@@ -1,6 +1,11 @@
-[theme]
 # Blue rather than Streamlit's default red, so neutral bars (e.g. "share of risk") don't read as alarms.
+# Set per mode: a top-level [theme] primaryColor would create one custom light theme and stop the app
+# following the visitor's dark-mode setting.
+[theme.light]
 primaryColor = "#2a78d6"
+
+[theme.dark]
+primaryColor = "#3987e5"
 
 [server]
 headless = true

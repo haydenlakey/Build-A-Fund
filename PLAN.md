@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-09 (end of Phase 1)_
+_Last updated: 2026-10-09 (Phase 2, steps 1–2 done)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
-| 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop, phone and dark mode. |
-| 2 | Composition, risk and reality-check views | Not started. **Next.** |
+| 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
+| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–2 done (ETF data, composition page); 99 tests pass. Next: step 3. |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
 | 5 | Fact sheet and polish | Not started |
@@ -35,15 +35,27 @@ _Last updated: 2026-10-09 (end of Phase 1)_
 - Compare funds side by side (funds can already be duplicated, saved and loaded)
 - "Explore diversifiers" from the preset universe
 
-## Phase 2 plan (next)
+### Phase 2: delivered so far
+
+- **Step 1 (ETF research):** all 31 JSE ETFs now have `tracks`, `ter`, `tc` in `universe.yaml` (sources by provider
+  in its header). New `data/lookthrough.yaml`: per ETF/index sector split (published labels + `sector_map` to the
+  app's Morningstar sectors), top holdings with tickers (for overlap), countries, `currency_of_country`, and a
+  `{url, as_of, accessed}` source on every block. `use:` lets an ETF inherit from the index it tracks.
+  Covers the 16 US ETFs too (yfinance `funds_data`).
+- **Step 2:** `fundlab/lookthrough.py` (profiles per holding → fund breakdowns by asset/sector/industry, country,
+  currency, earnings exposure; company overlap direct + through funds; tilts; concentration; weighted TER/TC)
+  and `views/composition.py` "What kind of fund is it?": tilt badges + explanation, sunburst (asset → sector,
+  tap for industry) + sector bars, country and currency bars, earnings-exposure bars, concentration tiles +
+  dominance warning + "companies you end up owning" table, risk-vs-money paired bars, sources expander.
+- Tests: `tests/test_lookthrough.py` (25, incl. a fires/stays-quiet fund per tilt), 2 new AppTests.
+  `scripts/browser_check.py` now also screenshots the composition page (3 views) via a share link.
+
+## Phase 2 plan
 
 Pages: **What kind of fund is it?** (composition), **Risk detail**, **Reality check**, plus the diversifier
 explorer and side-by-side comparison. In order:
-1. Research and add JSE ETF look-through data to `universe.yaml`: TER, top holdings, sector split, each with
-   source URL and as-of date (from provider fact sheets). Resolve the `tracks: null` entries.
-2. `fundlab/lookthrough.py` + composition page: sunburst/treemap by sector, asset type, country, currency;
-   tilt labels (tech-heavy, resources-heavy, rand-hedge, bank-heavy); concentration (top-5, effective
-   holdings, dominance warning); risk-vs-money paired bars.
+1. ~~Research and add JSE ETF look-through data~~ Done (JSE `tracks` resolved; US `tracks: null` left: not verified).
+2. ~~`fundlab/lookthrough.py` + composition page~~ Done.
 3. `fundlab/factors.py`: betas to Top 40, S&P 500 (rand), USD/ZAR, gold, commodities with CIs (OLS + HAC);
    clustered correlation heatmap.
 4. Active bets view: benchmark picker, active weights, TE, TE budget, rule-of-thumb comparisons (maths already in `active.py`).
@@ -60,6 +72,7 @@ Build A Fund/
 ├── app.py                 # entry: page config, st.navigation, sidebar (fund manager + settings)
 ├── views/                 # pages (not pages/, to avoid Streamlit's legacy auto-pages)
 │   ├── build.py           # Build your fund (centrepiece)
+│   ├── composition.py     # What kind of fund is it? (look-through, tilts, concentration, risk vs money)
 │   └── about.py           # About and data
 ├── ui/                    # Streamlit-only helpers
 │   ├── state.py           # session funds, active fund, example fund, share-link parse/build
@@ -77,8 +90,9 @@ Build A Fund/
 │   ├── model.py           # Holding, FundSettings, Fund, JSON + share codes
 │   ├── data.py            # Universe, quote units, cleaning, weekly resample, FX, download, PriceStore
 │   ├── analysis.py        # history_window, estimate, FundStats, compare (shared window + frontier)
+│   ├── lookthrough.py     # ETF look-through profiles, breakdowns, overlap, tilts, concentration
 │   └── verdict.py         # plain-language verdict
-├── data/universe.yaml, data/sample/{prices_native.parquet, meta.json}, data/cache/ (git-ignored)
+├── data/universe.yaml, data/lookthrough.yaml, data/sample/{prices_native.parquet, meta.json}, data/cache/ (git-ignored)
 ├── scripts/build_sample.py, scripts/browser_check.py
 ├── tests/ (test_maths, test_data, test_analysis, test_app), pytest.ini
 ├── .streamlit/config.toml # theme primaryColor blue
@@ -142,6 +156,27 @@ Made during build (2026-10-09):
 - *(inferred)* Ledoit-Wolf shrinks toward the constant-correlation target; EWMA λ = 0.97 weekly; MC rebalances weekly,
   t innovations share one chi-square draw; risk-free 7% is a placeholder assumption.
 
+Made in Phase 2 (2026-10-09):
+- **Look-through lives in `data/lookthrough.yaml`** (not inline in `universe.yaml`, which keeps one line per
+  holding); costs stay on the universe line. ETFs inherit from index records via `use:`.
+- **Offshore index sector splits use US-listed ETF proxies** (SPY, QQQ, URTH, EEM, MCHI, EWJ, FEZ; MSCI USA uses
+  SPY) via yfinance, so every sector label is Morningstar like the rest of the app. Fund sheets use mixed schemes
+  (10X uses Bloomberg BICS, which lumps healthcare into "consumer non-cyclical").
+- **TER = 1-year figure** where a sheet gives 1-year and 3-year. **Sygnia offshore ETFs: "Broker/Other platform"
+  TER** (what an EasyEquities buyer pays), not the cheaper Sygnia Alchemy figure. NewGold: "annual sales charge";
+  1nvest Gold: 0.25% management fee ex VAT (no TER published).
+- **Country** = where a company is based (top holdings refine JSE ETFs); **currency** = what the underlying is
+  priced in (JSE-listed shares and SA ETFs = ZAR; gold/platinum = USD); **earnings** (curated `exposure`) carries
+  the rand-hedge story. The SA ETF remainder beyond top holdings is "Not classified" rather than guessed.
+- **Tilt thresholds** (share of the whole fund): tech ≥ 25%, resources (Basic Materials + Energy) ≥ 25%,
+  banks ≥ 15%, property ≥ 20%, precious metals ≥ 15%, rand hedge (global + sa_dollar earnings) ≥ 50%,
+  mostly SA ≥ 80%; dominant holding > 20%. App rules of thumb, shown to the user as such (`lookthrough.TILTS`).
+- **Sunburst shows two rings** (asset → sector); the industry ring appears on tap. Colour = asset class only (≤ 5 hues).
+  Other breakdowns are single-hue horizontal bars (dataviz guidance: part-to-whole with many classes → bars).
+- **Dark mode fix:** `.streamlit/config.toml` uses `[theme.light]`/`[theme.dark]` primaryColor. A top-level
+  `[theme] primaryColor` made Streamlit build one custom light theme and ignore the visitor's dark setting.
+- The browser check ignores Streamlit's own 404 probes of `<page>/_stcore/*` on deep links (benign; it falls back).
+
 ## Research done so far
 
 - **Top 40** (41 lines incl. Investec Ltd + PLC) as at 8 Oct 2026, from https://satrix.co.za/products/product-details?id=44
@@ -151,6 +186,12 @@ Made during build (2026-10-09):
   and 21 Aug 2026, Crypto Briefing, SpotGamma, NBC News (Nasdaq-100 correction 28 Jul), CNBC 29 Jul (chip
   sell-off), Bloomberg 28 Jul, XTB 7 Jul. Copy the full URLs into the case files when writing them.
 - US sector/industry/country and US ETF expense ratios: Yahoo Finance via yfinance (accessed 2026-10-09).
+- **JSE ETF fact sheets (2026-10-09):** Satrix MDDs (`satrix.co.za/fund/mdd/<code>`, 31 Aug 2026) and product-page
+  sector tables (`product-details?id=N`; ids in `lookthrough.yaml`); Sygnia via iTransact (31 Jul 2026); 10X via
+  `assetmanagement.10x.co.za/wp-content/uploads/2026/08/` (31 Jul 2026); 1nvest, NewGold and SYGEU via
+  EasyEquities' resource site (Oct–Dec 2025: **older**, because etfsa.co.za returns 403 to scripts and the
+  1nvest/NewGold sites block them). MSCI EM country weights: MSCI factsheet, 30 Sep 2026.
+  Tip: `pdftotext -raw` reads Satrix/Sygnia/10X sheets; 1nvest needs word coordinates (pdfplumber).
 
 ## Approved case-file list (44)
 
@@ -180,6 +221,11 @@ Made during build (2026-10-09):
   (STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN).
 - The GitHub Action and Streamlit Cloud deployment are untested (no GitHub repo yet).
 - CRLF warnings on commit (Windows). Harmless; add `.gitattributes` if they get annoying.
+- **Stale ETF sheets:** 1nvest (ETFT40, ETFSWX, ETF500, ETFGLD), NewGold (GLD, NGPLT) and SYGEU data date from
+  Oct–Dec 2025. Refresh by hand from etfsa.co.za when a browser is available.
+- ETFSWX has no published sector table (chart only): its sector view uses top holdings + "Not disclosed".
+- Bank share is understated for ETFs whose sheets only give ICB industries (CTOP50, STXMMT: "Financials").
+- VT, VEA, VWO, SMH have no sourced country split (shown as "Other or global").
 
 ## Open questions
 
@@ -190,5 +236,6 @@ Made during build (2026-10-09):
 
 ## Next step
 
-Phase 2, step 1: research JSE ETF fact sheets (TER, top holdings, sector split, index tracked, each with URL and
-as-of date) and add them to `universe.yaml`; then build `fundlab/lookthrough.py` and the composition page.
+Phase 2, step 3: `fundlab/factors.py` (betas to Top 40, S&P 500 in rand, USD/ZAR, gold, commodities, OLS with
+HAC standard errors and confidence intervals) and a clustered correlation heatmap, added to the composition page.
+Then step 4 (active bets view).

@@ -78,3 +78,24 @@ def test_about_page_renders():
     at.switch_page("views/about.py").run()
     no_errors(at)
     assert any("About and data" in t.value for t in at.title)
+
+
+def test_composition_page_with_example_fund():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.switch_page("views/composition.py").run()
+    no_errors(at)
+    assert any("What kind of fund is it?" in t.value for t in at.title)
+    labels = [m.label for m in at.metric]
+    assert "Top five holdings" in labels and "Effective holdings" in labels
+    assert len(at.get("plotly_chart")) >= 3  # sunburst, sector bars, risk vs money
+    for view in ["Country and currency", "Where earnings come from"]:
+        at.segmented_control(key="comp_view").set_value(view).run()
+        no_errors(at)
+
+
+def test_composition_page_empty_fund():
+    at = fresh()
+    at.switch_page("views/composition.py").run()
+    no_errors(at)
+    assert any("This fund is empty" in i.value for i in at.info)

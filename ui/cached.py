@@ -4,7 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import analysis, data
+from fundlab import analysis, data, lookthrough
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -47,3 +47,19 @@ def _compare(before_json: str, after_json: str) -> analysis.Comparison:
 
 def compare(before: Fund, after: Fund) -> analysis.Comparison:
     return _compare(before.to_json(), after.to_json())
+
+
+@st.cache_resource
+def lookthrough_data() -> lookthrough.LookThroughData:
+    return lookthrough.load_lookthrough()
+
+
+@st.cache_data(max_entries=64, show_spinner=False)
+def _compose(fund_json: str) -> lookthrough.Composition:
+    fund = Fund.from_json(fund_json)
+    names = {h.ticker: h.name for h in fund.holdings}
+    return lookthrough.compose(fund.weights(), universe().entries, lookthrough_data(), names)
+
+
+def compose(fund: Fund) -> lookthrough.Composition:
+    return _compose(fund.to_json())

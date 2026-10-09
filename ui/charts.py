@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 from fundlab.analysis import Comparison
 
-from .theme import base_layout, palette
+from .theme import FONT, base_layout, palette
 
 N_FRAMES = 14
 
@@ -85,4 +85,88 @@ def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figur
                                 dict(frame=dict(duration=45, redraw=False), transition=dict(duration=0),
                                      fromcurrent=False, mode="immediate")])],
         )], margin=dict(l=8, r=8, t=40, b=120), height=480)
+    return fig
+
+
+# ---- composition ------------------------------------------------------------------
+
+ASSET_ORDER = ["equity", "property", "bonds", "commodity", "cash"]
+
+
+def sector_sunburst(sectors, asset_labels: dict[str, str]) -> go.Figure:
+    """Asset class -> sector -> published industry label, sized by share of the fund.
+
+    Colour follows the asset class only (<= 5 hues); rings are separated by surface-coloured borders.
+    """
+    p = palette()
+    colours = {a: p["series"][i] for i, a in enumerate(ASSET_ORDER)}
+    ids, labels, parents, values, cols = [], [], [], [], []
+    for a, g in sectors.groupby("asset", sort=False):
+        aid = f"a:{a}"
+        ids.append(aid); labels.append(asset_labels.get(a, a)); parents.append(""); values.append(g["weight"].sum())
+        cols.append(colours.get(a, p["muted"]))
+        for s, gs in g.groupby("sector", sort=False):
+            sid = f"{aid}/s:{s}"
+            ids.append(sid); labels.append(s); parents.append(aid); values.append(gs["weight"].sum())
+            cols.append(colours.get(a, p["muted"]))
+            if len(gs) > 1 or gs["industry"].iloc[0] != s:
+                for _, r in gs.iterrows():
+                    ids.append(f"{sid}/i:{r['industry']}"); labels.append(r["industry"]); parents.append(sid)
+                    values.append(r["weight"]); cols.append(colours.get(a, p["muted"]))
+    fig = go.Figure(go.Sunburst(
+        ids=ids, labels=labels, parents=parents, values=values, branchvalues="total",
+        marker=dict(colors=cols, line=dict(color=p["surface"], width=2)),
+        insidetextorientation="radial", textfont=dict(family=FONT),
+        hovertemplate="<b>%{label}</b><br>%{value:.1%} of the fund<br>%{percentParent:.0%} of %{parent}<extra></extra>",
+        maxdepth=2,
+    ))
+    fig.update_layout(**base_layout(p, height=460, margin=dict(l=4, r=4, t=8, b=4),
+                                    uniformtext=dict(minsize=11, mode="hide")))
+    return fig
+
+
+def share_bars(s, name: str, colour_idx: int = 0, height_per_bar: int = 30) -> go.Figure:
+    """Horizontal bars of shares (fractions), largest on top, value labels at the bar ends."""
+    p = palette()
+    s = s[s > 0.0005].sort_values()
+    fig = go.Figure(go.Bar(
+        x=s.values, y=list(s.index), orientation="h", name=name,
+        marker=dict(color=p["series"][colour_idx], line=dict(width=0), cornerradius=4),
+        text=[f"{v:.1%}" for v in s.values], textposition="outside", cliponaxis=False,
+        textfont=dict(color=p["ink2"], size=12),
+        hovertemplate="<b>%{y}</b><br>%{x:.1%} of the fund<extra></extra>",
+    ))
+    layout = base_layout(p, height=max(140, 60 + height_per_bar * len(s)), showlegend=False,
+                         margin=dict(l=8, r=48, t=8, b=8), bargap=0.35)
+    layout["xaxis"] = dict(layout["xaxis"], tickformat=".0%", rangemode="tozero", showgrid=True)
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
+    fig.update_layout(**layout)
+    return fig
+
+
+def risk_vs_money(rands, risk, names: dict[str, str]) -> go.Figure:
+    """Paired horizontal bars: each holding's share of the rands and share of the risk."""
+    p = palette()
+    order = rands.sort_values().index
+    labels = [names.get(t, t) for t in order]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=labels, x=[risk.get(t, float("nan")) for t in order], orientation="h", name="Share of risk",
+        marker=dict(color=p["series"][1], cornerradius=4),
+        text=[f"{risk.get(t, float('nan')):.0%}" for t in order], textposition="outside", cliponaxis=False,
+        textfont=dict(color=p["ink2"], size=11),
+        hovertemplate="<b>%{y}</b><br>Share of risk %{x:.1%}<extra></extra>",
+    ))
+    fig.add_trace(go.Bar(
+        y=labels, x=[rands[t] for t in order], orientation="h", name="Share of rands",
+        marker=dict(color=p["series"][0], cornerradius=4), text=[f"{rands[t]:.0%}" for t in order],
+        textposition="outside", cliponaxis=False, textfont=dict(color=p["ink2"], size=11),
+        hovertemplate="<b>%{y}</b><br>Share of rands %{x:.1%}<extra></extra>",
+    ))
+    layout = base_layout(p, height=max(200, 90 + 52 * len(order)), barmode="group", bargap=0.3, bargroupgap=0.08,
+                         margin=dict(l=8, r=48, t=40, b=8))
+    layout["xaxis"] = dict(layout["xaxis"], tickformat=".0%", rangemode="tozero")
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
+    layout["legend"] = dict(layout["legend"], traceorder="reversed")
+    fig.update_layout(**layout)
     return fig
