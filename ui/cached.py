@@ -4,7 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import analysis, data, lookthrough
+from fundlab import analysis, data, factors, lookthrough
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -63,3 +63,22 @@ def _compose(fund_json: str) -> lookthrough.Composition:
 
 def compose(fund: Fund) -> lookthrough.Composition:
     return _compose(fund.to_json())
+
+
+@st.cache_data(max_entries=64, show_spinner=False)
+def _sensitivities(fund_json: str):
+    fund = Fund.from_json(fund_json)
+    stats = compare(fund, fund).after
+    if stats is None:
+        return None
+    fac = factors.factor_returns(prices([t for t, _, _ in factors.FACTORS.values()]))
+    port = stats.port_returns
+    fac = fac.loc[port.index.min():port.index.max()]
+    single = factors.single_betas(port, fac)
+    joint, r2, n = factors.joint_betas(port, fac)
+    return single, joint, r2, n
+
+
+def sensitivities(fund: Fund):
+    """(single-factor betas, joint table, joint R², joint n) for the fund's estimation window, or None."""
+    return _sensitivities(fund.to_json())

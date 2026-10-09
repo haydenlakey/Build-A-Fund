@@ -7,11 +7,13 @@ LIGHT = {
     "surface": "#fcfcfb", "ink": "#0b0b0b", "ink2": "#52514e", "muted": "#898781",
     "grid": "#e1e0d9", "axis": "#c3c2b7",
     "series": ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"],
+    "div_neg": "#1c5cab", "div_mid": "#f0efec", "div_pos": "#e34948",  # diverging blue <-> gray <-> red
 }
 DARK = {
     "surface": "#1a1a19", "ink": "#ffffff", "ink2": "#c3c2b7", "muted": "#898781",
     "grid": "#2c2c2a", "axis": "#383835",
     "series": ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"],
+    "div_neg": "#3987e5", "div_mid": "#383835", "div_pos": "#e66767",
 }
 FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
 

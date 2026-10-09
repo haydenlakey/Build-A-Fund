@@ -90,7 +90,7 @@ def main() -> int:
             page.screenshot(path=OUT / f"{label}-3-preview.png")
             if label == "desktop" and not marker_moves(page):
                 problems.append("risk-return marker did not animate on Replay")
-            page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 1800})
+            page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 3400})
             page.goto(f"{URL}/composition?fund={EXAMPLE.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-4-composition.png")

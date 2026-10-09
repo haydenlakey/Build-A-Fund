@@ -4,6 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from fundlab.factors import FACTORS, cluster, correlation
 from fundlab.lookthrough import ASSET_LABELS, DOMINANT, EARNINGS_LABELS, TILTS, Composition
 from fundlab.model import Fund
 from ui import cached, charts, state
@@ -118,6 +119,57 @@ $$RC_i = \frac{w_i\,(\Sigma w)_i}{\sigma_p}, \qquad \sum_i RC_i = \sigma_p,$$
 
 and its share of risk is $RC_i / \sigma_p$. These shares add to 100%. Holdings left out of the
 statistics for lack of history get no risk bar.
+"""
+
+BETA_WHAT = """
+A **beta** says how much your fund has tended to move when something else moves. A beta of
+1.2 to the JSE Top 40 means that in a week the Top 40 rose 1%, your fund rose about 1.2% on
+average; a beta of 0 means no consistent link.
+
+The **US dollar in rand** row is the rand-hedge test: a positive beta means your fund has
+tended to *gain* in rand when the rand weakened. Gold and commodities show how much the fund
+rides on those prices.
+
+Each dot is the best estimate and the whisker its **95% confidence interval**: the range of
+betas consistent with the data. A whisker crossing zero means the history can't rule out *no*
+link. Each row is a separate regression on the same weeks, so the rows overlap: a fund full of
+JSE miners will show betas to the Top 40, gold *and* commodities at once.
+"""
+
+BETA_MATHS = r"""
+For each factor $f$, ordinary least squares on weekly rand returns over the statistics window:
+
+$$r_{\text{fund},t} = a + \beta\, f_t + \varepsilon_t .$$
+
+Standard errors are **Newey-West (HAC)**, robust to autocorrelation and changing volatility,
+with $L = \lfloor 4 (n/100)^{2/9} \rfloor$ lags:
+
+$$\widehat{V}(\hat b) = (X^\top X)^{-1}\Big[\sum_t \hat u_t^2 x_t x_t^\top + \sum_{l=1}^{L}\Big(1-\tfrac{l}{L+1}\Big)
+\sum_t \hat u_t \hat u_{t-l}\big(x_t x_{t-l}^\top + x_{t-l} x_t^\top\big)\Big](X^\top X)^{-1}\cdot\frac{n}{n-k}.$$
+
+The interval is $\hat\beta \pm t_{0.975,\,n-2}\,\mathrm{se}(\hat\beta)$. $R^2$ is the share of the fund's
+weekly variance the factor explains. Factors: Satrix 40 (Top 40 with dividends), SPY × USD/ZAR,
+USD/ZAR, gold futures × USD/ZAR, and the Invesco DBC commodity ETF × USD/ZAR (a proxy: Yahoo has no
+Bloomberg Commodity index).
+"""
+
+CORR_WHAT = """
+Each square is the **correlation** between two holdings' weekly returns: +1 (red) means they
+always move together, 0 (gray) no relationship, −1 (blue) they move in opposite directions.
+
+The holdings are **reordered** so that ones that move alike sit next to each other, which makes
+blocks of red stand out: each block is, in effect, one bet held several times over. Owning ten
+holdings that all correlate at 0.9 diversifies much less than owning three that don't.
+"""
+
+CORR_MATHS = r"""
+Correlations come from the covariance estimate chosen in *Assumptions and settings*:
+$\rho_{ij} = \Sigma_{ij} / \sqrt{\Sigma_{ii}\Sigma_{jj}}$.
+
+Ordering: hierarchical clustering with **average linkage** on the distance
+$d_{ij} = \sqrt{(1-\rho_{ij})/2}$ (0 for perfectly correlated, 1 for perfectly opposite), with
+optimal leaf ordering. Groups are cut at $d = \sqrt{(1-0.7)/2}$, so holdings in a group have an
+average correlation of roughly 0.7 or more.
 """
 
 
@@ -236,6 +288,77 @@ def risk_vs_money(fund: Fund) -> None:
     C.chart_notes(RISK_WHAT, RISK_MATHS, "rvm")
 
 
+def sensitivities(fund: Fund, comp: Composition) -> None:
+    st.subheader("Sensitivities")
+    with st.spinner("Running regressions…"):
+        res = cached.sensitivities(fund)
+    if not res or not res[0]:
+        st.info("Not enough shared price history to estimate sensitivities (at least a year of weekly returns).")
+        return
+    single, joint, r2, n = res
+    st.plotly_chart(charts.beta_forest(single), config=CHART_CONFIG, key="betas")
+    by = {b.key: b for b in single}
+    notes = []
+    if "usdzar" in by:
+        b = by["usdzar"]
+        if b.significant:
+            notes.append(f"In weeks the rand weakened 1% against the dollar, the fund tended to move {b.beta:+.2f}% "
+                         f"in rand ({'it behaved like a rand hedge' if b.beta > 0 else 'the opposite of a rand hedge'}).")
+            if b.beta < 0 and any(t.key == "rand_hedge" for t in comp.tilts):
+                notes.append("That sits oddly with the *Rand hedge* label above, and both are true. The label is about "
+                             "where the companies earn their money, which pays off over years as the rand drifts. "
+                             "Week to week, the rand and South African shares often fall together when global "
+                             "investors pull money out of emerging markets, so the short-run link can point the other way.")
+        else:
+            notes.append("No clear link to the rand–dollar exchange rate over this window.")
+    best = max(single, key=lambda b: b.r2)
+    notes.append(f"The {best.label} explains the most of the fund's weekly swings (R² {best.r2:.0%}).")
+    for t in notes:
+        st.caption(t)
+    if st.toggle("Show as a table", key="beta_table"):
+        st.dataframe(pd.DataFrame([{"Factor": b.label, "Beta": b.beta, "95% low": b.lo, "95% high": b.hi,
+                                    "R²": b.r2 * 100, "Correlation": b.corr, "Weeks": b.n} for b in single]),
+                     hide_index=True, width="stretch", column_config={
+                         "Beta": st.column_config.NumberColumn(format="%.2f"),
+                         "95% low": st.column_config.NumberColumn(format="%.2f"),
+                         "95% high": st.column_config.NumberColumn(format="%.2f"),
+                         "R²": st.column_config.NumberColumn(format="%.0f%%"),
+                         "Correlation": st.column_config.NumberColumn(format="%.2f")})
+    C.chart_notes(BETA_WHAT, BETA_MATHS, "beta")
+    if len(joint) and st.session_state.get("maths_beta"):
+        st.markdown(f"**All factors at once** (one regression, {n} weeks, R² {r2:.0%}). Each beta now holds the "
+                    "other factors fixed, so overlapping factors share the credit and intervals widen.")
+        jt = joint.rename(index={k: FACTORS[k][1] for k in joint.index})
+        st.dataframe(jt.rename(columns={"beta": "Beta", "se": "Std error (HAC)", "lo": "95% low", "hi": "95% high"}),
+                     width="stretch", column_config={c: st.column_config.NumberColumn(format="%.2f")
+                                                     for c in ["Beta", "Std error (HAC)", "95% low", "95% high"]})
+
+
+def moves_together(fund: Fund) -> None:
+    st.subheader("Which holdings move together")
+    if len(fund.weights()) < 2:
+        st.caption("Add a second holding to see how your holdings move relative to each other.")
+        return
+    cmp = cached.compare(fund, fund)
+    cov = cmp.est.cov
+    if cov.shape[0] < 2:
+        st.info("Not enough shared price history to compare holdings yet.")
+        return
+    cl = cluster(correlation(cov))
+    names = {t: cached.name_of(t, fund) for t in cl.order}
+    st.plotly_chart(charts.corr_heatmap(cl.corr, names), config=CHART_CONFIG, key="corr")
+    if cl.groups:
+        for g in cl.groups:
+            sub = cl.corr.loc[g, g].to_numpy()
+            avg = (sub.sum() - len(g)) / (len(g) * (len(g) - 1))
+            share = fund.weights()[g].sum()
+            st.caption(f"Move together (average correlation {avg:.2f}, {share:.0%} of the rands): "
+                       + ", ".join(names[t] for t in g))
+    else:
+        st.caption("No group of holdings moves closely together (no average correlation of 0.7 or more).")
+    C.chart_notes(CORR_WHAT, CORR_MATHS, "corr")
+
+
 def sources(comp: Composition, fund: Fund) -> None:
     rows = []
     for t, p in comp.profiles.items():
@@ -281,4 +404,6 @@ character(comp)
 what_it_owns(comp)
 concentration(comp, fund)
 risk_vs_money(fund)
+sensitivities(fund, comp)
+moves_together(fund)
 sources(comp, fund)

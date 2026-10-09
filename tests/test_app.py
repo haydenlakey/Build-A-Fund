@@ -88,7 +88,8 @@ def test_composition_page_with_example_fund():
     assert any("What kind of fund is it?" in t.value for t in at.title)
     labels = [m.label for m in at.metric]
     assert "Top five holdings" in labels and "Effective holdings" in labels
-    assert len(at.get("plotly_chart")) >= 3  # sunburst, sector bars, risk vs money
+    assert len(at.get("plotly_chart")) >= 5  # sunburst, sector bars, risk vs money, betas, correlation
+    assert {"Sensitivities", "Which holdings move together"} <= {s.value for s in at.subheader}
     for view in ["Country and currency", "Where earnings come from"]:
         at.segmented_control(key="comp_view").set_value(view).run()
         no_errors(at)

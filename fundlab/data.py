@@ -130,6 +130,25 @@ def repair_hundredfold(s: pd.Series) -> pd.Series:
     return fixed.reindex(s.index)
 
 
+def remove_spikes(s: pd.Series, jump: float, calm: float) -> pd.Series:
+    """Replace isolated bad ticks: a point more than `jump` away from both neighbours, in the same
+    direction, while the neighbours are within `calm` of each other. Such points are interpolated.
+
+    Used for exchange rates only (Yahoo's ZAR=X has one-week ticks like 14.86 between 17.28 and
+    18.10 in Nov 2024). Shares are left alone: volatile shares really do jump and reverse.
+    """
+    x = s.dropna()
+    if len(x) < 3:
+        return s
+    prev, nxt = x.shift(1), x.shift(-1)
+    up, down = x / prev - 1, x / nxt - 1
+    bad = (up.abs() > jump) & (down.abs() > jump) & (np.sign(up) == np.sign(down)) & ((nxt / prev - 1).abs() < calm)
+    if not bad.any():
+        return s
+    fixed = x.mask(bad).interpolate(method="time", limit_area="inside")
+    return fixed.reindex(s.index).where(s.notna())
+
+
 def to_weekly(daily: pd.DataFrame) -> pd.DataFrame:
     """Daily closes -> weekly closes labelled by the Friday that ends each week.
 
@@ -153,6 +172,8 @@ def clean_native(raw_daily: pd.DataFrame) -> pd.DataFrame:
         s = s.where(s > 0)
         if quote_unit(t) == "ZAc":
             s = repair_hundredfold(s) / 100.0
+        elif quote_unit(t) == "rate":
+            s = remove_spikes(s, jump=0.05, calm=0.02)
         out[t] = s
     return to_weekly(pd.DataFrame(out, index=raw_daily.index)).dropna(how="all")
 
@@ -244,7 +265,11 @@ class PriceStore:
             native = frames[0]
             for df in frames[1:]:
                 native = native.combine_first(df)
-            self.native = native.sort_index()
+            native = native.sort_index()
+            for t in native.columns:  # also repairs samples built before FX spikes were filtered
+                if quote_unit(t) == "rate":
+                    native[t] = remove_spikes(native[t], jump=0.08, calm=0.06)
+            self.native = native
 
     @property
     def sample_date(self) -> str | None:

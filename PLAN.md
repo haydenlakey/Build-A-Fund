@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-09 (Phase 2, steps 1–2 done)_
+_Last updated: 2026-10-09 (Phase 2, steps 1–3 done)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
-| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–2 done (ETF data, composition page); 99 tests pass. Next: step 3. |
+| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–3 done (ETF data, composition page, sensitivities + correlation clusters); 111 tests pass. Next: step 4. |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
 | 5 | Fact sheet and polish | Not started |
@@ -47,6 +47,15 @@ _Last updated: 2026-10-09 (Phase 2, steps 1–2 done)_
   and `views/composition.py` "What kind of fund is it?": tilt badges + explanation, sunburst (asset → sector,
   tap for industry) + sector bars, country and currency bars, earnings-exposure bars, concentration tiles +
   dominance warning + "companies you end up owning" table, risk-vs-money paired bars, sources expander.
+- **Step 3:** `fundlab/factors.py`: single-factor betas (OLS, Newey-West HAC errors, t intervals, R²) to Top 40
+  (STX40.JO), S&P 500 in rand, USD/ZAR, gold in rand, DBC in rand; a joint regression (shown under "Show me the
+  maths"); correlation clustering (average linkage on sqrt((1-ρ)/2), optimal leaf order, groups at ρ ≈ 0.7).
+  Composition page gains **Sensitivities** (dot-and-whisker chart + table toggle + rand-hedge reading) and
+  **Which holdings move together** (clustered heatmap, diverging blue/gray/red tokens in `ui/theme.py`).
+- **Data fix (affects Phase 1 numbers):** Yahoo's ZAR=X has isolated bad ticks (14.86 on 15 Nov 2024 between
+  17.28 and 18.10; 15.43 on 17 Jan 2025). `data.remove_spikes` now repairs FX series daily on download and weekly
+  on load. USD/ZAR vol for 2024–25 dropped from ~28% to ~10% a year; STX500 vs SPY-in-rand correlation 0.56 → 0.83.
+- Tests: `tests/test_factors.py` (10, incl. simulated CI coverage with AR(1) errors), 3 spike tests in `test_data.py`.
 - Tests: `tests/test_lookthrough.py` (25, incl. a fires/stays-quiet fund per tilt), 2 new AppTests.
   `scripts/browser_check.py` now also screenshots the composition page (3 views) via a share link.
 
@@ -56,8 +65,7 @@ Pages: **What kind of fund is it?** (composition), **Risk detail**, **Reality ch
 explorer and side-by-side comparison. In order:
 1. ~~Research and add JSE ETF look-through data~~ Done (JSE `tracks` resolved; US `tracks: null` left: not verified).
 2. ~~`fundlab/lookthrough.py` + composition page~~ Done.
-3. `fundlab/factors.py`: betas to Top 40, S&P 500 (rand), USD/ZAR, gold, commodities with CIs (OLS + HAC);
-   clustered correlation heatmap.
+3. ~~`fundlab/factors.py` + clustered correlation heatmap~~ Done.
 4. Active bets view: benchmark picker, active weights, TE, TE budget, rule-of-thumb comparisons (maths already in `active.py`).
 5. Risk detail: VaR/ES 3 ways side by side, simulated rand distribution, fan chart, stress tests
    (2008, Dec 2015, Mar 2020, 2022, Jul 2026), drawdown and rolling vol, leverage toggle.
@@ -175,6 +183,13 @@ Made in Phase 2 (2026-10-09):
   Other breakdowns are single-hue horizontal bars (dataviz guidance: part-to-whole with many classes → bars).
 - **Dark mode fix:** `.streamlit/config.toml` uses `[theme.light]`/`[theme.dark]` primaryColor. A top-level
   `[theme] primaryColor` made Streamlit build one custom light theme and ignore the visitor's dark setting.
+- **Betas are single-factor regressions** (one per factor, easiest to read); the joint regression is extra detail.
+  Factor series need ≥ 52 overlapping weeks. The Top 40 factor is STX40.JO (total return, from 2009).
+- **FX spike rule:** a point > 8% (weekly; 5% daily) from both neighbours in the same direction while the
+  neighbours are within 6% (2% daily) is interpolated. FX only: volatile shares (Micron, gold miners) genuinely
+  jump and reverse, and a share-level filter flagged dozens of real weeks.
+- When the *Rand hedge* tilt (earnings) and a negative USD/ZAR beta (weekly co-movement) disagree, the page explains
+  why both can be true instead of hiding one.
 - The browser check ignores Streamlit's own 404 probes of `<page>/_stcore/*` on deep links (benign; it falls back).
 
 ## Research done so far
@@ -236,6 +251,6 @@ Made in Phase 2 (2026-10-09):
 
 ## Next step
 
-Phase 2, step 3: `fundlab/factors.py` (betas to Top 40, S&P 500 in rand, USD/ZAR, gold, commodities, OLS with
-HAC standard errors and confidence intervals) and a clustered correlation heatmap, added to the composition page.
-Then step 4 (active bets view).
+Phase 2, step 4: active bets view (benchmark picker: Top 40, balanced proxy, global; active weights, tracking
+error, each bet's share of the TE budget, rule-of-thumb versions beside the exact calculation; maths already in
+`fundlab/active.py`). Benchmarks need look-through weights for overlap (e.g. Top 40 holdings vs a fund's shares).

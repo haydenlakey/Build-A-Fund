@@ -170,3 +170,54 @@ def risk_vs_money(rands, risk, names: dict[str, str]) -> go.Figure:
     layout["legend"] = dict(layout["legend"], traceorder="reversed")
     fig.update_layout(**layout)
     return fig
+
+
+# ---- sensitivities and correlation --------------------------------------------------
+
+def beta_forest(betas) -> go.Figure:
+    """Each factor's beta as a dot with its confidence interval as a whisker; zero line for reference."""
+    p = palette()
+    betas = list(reversed(betas))
+    y = [b.label for b in betas]
+    fig = go.Figure()
+    fig.add_vline(x=0, line=dict(color=p["axis"], width=1))
+    fig.add_trace(go.Scatter(
+        x=[b.beta for b in betas], y=y, mode="markers+text", name="Beta",
+        marker=dict(size=11, color=p["series"][0], line=dict(width=2, color=p["surface"])),
+        error_x=dict(type="data", symmetric=False, array=[b.hi - b.beta for b in betas],
+                     arrayminus=[b.beta - b.lo for b in betas], color=p["series"][0], thickness=2, width=6),
+        text=[f"{b.beta:.2f}" for b in betas], textposition="top center", textfont=dict(color=p["ink2"], size=12),
+        customdata=[[b.lo, b.hi, b.r2, b.n] for b in betas],
+        hovertemplate="<b>%{y}</b><br>Beta %{x:.2f}<br>95% interval %{customdata[0]:.2f} to %{customdata[1]:.2f}"
+                      "<br>R² %{customdata[2]:.0%} · %{customdata[3]} weeks<extra></extra>",
+    ))
+    layout = base_layout(p, height=max(220, 70 + 56 * len(betas)), showlegend=False, margin=dict(l=8, r=16, t=16, b=8))
+    layout["xaxis"] = dict(layout["xaxis"], title="Beta (change in the fund per 1 unit change in the factor)",
+                           zeroline=False)
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
+    fig.update_layout(**layout)
+    return fig
+
+
+def corr_heatmap(corr, names: dict[str, str]) -> go.Figure:
+    """Clustered correlation matrix, diverging blue (-1) <-> gray (0) <-> red (+1)."""
+    p = palette()
+    labels = [names.get(t, t) for t in corr.index]
+    n = len(labels)
+    z = corr.to_numpy()
+    fig = go.Figure(go.Heatmap(
+        z=z, x=labels, y=labels, zmin=-1, zmax=1, xgap=2, ygap=2,
+        colorscale=[[0, p["div_neg"]], [0.5, p["div_mid"]], [1, p["div_pos"]]],
+        text=[[f"{v:.2f}" for v in row] for row in z], texttemplate="%{text}" if n <= 12 else None,
+        textfont=dict(size=11),
+        colorbar=dict(title=dict(text="Correlation", side="right"), thickness=10, tickvals=[-1, -0.5, 0, 0.5, 1],
+                      outlinewidth=0, tickfont=dict(color=p["muted"])),
+        hovertemplate="<b>%{y}</b> and <b>%{x}</b><br>correlation %{z:.2f}<extra></extra>",
+    ))
+    side = max(280, 120 + 38 * n)
+    layout = base_layout(p, height=side, margin=dict(l=8, r=8, t=8, b=8))
+    layout["xaxis"] = dict(layout["xaxis"], showgrid=False, tickangle=-40, automargin=True, side="bottom")
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, autorange="reversed", automargin=True,
+                           tickfont=dict(color=p["ink2"]))
+    fig.update_layout(**layout)
+    return fig

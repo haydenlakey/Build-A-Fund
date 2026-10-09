@@ -123,3 +123,25 @@ def test_bundled_sample_is_sane():
     assert last["AAPL"] > 1_000  # dollars converted to rand
     weekly = z.pct_change(fill_method=None)
     assert weekly.abs().max().max() < 1.5  # no leftover 100x glitches in these
+
+
+def test_remove_spikes_interpolates_isolated_fx_ticks():
+    idx = pd.date_range("2024-11-01", periods=5, freq="W-FRI")
+    s = pd.Series([17.60, 17.28, 14.86, 18.10, 18.08], index=idx)  # Yahoo ZAR=X, Nov 2024
+    out = data.remove_spikes(s, jump=0.08, calm=0.06)
+    assert out.iloc[2] == pytest.approx((17.28 + 18.10) / 2, rel=1e-3)
+    assert out.drop(idx[2]).equals(s.drop(idx[2]))
+
+
+def test_remove_spikes_keeps_real_moves_and_edges():
+    idx = pd.date_range("2020-02-28", periods=5, freq="W-FRI")
+    crash = pd.Series([15.47, 15.59, 16.56, 17.34, 17.30], index=idx)  # a real, persistent move
+    assert data.remove_spikes(crash, jump=0.08, calm=0.06).equals(crash)
+    edge = pd.Series([10.0, 10.1, 10.0, 10.1, 13.0], index=idx)  # last point has no right neighbour
+    assert data.remove_spikes(edge, jump=0.08, calm=0.06).equals(edge)
+
+
+def test_store_cleans_fx_spikes_on_load():
+    store = data.PriceStore(allow_live=False)
+    z = store.native[data.USDZAR]
+    assert z.loc["2024-11-15"] > 17.0 and z.loc["2025-01-17"] > 18.0
