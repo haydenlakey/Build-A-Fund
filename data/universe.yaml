@@ -30,8 +30,23 @@
 #     column on the Satrix page above. Treat "exposure" as an approximation.
 #   Ticker availability and history start dates: checked with yfinance on 2026-10-09.
 #
-# Not yet filled (phase 2): JSE ETF TERs, top holdings and sector splits for look-through.
-# Each will be copied from the provider's fact sheet with its as-of date.
+#   JSE ETF costs (ter = total expense ratio, tc = transaction costs, as fractions; accessed 2026-10-09).
+#     Satrix: monthly MDD, https://satrix.co.za/fund/mdd/<code>, 1-year column. 31 Aug 2026
+#       (STX500 and STXFIN: 31 Jul 2026).
+#     Sygnia Itrix: MDDs at https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/
+#       (itrix_top40, itrix_sp500, itrix_msciusa, itrix_msciworld, itrix_mscijapan), 31 Jul 2026,
+#       ratios "Jun 2026". SYGEU from the EasyEquities copy, 31 Dec 2025. For SYGUS, SYGWD,
+#       SYGJP and SYGEU the "Broker/Other Platform" column is used (what an EasyEquities buyer
+#       pays); Sygnia's own Alchemy platform is cheaper (e.g. SYGUS 0.65% vs 0.89%).
+#     10X: MDDs at https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/ , 31 Jul 2026.
+#     1nvest: MDDs at https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/1nvest/<code>.pdf,
+#       "1 Year Total Expense". ETFT40 and ETF500 31 Dec 2025, ETFSWX 31 Oct 2025 (older:
+#       newer copies on etfsa.co.za refuse automated downloads). ETFGLD: 0.25% management
+#       fee excluding VAT (the sheet gives no TER), 31 Dec 2025.
+#     NewGold (GLD, NGPLT): "Annual Sales Charge" from the EasyEquities copies,
+#       https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/ABSA/<code>.pdf, 31 Dec 2025.
+#       The sheet gives no separate TER figure.
+#   Look-through (holdings, sectors, countries): data/lookthrough.yaml, with a source per entry.
 
 as_of: 2026-10-09
 
@@ -83,39 +98,39 @@ jse_shares:
 # JSE ETFs: tickers confirmed on Yahoo on 2026-10-09. STXSWX, SYGSW4, DIVTRX,
 # NFEMOM, NFTRCI and PTXTEN returned no data and are left out. Names checked against
 # Yahoo longName on 2026-10-09 (CoreShares is now branded 10X; ETFSWX is now 1nvest Capped All Share).
-# ter / holdings / sectors are added in phase 2 from each fund's fact sheet.
+# tracks, ter and tc from each fund's MDD (see Sources above); contents in data/lookthrough.yaml.
 jse_etfs:
-  - {ticker: STX40.JO,  name: Satrix 40,                      sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
-  - {ticker: SYGT40.JO, name: Sygnia Itrix Top 40,            sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
-  - {ticker: ETFT40.JO, name: 1nvest Top 40,                  sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
-  - {ticker: ETFSWX.JO, name: 1nvest Capped All Share,         sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
-  - {ticker: CTOP50.JO, name: 10X S&P SA Top 50,              sector: Equity, region: SA,     tracks: S&P South Africa Top 50, themes: [sa_equity]}
-  - {ticker: STXCAP.JO, name: Satrix Capped All Share,        sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
-  - {ticker: STXRES.JO, name: Satrix RESI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Resource 10, themes: [sa_equity, mining]}
-  - {ticker: STXFIN.JO, name: Satrix FINI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Financial 15, themes: [sa_equity, bank]}
-  - {ticker: STXIND.JO, name: Satrix INDI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Industrial 25, themes: [sa_equity]}
-  - {ticker: STXDIV.JO, name: Satrix Divi Plus,               sector: Equity, region: SA,     tracks: FTSE/JSE Dividend Plus, themes: [sa_equity]}
-  - {ticker: STXQUA.JO, name: Satrix Quality,                 sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
-  - {ticker: STXMMT.JO, name: Satrix Momentum,                sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
-  - {ticker: STXPRO.JO, name: Satrix Property,                sector: Property, region: SA,   tracks: null, themes: [listed_property]}
-  - {ticker: CSPROP.JO, name: 10X South African Property Income, sector: Property, region: SA,   tracks: null, themes: [listed_property]}
-  - {ticker: STXGOV.JO, name: Satrix SA Bond,                 sector: Bonds,  region: SA,     tracks: null, themes: [sa_bonds]}
-  - {ticker: STXILB.JO, name: Satrix ILBI,                    sector: Bonds,  region: SA,     tracks: null, themes: [sa_bonds, inflation_linked]}
-  - {ticker: STX500.JO, name: Satrix S&P 500,                 sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
-  - {ticker: SYG500.JO, name: Sygnia Itrix S&P 500,           sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
-  - {ticker: CSP500.JO, name: 10X S&P 500,                    sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
-  - {ticker: ETF500.JO, name: 1nvest S&P 500 Feeder,          sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
-  - {ticker: SYGUS.JO,  name: Sygnia Itrix MSCI USA,          sector: Equity, region: US,     tracks: MSCI USA, themes: [offshore_equity]}
-  - {ticker: STXNDQ.JO, name: Satrix Nasdaq 100,              sector: Equity, region: US,     tracks: Nasdaq-100, themes: [offshore_equity, us_tech]}
-  - {ticker: STXWDM.JO, name: Satrix MSCI World Feeder,       sector: Equity, region: Global, tracks: MSCI World, themes: [offshore_equity]}
-  - {ticker: SYGWD.JO,  name: Sygnia Itrix MSCI World,        sector: Equity, region: Global, tracks: MSCI World, themes: [offshore_equity]}
-  - {ticker: STXEMG.JO, name: Satrix MSCI Emerging Markets,   sector: Equity, region: EM,     tracks: MSCI Emerging Markets, themes: [offshore_equity]}
-  - {ticker: STXCHN.JO, name: Satrix MSCI China Feeder,       sector: Equity, region: China,  tracks: MSCI China, themes: [offshore_equity, china_tech]}
-  - {ticker: SYGEU.JO,  name: Sygnia Itrix Euro Stoxx 50,     sector: Equity, region: Europe, tracks: Euro Stoxx 50, themes: [offshore_equity]}
-  - {ticker: SYGJP.JO,  name: Sygnia Itrix MSCI Japan,        sector: Equity, region: Japan,  tracks: MSCI Japan, themes: [offshore_equity]}
-  - {ticker: GLD.JO,    name: NewGold Gold ETF,               sector: Commodity, region: Global, tracks: Gold price, themes: [gold]}
-  - {ticker: ETFGLD.JO, name: 1nvest Gold,                    sector: Commodity, region: Global, tracks: Gold price, themes: [gold]}
-  - {ticker: NGPLT.JO,  name: NewGold Platinum,               sector: Commodity, region: Global, tracks: Platinum price, themes: [pgm]}
+  - {ticker: STX40.JO,  name: Satrix 40,                      sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, ter: 0.001, tc: 0.0003, themes: [sa_equity]}
+  - {ticker: SYGT40.JO, name: Sygnia Itrix Top 40,            sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, ter: 0.0015, tc: 0.0005, themes: [sa_equity]}
+  - {ticker: ETFT40.JO, name: 1nvest Top 40,                  sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, ter: 0.0032, tc: 0.0004, themes: [sa_equity]}
+  - {ticker: ETFSWX.JO, name: 1nvest Capped All Share,         sector: Equity, region: SA,     tracks: FTSE/JSE Capped SWIX All Share, ter: 0.0031, tc: 0.0003, themes: [sa_equity]}
+  - {ticker: CTOP50.JO, name: 10X S&P SA Top 50,              sector: Equity, region: SA,     tracks: S&P South Africa 50, ter: 0.0025, tc: 0.0004, themes: [sa_equity]}
+  - {ticker: STXCAP.JO, name: Satrix Capped All Share,        sector: Equity, region: SA,     tracks: FTSE/JSE Capped All Share, ter: 0.0015, tc: 0.0003, themes: [sa_equity]}
+  - {ticker: STXRES.JO, name: Satrix RESI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Capped Resources 10, ter: 0.0046, tc: 0.0005, themes: [sa_equity, mining]}
+  - {ticker: STXFIN.JO, name: Satrix FINI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Financial 15, ter: 0.0046, tc: 0.0001, themes: [sa_equity, bank]}
+  - {ticker: STXIND.JO, name: Satrix INDI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Capped Industrial 25, ter: 0.0044, tc: 0.0008, themes: [sa_equity]}
+  - {ticker: STXDIV.JO, name: Satrix Divi Plus,               sector: Equity, region: SA,     tracks: FTSE/JSE Dividend Plus, ter: 0.0044, tc: 0.0014, themes: [sa_equity]}
+  - {ticker: STXQUA.JO, name: Satrix Quality,                 sector: Equity, region: SA,     tracks: Satrix Quality Index, ter: 0.004, tc: 0.0016, themes: [sa_equity]}
+  - {ticker: STXMMT.JO, name: Satrix Momentum,                sector: Equity, region: SA,     tracks: Satrix Momentum Index, ter: 0.004, tc: 0.0033, themes: [sa_equity]}
+  - {ticker: STXPRO.JO, name: Satrix Property,                sector: Property, region: SA,   tracks: FTSE/JSE All Property, ter: 0.0033, tc: 0.0008, themes: [listed_property]}
+  - {ticker: CSPROP.JO, name: 10X South African Property Income, sector: Property, region: SA,   tracks: SA Property Income Index (10X custom), ter: 0.0044, tc: 0.0007, themes: [listed_property]}
+  - {ticker: STXGOV.JO, name: Satrix SA Bond,                 sector: Bonds,  region: SA,     tracks: S&P South Africa Sovereign Bond 1+ Year, ter: 0.0025, tc: 0.0, themes: [sa_bonds]}
+  - {ticker: STXILB.JO, name: Satrix ILBI,                    sector: Bonds,  region: SA,     tracks: FTSE/JSE Inflation-Linked Government, ter: 0.0025, tc: 0.0, themes: [sa_bonds, inflation_linked]}
+  - {ticker: STX500.JO, name: Satrix S&P 500,                 sector: Equity, region: US,     tracks: S&P 500, ter: 0.0025, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: SYG500.JO, name: Sygnia Itrix S&P 500,           sector: Equity, region: US,     tracks: S&P 500, ter: 0.0019, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: CSP500.JO, name: 10X S&P 500,                    sector: Equity, region: US,     tracks: S&P 500, ter: 0.0037, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: ETF500.JO, name: 1nvest S&P 500 Feeder,          sector: Equity, region: US,     tracks: S&P 500, ter: 0.0027, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: SYGUS.JO,  name: Sygnia Itrix MSCI USA,          sector: Equity, region: US,     tracks: MSCI USA, ter: 0.0089, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: STXNDQ.JO, name: Satrix Nasdaq 100,              sector: Equity, region: US,     tracks: Nasdaq-100, ter: 0.0042, tc: 0.0, themes: [offshore_equity, us_tech]}
+  - {ticker: STXWDM.JO, name: Satrix MSCI World Feeder,       sector: Equity, region: Global, tracks: MSCI World, ter: 0.0026, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: SYGWD.JO,  name: Sygnia Itrix MSCI World,        sector: Equity, region: Global, tracks: MSCI World, ter: 0.0071, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: STXEMG.JO, name: Satrix MSCI Emerging Markets,   sector: Equity, region: EM,     tracks: MSCI Emerging Markets, ter: 0.004, tc: 0.0, themes: [offshore_equity]}
+  - {ticker: STXCHN.JO, name: Satrix MSCI China Feeder,       sector: Equity, region: China,  tracks: MSCI China, ter: 0.0051, tc: 0.0, themes: [offshore_equity, china_tech]}
+  - {ticker: SYGEU.JO,  name: Sygnia Itrix Euro Stoxx 50,     sector: Equity, region: Europe, tracks: Euro Stoxx 50, ter: 0.0091, tc: 0.0001, themes: [offshore_equity]}
+  - {ticker: SYGJP.JO,  name: Sygnia Itrix MSCI Japan,        sector: Equity, region: Japan,  tracks: MSCI Japan, ter: 0.0093, tc: 0.0001, themes: [offshore_equity]}
+  - {ticker: GLD.JO,    name: NewGold Gold ETF,               sector: Commodity, region: Global, tracks: Gold price, ter: 0.003, themes: [gold]}
+  - {ticker: ETFGLD.JO, name: 1nvest Gold,                    sector: Commodity, region: Global, tracks: Gold price, ter: 0.0025, themes: [gold]}
+  - {ticker: NGPLT.JO,  name: NewGold Platinum,               sector: Commodity, region: Global, tracks: Platinum price, ter: 0.0035, themes: [pgm]}
 
 us_shares:
   - {ticker: AAPL,  name: Apple,                       sector: Technology,             industry: Consumer Electronics,               country: US, themes: [us_tech]}

@@ -1,0 +1,759 @@
+# Look-through data for ETFs: what each fund actually holds.
+#
+# Edit freely: the app reads this file at start-up. Every block names its source and date.
+# Costs (ter, tc) live on each ETF's line in universe.yaml; this file holds the contents.
+#
+# Field guide (one entry per ETF ticker, or per index under "index:<name>")
+#   use         Inherit any field this entry leaves out from another entry
+#               (usually the index the ETF tracks). Own fields always win.
+#   asset       Asset class: equity | bonds | property | commodity | cash
+#   sectors     {label: percent} as published. Labels are mapped to the app's sectors by
+#               sector_map below; unknown labels show as "Other". The published label is kept
+#               as the finer "industry" level in charts.
+#   holdings    Top holdings as [ticker, name, percent]. ticker is a Yahoo symbol (null if
+#               unknown); a ticker that is also in universe.yaml lets the app spot overlap.
+#               Only the top 10 (or fewer) are published, so this is partial by design.
+#   countries   {ISO country code or "Other": percent}. For JSE equity funds this means
+#               "JSE-listed"; the app refines it with the countries of the top holdings.
+#   sectors_src / holdings_src / countries_src
+#               {url, as_of (date of the data), accessed (date we read it), note (optional)}
+#
+# Percentages need not sum to exactly 100 (rounding); the app rescales.
+#
+# Source notes
+#   Satrix sector splits come from the "Constituent industries" table on each product page
+#   (ICB supersectors for most SA equity funds), shown "As On 09 Oct 2026". Satrix top
+#   holdings come from the monthly Minimum Disclosure Document (MDD) at
+#   https://satrix.co.za/fund/mdd/<JSE code>, which redirects to the current PDF.
+#   Offshore index sector splits use a US-listed ETF on the same index as a proxy, read from
+#   Yahoo Finance (Morningstar sector data via yfinance funds_data), so they share the
+#   Morningstar sector names used everywhere else in the app.
+#   Some providers' latest MDDs could not be downloaded (etfsa.co.za refuses automated
+#   access; 1nvest and NewGold sites block it). For those funds the newest copy on
+#   EasyEquities' resource site is used, and its date is recorded. It is older.
+
+as_of: 2026-10-09
+
+# Published sector label (upper-cased for matching) -> app sector.
+sector_map:
+  # ICB supersectors (Satrix pages)
+  BASIC RESOURCES: Basic Materials
+  CHEMICALS: Basic Materials
+  CONSTRUCTION & MATERIALS: Industrials
+  INDUSTRIAL GOODS & SEVICES: Industrials        # Satrix's spelling
+  INDUSTRIAL GOODS & SERVICES: Industrials
+  BANKS: Financial Services
+  INSURANCE: Financial Services
+  FINANCIAL SERVICES: Financial Services
+  REAL ESTATE: Real Estate
+  TECHNOLOGY: Technology
+  TELECOMMUNICATIONS: Communication Services
+  MEDIA: Communication Services
+  HEALTH CARE: Healthcare
+  PERSONAL CARE DRUG AND GROCERY STORES: Consumer Defensive
+  FOOD BEVERAGE AND TOBACCO: Consumer Defensive
+  CONSUMER PRODUCTS AND SERVICES: Consumer Cyclical
+  RETAIL: Consumer Cyclical
+  TRAVEL & LEISURE: Consumer Cyclical
+  AUTOMOBILES AND PARTS: Consumer Cyclical
+  ENERGY: Energy
+  UTILITIES: Utilities
+  # ICB industries (Satrix Momentum / INDI pages, 10X sheets)
+  BASIC MATERIALS: Basic Materials
+  FINANCIALS: Financial Services
+  CONSUMER STAPLES: Consumer Defensive
+  CONSUMER DISCRETIONARY: Consumer Cyclical
+  INDUSTRIALS: Industrials
+  # Property sub-sectors (10X)
+  DIVERSIFIED REITS: Real Estate
+  RETAIL REITS: Real Estate
+  INDUSTRIAL REITS: Real Estate
+  STORAGE REITS: Real Estate
+  REAL ESTATE HOLDING AND DEVELOPMENT: Real Estate
+  # Bonds and commodities
+  GOVERNMENT BONDS: Government bonds
+  INFLATION-LINKED GOVERNMENT BONDS: Government bonds
+  US BONDS (GOVERNMENT AND CORPORATE): Government and corporate bonds
+  GOLD: Precious metals
+  PLATINUM: Precious metals
+  # Morningstar names map to themselves
+  COMMUNICATION SERVICES: Communication Services
+  CONSUMER CYCLICAL: Consumer Cyclical
+  CONSUMER DEFENSIVE: Consumer Defensive
+  HEALTHCARE: Healthcare
+
+# Country -> currency the underlying assets are priced in.
+currency_of_country:
+  ZA: ZAR
+  US: USD
+  JP: JPY
+  GB: GBP
+  CA: CAD
+  CN: CNY/HKD
+  TW: TWD
+  KR: KRW
+  IN: INR
+  BR: BRL
+  CH: CHF
+  NL: EUR
+  FR: EUR
+  DE: EUR
+  ES: EUR
+  IT: EUR
+  BE: EUR
+  IE: EUR
+  LU: EUR
+  RO: EUR       # NEPI Rockcastle: assets in Central/Eastern Europe, reports in EUR
+  Other: Other
+
+# ---------------------------------------------------------------------------------------
+# Indices (shared by every ETF that tracks them)
+# ---------------------------------------------------------------------------------------
+entries:
+  index:S&P 500:
+    asset: equity
+    sectors: {Technology: 40.5, Financial Services: 11.2, Communication Services: 10.0, Healthcare: 9.3, Consumer Cyclical: 8.7, Industrials: 7.5, Consumer Defensive: 4.3, Energy: 3.4, Utilities: 1.9, Real Estate: 1.7, Basic Materials: 1.6}
+    sectors_src: {url: "https://finance.yahoo.com/quote/SPY/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: SPDR S&P 500 ETF (SPY), Morningstar sectors via yfinance."}
+    countries: {US: 100}
+    countries_src: {url: "https://www.spglobal.com/spdji/en/indices/equity/sp-500/", as_of: 2026-10-09, accessed: 2026-10-09, note: "The S&P 500 holds US companies only (index definition)."}
+
+  index:Nasdaq-100:
+    asset: equity
+    sectors: {Technology: 60.3, Communication Services: 12.6, Consumer Cyclical: 10.1, Consumer Defensive: 5.6, Industrials: 5.1, Healthcare: 3.8, Utilities: 1.0, Basic Materials: 0.9, Energy: 0.4, Financial Services: 0.2}
+    sectors_src: {url: "https://finance.yahoo.com/quote/QQQ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: Invesco QQQ Trust, Morningstar sectors via yfinance."}
+    countries: {US: 100}
+    countries_src: {url: "https://www.nasdaq.com/solutions/global-indexes/nasdaq-100", as_of: 2026-10-09, accessed: 2026-10-09, note: "Treated as US: Nasdaq-listed; a few members are domiciled abroad (e.g. ASML ADR)."}
+
+  index:MSCI USA:
+    use: index:S&P 500
+    sectors_src: {url: "https://finance.yahoo.com/quote/SPY/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: S&P 500 sector split (SPY). MSCI USA covers a similar large- and mid-cap US universe."}
+
+  index:MSCI World:
+    asset: equity
+    sectors: {Technology: 32.5, Financial Services: 15.6, Industrials: 10.5, Healthcare: 9.2, Communication Services: 8.4, Consumer Cyclical: 8.2, Consumer Defensive: 4.7, Energy: 4.0, Basic Materials: 3.1, Utilities: 2.2, Real Estate: 1.5}
+    sectors_src: {url: "https://finance.yahoo.com/quote/URTH/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: iShares MSCI World ETF (URTH), Morningstar sectors via yfinance."}
+    countries: {US: 72.2, JP: 5.8, GB: 3.6, CA: 3.4, Other: 15.0}
+    countries_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_msciworld.pdf", as_of: 2026-07-31, accessed: 2026-10-09, note: "Geographic allocation of the Sygnia Itrix MSCI World ETF MDD."}
+
+  index:MSCI Emerging Markets:
+    asset: equity
+    sectors: {Technology: 44.2, Financial Services: 19.1, Consumer Cyclical: 7.5, Industrials: 6.1, Communication Services: 5.9, Basic Materials: 5.7, Energy: 3.5, Healthcare: 2.9, Consumer Defensive: 2.4, Utilities: 1.8, Real Estate: 0.9}
+    sectors_src: {url: "https://finance.yahoo.com/quote/EEM/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: iShares MSCI Emerging Markets ETF (EEM), Morningstar sectors via yfinance."}
+    countries: {TW: 28.94, KR: 21.4, CN: 19.8, IN: 10.65, BR: 4.09, Other: 15.12}
+    countries_src: {url: "https://www.msci.com/documents/10199/a4a8c82c-84ae-4a39-acae-27a8d4c07fe8", as_of: 2026-09-30, accessed: 2026-10-09, note: "MSCI Emerging Markets Index factsheet (AUD edition; country weights are the same in every currency edition)."}
+
+  index:MSCI China:
+    asset: equity
+    sectors: {Consumer Cyclical: 22.5, Financial Services: 21.0, Communication Services: 18.1, Technology: 11.6, Healthcare: 6.7, Basic Materials: 5.3, Industrials: 4.8, Energy: 3.8, Consumer Defensive: 3.0, Utilities: 1.7, Real Estate: 1.5}
+    sectors_src: {url: "https://finance.yahoo.com/quote/MCHI/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: iShares MSCI China ETF (MCHI), Morningstar sectors via yfinance."}
+    countries: {CN: 100}
+    countries_src: {url: "https://www.msci.com/indexes/index/302400", as_of: 2026-10-09, accessed: 2026-10-09, note: "Single-country index (includes Hong Kong- and US-listed Chinese companies)."}
+
+  index:MSCI Japan:
+    asset: equity
+    sectors: {Industrials: 22.8, Technology: 22.0, Financial Services: 19.3, Consumer Cyclical: 11.1, Communication Services: 9.6, Healthcare: 5.2, Consumer Defensive: 3.4, Basic Materials: 2.8, Real Estate: 1.7, Utilities: 1.0, Energy: 0.9}
+    sectors_src: {url: "https://finance.yahoo.com/quote/EWJ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: iShares MSCI Japan ETF (EWJ), Morningstar sectors via yfinance."}
+    countries: {JP: 100}
+    countries_src: {url: "https://www.msci.com/indexes/index/939200", as_of: 2026-10-09, accessed: 2026-10-09, note: "Single-country index."}
+
+  index:Euro Stoxx 50:
+    asset: equity
+    sectors: {Financial Services: 27.1, Industrials: 20.4, Technology: 18.5, Consumer Cyclical: 8.1, Utilities: 5.4, Healthcare: 5.1, Consumer Defensive: 5.0, Energy: 5.0, Basic Materials: 3.4, Communication Services: 2.0}
+    sectors_src: {url: "https://finance.yahoo.com/quote/FEZ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Proxy: SPDR Euro Stoxx 50 ETF (FEZ), Morningstar sectors via yfinance."}
+    countries: {FR: 33.4, DE: 30.2, NL: 14.0, ES: 10.5, Other: 11.9}
+    countries_src: {url: "https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/Sygnia/SYGEU.pdf", as_of: 2025-12-31, accessed: 2026-10-09, note: "Geographic allocation of the Sygnia Itrix Euro Stoxx 50 ETF MDD."}
+
+  index:FTSE/JSE Top 40:
+    use: STX40.JO
+
+  index:Gold price:
+    asset: commodity
+    sectors: {Gold: 100}
+    countries: {Other: 100}
+    note: "Physical gold bullion. Priced in US dollars, so its rand value moves with USD/ZAR."
+
+  index:Platinum price:
+    asset: commodity
+    sectors: {Platinum: 100}
+    countries: {Other: 100}
+    note: "Physical platinum. Priced in US dollars."
+
+# ---------------------------------------------------------------------------------------
+# Satrix (sector split: product page "As On 09 Oct 2026"; holdings: MDD)
+# ---------------------------------------------------------------------------------------
+  STX40.JO:
+    asset: equity
+    sectors: {Basic Resources: 33.86, Banks: 22.72, Technology: 10.27, Telecommunications: 6.29, Insurance: 5.98, Personal Care Drug and Grocery Stores: 5.14, Food Beverage and Tobacco: 3.38, Financial Services: 2.32, Consumer Products and Services: 2.28, Chemicals: 2.18, Real Estate: 2.01, Retail: 1.57, Industrial Goods & Sevices: 1.12, Health Care: 0.90}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=44", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [GFI.JO, Gold Fields, 8.86]
+      - [ANG.JO, AngloGold Ashanti, 7.91]
+      - [NPN.JO, Naspers, 7.84]
+      - [FSR.JO, FirstRand, 6.52]
+      - [CPI.JO, Capitec, 5.63]
+      - [SBK.JO, Standard Bank, 5.49]
+      - [MTN.JO, MTN Group, 4.65]
+      - [VAL.JO, Valterra Platinum, 4.46]
+      - [AGL.JO, Anglo American, 3.41]
+      - [ABG.JO, Absa Group, 2.55]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STX40", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXCAP.JO:
+    asset: equity
+    sectors: {Basic Resources: 30.16, Banks: 19.58, Technology: 9.41, Insurance: 5.98, Telecommunications: 5.66, Personal Care Drug and Grocery Stores: 5.11, Real Estate: 5.00, Food Beverage and Tobacco: 4.08, Financial Services: 3.48, Retail: 2.54, Consumer Products and Services: 2.34, Chemicals: 2.27, Industrial Goods & Sevices: 1.87, Health Care: 1.25, Energy: 0.70, Travel & Leisure: 0.31, Construction & Materials: 0.29}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=66", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [GFI.JO, Gold Fields, 7.71]
+      - [ANG.JO, AngloGold Ashanti, 6.92]
+      - [NPN.JO, Naspers, 6.85]
+      - [FSR.JO, FirstRand, 5.69]
+      - [CPI.JO, Capitec, 4.91]
+      - [SBK.JO, Standard Bank, 4.79]
+      - [MTN.JO, MTN Group, 4.05]
+      - [VAL.JO, Valterra Platinum, 3.89]
+      - [AGL.JO, Anglo American, 2.98]
+      - [ABG.JO, Absa Group, 2.22]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXCAP", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXRES.JO:
+    asset: equity
+    sectors: {Basic Resources: 93.63, Chemicals: 6.37}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=27", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [GFI.JO, Gold Fields, 24.44]
+      - [ANG.JO, AngloGold Ashanti, 21.85]
+      - [VAL.JO, Valterra Platinum, 12.31]
+      - [AGL.JO, Anglo American, 9.42]
+      - [IMP.JO, Impala Platinum, 6.49]
+      - [HAR.JO, Harmony Gold, 6.47]
+      - [GLN.JO, Glencore, 5.14]
+      - [SSW.JO, Sibanye Stillwater, 4.99]
+      - [SOL.JO, Sasol, 4.23]
+      - [NPH.JO, Northam Platinum, 3.91]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXRES", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXFIN.JO:
+    asset: equity
+    sectors: {Banks: 67.56, Insurance: 17.77, Real Estate: 7.77, Financial Services: 6.89}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=23", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [FSR.JO, FirstRand, 19.49]
+      - [SBK.JO, Standard Bank, 17.33]
+      - [CPI.JO, Capitec, 16.34]
+      - [ABG.JO, Absa Group, 7.50]
+      - [SLM.JO, Sanlam, 6.12]
+      - [DSY.JO, Discovery, 5.56]
+      - [NED.JO, Nedbank, 4.94]
+      - [REM.JO, Remgro, 3.86]
+      - [NRP.JO, NEPI Rockcastle, 3.56]
+      - [OUT.JO, OUTsurance, 2.81]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXFIN", as_of: 2026-07-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXIND.JO:
+    asset: equity
+    sectors: {Technology: 30.31, Consumer Staples: 27.29, Telecommunications: 18.13, Consumer Discretionary: 15.72, Industrials: 4.41, Health Care: 4.14}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=24", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [NPN.JO, Naspers, 23.10]
+      - [MTN.JO, MTN Group, 14.25]
+      - [CFR.JO, Richemont, 7.41]
+      - [PRX.JO, Prosus, 6.64]
+      - [BID.JO, Bid Corporation, 6.21]
+      - [SHP.JO, Shoprite, 6.05]
+      - [BTI.JO, British American Tobacco, 4.90]
+      - [ANH.JO, Anheuser-Busch InBev, 4.85]
+      - [VOD.JO, Vodacom, 3.64]
+      - [BVT.JO, Bidvest, 3.27]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXIND", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXDIV.JO:
+    asset: equity
+    sectors: {Basic Resources: 21.94, Banks: 19.87, Insurance: 14.38, Retail: 13.96, Food Beverage and Tobacco: 11.92, Financial Services: 5.70, Energy: 3.90, Health Care: 3.02, Telecommunications: 2.95, Industrial Goods & Sevices: 2.37}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=22", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [NED.JO, Nedbank, 5.35]
+      - [ABG.JO, Absa Group, 4.38]
+      - [INP.JO, Investec PLC, 4.25]
+      - [TRU.JO, Truworths, 4.22]
+      - [EXX.JO, Exxaro Resources, 4.13]
+      - [INL.JO, Investec Ltd, 4.03]
+      - [MTM.JO, Momentum Group, 4.02]
+      - [NTC.JO, Netcare, 3.97]
+      - [FSR.JO, FirstRand, 3.81]
+      - [SSW.JO, Sibanye Stillwater, 3.80]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXDIV", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXQUA.JO:
+    asset: equity
+    sectors: {Basic Resources: 34.57, Banks: 17.02, Insurance: 9.44, Personal Care Drug and Grocery Stores: 9.31, Telecommunications: 7.38, Retail: 7.23, Technology: 6.11, Financial Services: 5.99, Food Beverage and Tobacco: 2.95}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=36", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [ANG.JO, AngloGold Ashanti, 10.47]
+      - [CPI.JO, Capitec, 8.69]
+      - [NPN.JO, Naspers, 7.22]
+      - [VAL.JO, Valterra Platinum, 6.53]
+      - [GFI.JO, Gold Fields, 5.74]
+      - [SBK.JO, Standard Bank, 5.47]
+      - [BHG.JO, BHP Group, 5.36]
+      - [HAR.JO, Harmony Gold, 5.09]
+      - [OUT.JO, OUTsurance, 4.09]
+      - [BOX.JO, Boxer Retail, 3.45]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXQUA", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXMMT.JO:
+    asset: equity
+    sectors: {Basic Materials: 36.19, Financials: 32.45, Telecommunications: 10.04, Consumer Staples: 8.81, Technology: 5.77, Health Care: 3.71, Consumer Discretionary: 2.17, Energy: 0.84}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=34", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [ANG.JO, AngloGold Ashanti, 10.13]
+      - [CPI.JO, Capitec, 7.69]
+      - [MTN.JO, MTN Group, 6.61]
+      - [SBK.JO, Standard Bank, 6.49]
+      - [NPN.JO, Naspers, 5.98]
+      - [ABG.JO, Absa Group, 5.12]
+      - [GLN.JO, Glencore, 4.69]
+      - [SOL.JO, Sasol, 4.30]
+      - [GFI.JO, Gold Fields, 4.28]
+      - [VAL.JO, Valterra Platinum, 3.72]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXMMT", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXPRO.JO:
+    asset: property
+    sectors: {Real Estate: 100}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=35", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [NRP.JO, NEPI Rockcastle, 15.87]
+      - [GRT.JO, Growthpoint Properties, 14.33]
+      - [RDF.JO, Redefine Properties, 11.03]
+      - [VKE.JO, Vukile Property Fund, 8.29]
+      - [FFB.JO, Fortress Real Estate B, 7.49]
+      - [HYP.JO, Hyprop Investments, 6.13]
+      - [RES.JO, Resilient REIT, 5.87]
+      - [EQU.JO, Equites Property Fund, 3.93]
+      - [FTB.JO, Fairvest B, 3.38]
+      - [HMN.JO, Hammerson, 3.17]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXPRO", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXGOV.JO:
+    asset: bonds
+    sectors: {Government bonds: 100}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=31", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [null, "RSA 8.75% 2048 (R2048)", 12.82]
+      - [null, "RSA 8.875% 2035 (R2035)", 10.88]
+      - [null, "RSA 8.50% 2037 (R2037)", 10.53]
+      - [null, "RSA 8.25% 2032 (R2032)", 10.43]
+      - [null, "RSA 9.00% 2040 (R2040)", 9.55]
+      - [null, "RSA 8.75% 2044 (R2044)", 9.26]
+      - [null, "RSA 8.00% 2030 (R2030)", 8.77]
+      - [null, "RSA 7.00% 2031 (R213)", 6.05]
+      - [null, "RSA government bond (unnamed on sheet)", 4.39]
+      - [null, "RSA 10.50% 2027 (R186)", 2.94]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXGOV", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STXILB.JO:
+    asset: bonds
+    sectors: {Inflation-linked government bonds: 100}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=43", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings:
+      - [null, "RSA ILB 2.50% 2050", 17.84]
+      - [null, "RSA ILB 2.25% 2038", 15.95]
+      - [null, "RSA ILB 2.50% 2046", 15.85]
+      - [null, "RSA ILB 1.875% 2033", 13.81]
+      - [null, "RSA ILB 1.875% 2029", 11.89]
+      - [null, "RSA ILB R202 (2033)", 11.10]
+      - [null, "RSA ILB R210 (2028)", 8.34]
+      - [null, "RSA ILB 4.25% 2031", 1.70]
+      - [null, "RSA ILB 5.125% 2043", 1.49]
+      - [null, "RSA ILB 5.125% 2058", 1.42]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXILB", as_of: 2026-08-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  STX500.JO:
+    use: index:S&P 500
+    holdings:
+      - [NVDA, NVIDIA, 7.54]
+      - [AAPL, Apple, 7.03]
+      - [MSFT, Microsoft, 5.35]
+      - [AMZN, Amazon, 4.12]
+      - [GOOGL, Alphabet (Class A), 3.24]
+      - [AVGO, Broadcom, 2.86]
+      - [GOOGL, Alphabet (Class C), 2.61]
+      - [META, Meta Platforms, 1.90]
+      - [JPM, JPMorgan Chase, 1.46]
+      - [BRK-B, Berkshire Hathaway, 1.45]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STX500", as_of: 2026-07-31, accessed: 2026-10-09, note: "Alphabet's two share classes are both mapped to GOOGL."}
+
+  STXNDQ.JO:
+    use: index:Nasdaq-100
+    holdings:
+      - [NVDA, NVIDIA, 8.52]
+      - [AAPL, Apple, 7.42]
+      - [MSFT, Microsoft, 6.01]
+      - [MU, Micron Technology, 4.76]
+      - [AMZN, Amazon, 4.45]
+      - [AMD, Advanced Micro Devices, 3.38]
+      - [GOOGL, Alphabet (Class A), 3.15]
+      - [TSLA, Tesla, 2.93]
+      - [GOOGL, Alphabet (Class C), 2.92]
+      - [AVGO, Broadcom, 2.80]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXNDQ", as_of: 2026-08-31, accessed: 2026-10-09}
+
+  STXWDM.JO:
+    use: index:MSCI World
+    holdings:
+      - [NVDA, NVIDIA, 5.46]
+      - [AAPL, Apple, 5.10]
+      - [MSFT, Microsoft, 3.94]
+      - [AMZN, Amazon, 2.80]
+      - [GOOGL, Alphabet (Class A), 2.19]
+      - [AVGO, Broadcom, 1.80]
+      - [GOOGL, Alphabet (Class C), 1.72]
+      - [META, Meta Platforms, 1.38]
+      - [MU, Micron Technology, 1.14]
+      - [TSLA, Tesla, 1.07]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXWDM", as_of: 2026-08-31, accessed: 2026-10-09}
+
+  STXEMG.JO:
+    use: index:MSCI Emerging Markets
+    holdings:
+      - [TSM, Taiwan Semiconductor (TSMC), 13.31]
+      - [null, Samsung Electronics, 6.17]
+      - [null, SK hynix, 4.68]
+      - [null, Tencent Holdings, 2.52]
+      - [null, Alibaba Group, 1.72]
+      - [null, MediaTek, 1.28]
+      - [null, Delta Electronics, 0.80]
+      - [null, Samsung Electronics (preference shares), 0.77]
+      - [null, China Construction Bank, 0.71]
+      - [null, Hon Hai Precision Industry, 0.69]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXEMG", as_of: 2026-08-31, accessed: 2026-10-09, note: "TSMC's Taiwan shares are mapped to its US ADR (TSM) for overlap."}
+
+  STXCHN.JO:
+    use: index:MSCI China
+    holdings:
+      - [null, Tencent Holdings, 13.97]
+      - [null, Alibaba Group, 9.50]
+      - [null, China Construction Bank, 3.83]
+      - [null, Industrial and Commercial Bank of China, 2.41]
+      - [null, Xiaomi, 2.37]
+      - [null, Meituan, 1.94]
+      - [null, PDD Holdings, 1.90]
+      - [null, Bank of China, 1.86]
+      - [null, Ping An Insurance, 1.85]
+      - [null, BYD, 1.68]
+    holdings_src: {url: "https://satrix.co.za/fund/mdd/STXCHN", as_of: 2026-08-31, accessed: 2026-10-09}
+
+# ---------------------------------------------------------------------------------------
+# Sygnia Itrix (MDDs via iTransact, 31 Jul 2026; Euro Stoxx 50 via EasyEquities, 31 Dec 2025)
+# ---------------------------------------------------------------------------------------
+  SYGT40.JO:
+    use: STX40.JO
+    holdings:
+      - [NPN.JO, Naspers, 9.1]
+      - [FSR.JO, FirstRand, 7.1]
+      - [GFI.JO, Gold Fields, 6.8]
+      - [CPI.JO, Capitec, 6.0]
+      - [SBK.JO, Standard Bank, 6.0]
+      - [ANG.JO, AngloGold Ashanti, 5.8]
+      - [MTN.JO, MTN Group, 5.3]
+      - [VAL.JO, Valterra Platinum, 4.2]
+      - [AGL.JO, Anglo American, 3.3]
+      - [ABG.JO, Absa Group, 2.7]
+    holdings_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_top40.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=44", as_of: 2026-10-09, accessed: 2026-10-09, note: "Same index as Satrix 40; Satrix's FTSE/JSE Top 40 sector split is used."}
+
+  SYG500.JO:
+    use: index:S&P 500
+    holdings:
+      - [NVDA, NVIDIA, 7.5]
+      - [AAPL, Apple, 7.0]
+      - [MSFT, Microsoft, 5.4]
+      - [AMZN, Amazon, 4.1]
+      - [GOOGL, Alphabet (Class A), 3.2]
+      - [AVGO, Broadcom, 2.9]
+      - [GOOGL, Alphabet (Class C), 2.6]
+      - [META, Meta Platforms, 1.9]
+      - [JPM, JPMorgan Chase, 1.5]
+      - [BRK-B, Berkshire Hathaway, 1.5]
+    holdings_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_sp500.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+
+  SYGUS.JO:
+    use: index:MSCI USA
+    holdings:
+      - [NVDA, NVIDIA, 7.2]
+      - [AAPL, Apple, 7.0]
+      - [MSFT, Microsoft, 5.1]
+      - [AMZN, Amazon, 4.1]
+      - [GOOGL, Alphabet (Class A), 3.2]
+      - [AVGO, Broadcom, 2.7]
+      - [GOOGL, Alphabet (Class C), 2.6]
+      - [META, Meta Platforms, 1.9]
+      - [JPM, JPMorgan Chase, 1.5]
+      - [MU, Micron Technology, 1.4]
+    holdings_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_msciusa.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+
+  SYGWD.JO:
+    use: index:MSCI World
+    holdings:
+      - [NVDA, NVIDIA, 5.2]
+      - [AAPL, Apple, 5.1]
+      - [MSFT, Microsoft, 3.7]
+      - [AMZN, Amazon, 2.9]
+      - [GOOGL, Alphabet (Class A), 2.3]
+      - [AVGO, Broadcom, 2.0]
+      - [GOOGL, Alphabet (Class C), 1.8]
+      - [META, Meta Platforms, 1.4]
+      - [JPM, JPMorgan Chase, 1.1]
+      - [MU, Micron Technology, 1.0]
+    holdings_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_msciworld.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+
+  SYGJP.JO:
+    use: index:MSCI Japan
+    holdings:
+      - [null, Mitsubishi UFJ Financial Group, 4.7]
+      - [null, Toyota Motor, 3.5]
+      - [null, Tokyo Electron, 3.0]
+      - [null, Sumitomo Mitsui Financial Group, 3.0]
+      - [null, Advantest, 2.9]
+      - [null, Hitachi, 2.8]
+      - [null, Sony Group, 2.7]
+      - [null, SoftBank Group, 2.4]
+      - [null, Mizuho Financial Group, 2.4]
+      - [null, Recruit Holdings, 2.0]
+    holdings_src: {url: "https://www.itransact.co.za/Library/ITRANSACT%20MEDIA/FACT%20SHEETS/itrix_mscijapan.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+
+  SYGEU.JO:
+    use: index:Euro Stoxx 50
+    holdings:
+      - [ASML, ASML Holding, 8.5]
+      - [null, SAP, 5.1]
+      - [null, Siemens, 4.3]
+      - [null, LVMH, 3.9]
+      - [null, Banco Santander, 3.6]
+      - [null, Allianz, 3.5]
+      - [null, Schneider Electric, 3.2]
+      - [null, TotalEnergies, 2.9]
+      - [null, Airbus, 2.8]
+      - [null, BBVA, 2.7]
+    holdings_src: {url: "https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/Sygnia/SYGEU.pdf", as_of: 2025-12-31, accessed: 2026-10-09, note: "ASML's Dutch shares are mapped to its US ADR (ASML) for overlap."}
+
+# ---------------------------------------------------------------------------------------
+# 1nvest (MDDs via EasyEquities; newer ones exist on etfsa.co.za but could not be fetched)
+# ---------------------------------------------------------------------------------------
+  ETFT40.JO:
+    use: STX40.JO
+    holdings:
+      - [NPN.JO, Naspers, 11.13]
+      - [GFI.JO, Gold Fields, 8.56]
+      - [ANG.JO, AngloGold Ashanti, 6.66]
+      - [FSR.JO, FirstRand, 6.17]
+      - [SBK.JO, Standard Bank, 5.09]
+      - [CPI.JO, Capitec, 4.77]
+      - [VAL.JO, Valterra Platinum, 4.40]
+      - [MTN.JO, MTN Group, 3.98]
+      - [IMP.JO, Impala Platinum, 2.74]
+    holdings_src: {url: "https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/1nvest/ETFT40.pdf", as_of: 2025-12-31, accessed: 2026-10-09, note: "The sheet lists nine holdings."}
+    sectors_src: {url: "https://satrix.co.za/products/product-details?id=44", as_of: 2026-10-09, accessed: 2026-10-09, note: "Same index as Satrix 40; Satrix's FTSE/JSE Top 40 sector split is used."}
+
+  ETFSWX.JO:
+    asset: equity
+    holdings:
+      - [NPN.JO, Naspers, 8.98]
+      - [GFI.JO, Gold Fields, 7.57]
+      - [ANG.JO, AngloGold Ashanti, 5.38]
+      - [FSR.JO, FirstRand, 5.30]
+      - [SBK.JO, Standard Bank, 4.23]
+      - [CPI.JO, Capitec, 4.17]
+      - [MTN.JO, MTN Group, 3.85]
+      - [VAL.JO, Valterra Platinum, 2.97]
+      - [AGL.JO, Anglo American, 2.66]
+    holdings_src: {url: "https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/1nvest/ETFSWX.pdf", as_of: 2025-10-31, accessed: 2026-10-09, note: "The sheet lists nine holdings and gives the sector split only as a chart, so the sector view uses the holdings and shows the rest as not disclosed."}
+    countries: {ZA: 100}
+
+  ETF500.JO:
+    use: index:S&P 500
+    holdings:
+      - [NVDA, NVIDIA, 7.97]
+      - [MSFT, Microsoft, 6.74]
+      - [AAPL, Apple, 6.61]
+      - [AMZN, Amazon, 3.73]
+      - [META, Meta Platforms, 2.79]
+      - [AVGO, Broadcom, 2.72]
+      - [GOOGL, Alphabet (Class A), 2.48]
+      - [TSLA, Tesla, 2.18]
+      - [GOOGL, Alphabet (Class C), 1.99]
+      - [BRK-B, Berkshire Hathaway, 1.61]
+    holdings_src: {url: "https://resources.easyequities.co.za/ETFs/ETF%20Factsheets/1nvest/ETF500.pdf", as_of: 2025-12-31, accessed: 2026-10-09}
+
+  ETFGLD.JO:
+    use: index:Gold price
+
+# ---------------------------------------------------------------------------------------
+# 10X (MDDs from assetmanagement.10x.co.za, 31 Jul 2026)
+# ---------------------------------------------------------------------------------------
+  CTOP50.JO:
+    asset: equity
+    sectors: {Financials: 33.6, Basic Materials: 29.1, Technology: 9.6, Consumer Staples: 9.5, Telecommunications: 6.8, Consumer Discretionary: 5.1, Real Estate: 2.9, Industrials: 1.7, Health Care: 0.8, Energy: 0.7}
+    sectors_src: {url: "https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/10X-SP-SA-Top50-ETF-July-2026-MDD-Class-A.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+    holdings:
+      - [FSR.JO, FirstRand, 7.6]
+      - [NPN.JO, Naspers, 7.6]
+      - [GFI.JO, Gold Fields, 7.0]
+      - [SBK.JO, Standard Bank, 6.3]
+      - [CPI.JO, Capitec, 6.0]
+      - [MTN.JO, MTN Group, 5.4]
+      - [VAL.JO, Valterra Platinum, 4.7]
+      - [ANG.JO, AngloGold Ashanti, 3.4]
+      - [ABG.JO, Absa Group, 2.5]
+      - [CFR.JO, Richemont, 2.4]
+    holdings_src: {url: "https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/10X-SP-SA-Top50-ETF-July-2026-MDD-Class-A.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  CSPROP.JO:
+    asset: property
+    sectors: {Diversified REITs: 49.8, Retail REITs: 24.4, Real Estate Holding and Development: 17.4, Industrial REITs: 4.6, Storage REITs: 3.7}
+    sectors_src: {url: "https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/10X-SA-Property-Income-ETF-July-2026-MDD-Class-A.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+    holdings:
+      - [GRT.JO, Growthpoint Properties, 8.1]
+      - [NRP.JO, NEPI Rockcastle, 7.8]
+      - [RDF.JO, Redefine Properties, 7.6]
+      - [FFB.JO, Fortress Real Estate B, 5.4]
+      - [VKE.JO, Vukile Property Fund, 5.4]
+      - [HYP.JO, Hyprop Investments, 5.3]
+      - [OCT.JO, Octodec Investments, 5.2]
+      - [BTN.JO, Burstone Group, 5.2]
+      - [RES.JO, Resilient REIT, 4.9]
+      - [EQU.JO, Equites Property Fund, 4.6]
+    holdings_src: {url: "https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/10X-SA-Property-Income-ETF-July-2026-MDD-Class-A.pdf", as_of: 2026-07-31, accessed: 2026-10-09}
+    countries: {ZA: 100}
+
+  CSP500.JO:
+    use: index:S&P 500
+    holdings:
+      - [NVDA, NVIDIA, 7.6]
+      - [AAPL, Apple, 7.1]
+      - [MSFT, Microsoft, 5.4]
+      - [AMZN, Amazon, 4.2]
+      - [GOOGL, Alphabet (Class A), 3.3]
+      - [AVGO, Broadcom, 2.9]
+      - [GOOGL, Alphabet (Class C), 2.6]
+      - [META, Meta Platforms, 1.9]
+      - [BRK-B, Berkshire Hathaway, 1.5]
+      - [MU, Micron Technology, 1.5]
+    holdings_src: {url: "https://assetmanagement.10x.co.za/wp-content/uploads/2026/08/10X-SP-500-Index-Feeder-ETF-July-2026-MDD-Class-A.pdf", as_of: 2026-07-31, accessed: 2026-10-09, note: "The 10X sheet's own sector table uses Bloomberg's scheme; the index split is used instead for consistency."}
+
+# ---------------------------------------------------------------------------------------
+# NewGold (Absa)
+# ---------------------------------------------------------------------------------------
+  GLD.JO:
+    use: index:Gold price
+  NGPLT.JO:
+    use: index:Platinum price
+
+# ---------------------------------------------------------------------------------------
+# US-listed ETFs (Morningstar data via yfinance, read 2026-10-09)
+# ---------------------------------------------------------------------------------------
+  SPY:
+    use: index:S&P 500
+    holdings: [[NVDA, NVIDIA, 8.36], [AAPL, Apple, 7.35], [MSFT, Microsoft, 5.76], [AMZN, Amazon, 3.70], [GOOGL, Alphabet (Class A), 3.05], [AVGO, Broadcom, 2.53], [GOOGL, Alphabet (Class C), 2.45], [META, Meta Platforms, 2.42], [MU, Micron Technology, 1.82], [TSLA, Tesla, 1.51]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/SPY/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+  VOO:
+    use: index:S&P 500
+    holdings: [[NVDA, NVIDIA, 8.08], [AAPL, Apple, 7.03], [MSFT, Microsoft, 5.70], [AMZN, Amazon, 3.84], [GOOGL, Alphabet (Class A), 3.01], [AVGO, Broadcom, 2.65], [GOOGL, Alphabet (Class C), 2.40], [META, Meta Platforms, 1.90], [MU, Micron Technology, 1.63], [TSLA, Tesla, 1.57]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VOO/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+  VTI:
+    asset: equity
+    sectors: {Technology: 36.4, Financial Services: 12.4, Healthcare: 10.1, Consumer Cyclical: 9.2, Industrials: 9.1, Communication Services: 8.8, Consumer Defensive: 4.3, Energy: 3.7, Real Estate: 2.3, Utilities: 2.0, Basic Materials: 1.9}
+    sectors_src: {url: "https://finance.yahoo.com/quote/VTI/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[NVDA, NVIDIA, 6.87], [AAPL, Apple, 6.30], [MSFT, Microsoft, 5.10], [AMZN, Amazon, 3.41], [GOOGL, Alphabet (Class A), 2.70], [AVGO, Broadcom, 2.37], [GOOGL, Alphabet (Class C), 2.12], [META, Meta Platforms, 1.70], [MU, Micron Technology, 1.46], [TSLA, Tesla, 1.40]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VTI/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {US: 100}
+  QQQ:
+    use: index:Nasdaq-100
+    holdings: [[NVDA, NVIDIA, 8.33], [AAPL, Apple, 7.35], [MSFT, Microsoft, 5.76], [MU, Micron Technology, 5.02], [AMD, Advanced Micro Devices, 4.17], [AMZN, Amazon, 4.07], [META, Meta Platforms, 3.26], [GOOGL, Alphabet (Class A), 3.05], [GOOGL, Alphabet (Class C), 2.85], [TSLA, Tesla, 2.82]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/QQQ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+  VT:
+    asset: equity
+    sectors: {Technology: 30.3, Financial Services: 16.5, Industrials: 11.1, Consumer Cyclical: 9.0, Healthcare: 8.6, Communication Services: 7.3, Consumer Defensive: 4.5, Basic Materials: 4.1, Energy: 4.1, Utilities: 2.3, Real Estate: 2.3}
+    sectors_src: {url: "https://finance.yahoo.com/quote/VT/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[NVDA, NVIDIA, 4.32], [AAPL, Apple, 3.84], [MSFT, Microsoft, 3.16], [AMZN, Amazon, 2.11], [GOOGL, Alphabet (Class A), 1.68], [TSM, Taiwan Semiconductor (TSMC), 1.53], [AVGO, Broadcom, 1.44], [GOOGL, Alphabet (Class C), 1.31], [META, Meta Platforms, 1.05], [MU, Micron Technology, 0.91]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VT/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {Other: 100}
+    countries_src: {url: "https://finance.yahoo.com/quote/VT/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Global; no sourced country split yet, shown as one 'Other' block."}
+  VEA:
+    asset: equity
+    sectors: {Financial Services: 24.4, Industrials: 17.9, Technology: 15.5, Healthcare: 7.9, Basic Materials: 7.6, Consumer Cyclical: 7.4, Consumer Defensive: 5.3, Energy: 5.0, Communication Services: 3.5, Utilities: 3.0, Real Estate: 2.4}
+    sectors_src: {url: "https://finance.yahoo.com/quote/VEA/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[null, Samsung Electronics, 2.61], [null, SK hynix, 2.01], [ASML, ASML Holding, 1.96], [null, HSBC Holdings, 1.05], [null, Roche Holding, 0.92], [null, Royal Bank of Canada, 0.86], [null, Novartis, 0.85], [null, Shell, 0.77], [null, Nestle, 0.75], [null, Mitsubishi UFJ Financial Group, 0.74]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VEA/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {Other: 100}
+    countries_src: {url: "https://finance.yahoo.com/quote/VEA/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Developed markets outside the US; no sourced country split yet."}
+  VWO:
+    asset: equity
+    sectors: {Technology: 31.8, Financial Services: 20.2, Consumer Cyclical: 9.9, Basic Materials: 7.9, Industrials: 7.5, Communication Services: 6.5, Energy: 4.1, Healthcare: 4.0, Consumer Defensive: 3.3, Utilities: 2.7, Real Estate: 2.1}
+    sectors_src: {url: "https://finance.yahoo.com/quote/VWO/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[TSM, Taiwan Semiconductor (TSMC), 14.72], [null, Tencent Holdings, 2.90], [null, Alibaba Group, 2.19], [null, MediaTek, 1.47], [null, Delta Electronics, 0.90], [null, China Construction Bank, 0.86], [null, Hon Hai Precision Industry, 0.77], [null, Reliance Industries, 0.73], [null, HDFC Bank, 0.68], [null, ICICI Bank, 0.65]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VWO/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {Other: 100}
+    countries_src: {url: "https://finance.yahoo.com/quote/VWO/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Emerging markets (FTSE index, which unlike MSCI excludes South Korea); no sourced country split yet."}
+  ARKK:
+    asset: equity
+    sectors: {Healthcare: 30.1, Technology: 26.7, Financial Services: 16.0, Consumer Cyclical: 11.8, Industrials: 11.5, Communication Services: 3.9}
+    sectors_src: {url: "https://finance.yahoo.com/quote/ARKK/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[TSLA, Tesla, 9.08], [null, Space Exploration Technologies (SpaceX), 6.18], [null, Tempus AI, 5.91], [null, Circle Internet Group, 4.57], [null, CRISPR Therapeutics, 4.45], [null, Coinbase Global, 4.40], [null, Twist Bioscience, 4.38], [null, Robinhood Markets, 3.86], [null, 10x Genomics, 3.49], [null, Shopify, 3.24]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/ARKK/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {US: 100}
+  SMH:
+    asset: equity
+    sectors: {Technology: 100}
+    sectors_src: {url: "https://finance.yahoo.com/quote/SMH/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[NVDA, NVIDIA, 19.31], [TSM, Taiwan Semiconductor (TSMC), 9.28], [AMD, Advanced Micro Devices, 5.54], [AVGO, Broadcom, 5.27], [MU, Micron Technology, 4.92], [null, Applied Materials, 4.66], [INTC, Intel, 4.66], [null, Texas Instruments, 4.60], [null, KLA, 4.59], [ASML, ASML Holding, 4.54]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/SMH/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {Other: 100}
+    countries_src: {url: "https://finance.yahoo.com/quote/SMH/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Mostly US with Taiwan and Netherlands names; no sourced country split yet."}
+  XLE:
+    asset: equity
+    sectors: {Energy: 100}
+    sectors_src: {url: "https://finance.yahoo.com/quote/XLE/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[XOM, ExxonMobil, 24.03], [CVX, Chevron, 18.05], [null, ConocoPhillips, 6.73], [null, Valero Energy, 4.73], [null, Marathon Petroleum, 4.70], [null, Phillips 66, 4.64], [null, Williams Companies, 4.29], [null, SLB, 3.86], [null, EOG Resources, 3.85], [null, Kinder Morgan, 3.15]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/XLE/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {US: 100}
+  XLF:
+    asset: equity
+    sectors: {Financial Services: 98.2, Technology: 1.6, Industrials: 0.2}
+    sectors_src: {url: "https://finance.yahoo.com/quote/XLF/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[BRK-B, Berkshire Hathaway, 12.30], [JPM, JPMorgan Chase, 11.66], [V, Visa, 8.12], [MA, Mastercard, 5.91], [BAC, Bank of America, 4.69], [null, Goldman Sachs, 3.48], [null, Wells Fargo, 3.21], [null, Morgan Stanley, 2.98], [null, Citigroup, 2.88], [null, American Express, 2.12]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/XLF/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {US: 100}
+  VNQ:
+    asset: property
+    sectors: {Real Estate: 99.4, Communication Services: 0.4, Energy: 0.1}
+    sectors_src: {url: "https://finance.yahoo.com/quote/VNQ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    holdings: [[null, Vanguard Real Estate II Index (fund-of-fund stake), 14.53], [null, Welltower, 8.72], [null, Prologis, 6.89], [null, Equinix, 5.45], [null, American Tower, 4.33], [null, Simon Property Group, 3.64], [null, Digital Realty Trust, 3.63], [null, Realty Income, 3.00], [null, Public Storage, 2.72], [null, Vivmark Residential, 2.46]]
+    holdings_src: {url: "https://finance.yahoo.com/quote/VNQ/holdings/", as_of: 2026-10-09, accessed: 2026-10-09}
+    countries: {US: 100}
+  BND:
+    asset: bonds
+    sectors: {US bonds (government and corporate): 100}
+    sectors_src: {url: "https://finance.yahoo.com/quote/BND/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "Asset mix 98.6% bonds, 1.4% cash."}
+    countries: {US: 100}
+  TLT:
+    asset: bonds
+    sectors: {Government bonds: 100}
+    sectors_src: {url: "https://finance.yahoo.com/quote/TLT/holdings/", as_of: 2026-10-09, accessed: 2026-10-09, note: "US Treasuries with 20+ years to maturity."}
+    countries: {US: 100}
+  GLD:
+    use: index:Gold price
+  IAU:
+    use: index:Gold price
