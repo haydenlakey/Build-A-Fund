@@ -121,3 +121,26 @@ def test_picker_resets_after_a_change_and_can_resize():
     no_errors(at)
     fund = at.session_state.funds[at.session_state.active]
     assert fund.amounts()["NPN.JO"] == pytest.approx(6000.0)
+
+
+def test_active_bets_page_and_benchmark_switch():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.switch_page("views/active_bets.py").run()
+    no_errors(at)
+    labels = [m.label for m in at.metric]
+    assert "Tracking error" in labels and "Rule-of-thumb estimate" in labels
+    assert len(at.get("plotly_chart")) >= 2
+    at.selectbox[0].set_value("balanced").run()
+    no_errors(at)
+    fund = at.session_state.funds[at.session_state.active]
+    assert fund.settings.benchmark == "balanced"
+
+
+def test_old_benchmark_ticker_in_saved_file_still_works():
+    f = Fund("Old", [Holding("STX40.JO", "Satrix 40", "jse_etf", 5000), Holding("NPN.JO", "Naspers", "jse_share", 2000)])
+    f.settings.benchmark = "STX40.JO"
+    at = fresh({"fund": f.to_share_code()})
+    at.switch_page("views/active_bets.py").run()
+    no_errors(at)
+    assert any(m.label == "Tracking error" for m in at.metric)

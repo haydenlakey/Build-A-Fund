@@ -249,3 +249,48 @@ def test_active_weights_union_of_indexes():
     a = active.active_weights(pd.Series({"A": 0.6, "B": 0.4}), pd.Series({"B": 0.5, "C": 0.5}))
     assert a.to_dict() == pytest.approx({"A": 0.6, "B": -0.1, "C": -0.5})
     assert a.sum() == pytest.approx(0.0)
+
+
+def _cov3():
+    vol = np.array([0.20, 0.15, 0.10])
+    corr = np.array([[1, 0.6, 0.2], [0.6, 1, 0.3], [0.2, 0.3, 1]])
+    idx = list("ABC")
+    return pd.DataFrame(np.outer(vol, vol) * corr, index=idx, columns=idx), pd.Series([0.12, 0.10, 0.07], index=idx)
+
+
+def test_analyse_fund_equal_to_benchmark_has_no_active_risk():
+    cov, mu = _cov3()
+    w = pd.Series({"A": 0.5, "B": 0.3, "C": 0.2})
+    rep = active.analyse(w, w, mu, cov)
+    assert rep.te == pytest.approx(0) and rep.beta == pytest.approx(1)
+    assert rep.active.empty or rep.active.abs().max() < 1e-12
+
+
+def test_analyse_two_asset_closed_form():
+    cov, mu = _cov3()
+    rep = active.analyse(pd.Series({"A": 1.0}), pd.Series({"B": 1.0}), mu, cov)
+    va, vb, cab = cov.loc["A", "A"], cov.loc["B", "B"], cov.loc["A", "B"]
+    assert rep.te == pytest.approx(np.sqrt(va + vb - 2 * cab))
+    assert rep.beta == pytest.approx(cab / vb)
+    assert rep.exp_active == pytest.approx(0.02)
+    assert rep.info_ratio == pytest.approx(0.02 / rep.te)
+    assert rep.active.sum() == pytest.approx(0) and rep.budget.sum() == pytest.approx(1)
+
+
+def test_analyse_budget_matches_te_and_rule_of_thumb_is_close():
+    cov, mu = _cov3()
+    rep = active.analyse(pd.Series({"A": 0.6, "C": 0.4}), pd.Series({"A": 0.3, "B": 0.4, "C": 0.3}), mu, cov)
+    a = rep.active
+    assert rep.te == pytest.approx(active.tracking_error(a, cov))
+    assert rep.budget.sum() == pytest.approx(1)
+    assert 0.5 * rep.te < rep.te_rule < 2 * rep.te
+
+
+def test_universe_benchmarks_are_well_formed():
+    from fundlab.data import load_universe
+    u = load_universe()
+    assert "top40" in u.benchmarks
+    known = set(u.entries) | {f["ticker"] for f in u.factors.values()}
+    for k, b in u.benchmarks.items():
+        assert sum(b["components"].values()) == pytest.approx(1.0), k
+        assert set(b["components"]) <= known, k

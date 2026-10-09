@@ -221,3 +221,47 @@ def corr_heatmap(corr, names: dict[str, str]) -> go.Figure:
                            tickfont=dict(color=p["ink2"]))
     fig.update_layout(**layout)
     return fig
+
+
+# ---- active bets -------------------------------------------------------------------
+
+def active_bars(active, names: dict[str, str]) -> go.Figure:
+    """Active weights: overweights (blue) right of zero, underweights (red) left, labelled with signs."""
+    p = palette()
+    s = active.sort_values()
+    labels = [names.get(t, t) for t in s.index]
+    fig = go.Figure(go.Bar(
+        x=s.values, y=labels, orientation="h",
+        marker=dict(color=[p["div_neg"] if v > 0 else p["div_pos"] for v in s.values], cornerradius=4),
+        text=[f"{v:+.1%}" for v in s.values], textposition="outside", cliponaxis=False,
+        textfont=dict(color=p["ink2"], size=12),
+        customdata=["more than the benchmark" if v > 0 else "less than the benchmark" for v in s.values],
+        hovertemplate="<b>%{y}</b><br>%{x:+.1%}: %{customdata}<extra></extra>",
+    ))
+    layout = base_layout(p, height=max(180, 60 + 34 * len(s)), showlegend=False, margin=dict(l=8, r=56, t=8, b=8),
+                         bargap=0.35)
+    lim = max(abs(s.min()), abs(s.max()), 0.01) * 1.25
+    layout["xaxis"] = dict(layout["xaxis"], tickformat="+.0%", range=[-lim, lim], zeroline=True,
+                           zerolinecolor=p["axis"], zerolinewidth=1)
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
+    fig.update_layout(**layout)
+    return fig
+
+
+def budget_bars(budget, names: dict[str, str]) -> go.Figure:
+    """Each bet's share of the tracking-error budget (can be negative: the bet offsets others)."""
+    p = palette()
+    s = budget.sort_values()
+    fig = go.Figure(go.Bar(
+        x=s.values, y=[names.get(t, t) for t in s.index], orientation="h",
+        marker=dict(color=[p["series"][1] if v >= 0 else p["muted"] for v in s.values], cornerradius=4),
+        text=[f"{v:.0%}" for v in s.values], textposition="outside", cliponaxis=False,
+        textfont=dict(color=p["ink2"], size=12),
+        hovertemplate="<b>%{y}</b><br>%{x:.1%} of the tracking-error budget<extra></extra>",
+    ))
+    layout = base_layout(p, height=max(180, 60 + 34 * len(s)), showlegend=False, margin=dict(l=8, r=56, t=8, b=8),
+                         bargap=0.35)
+    layout["xaxis"] = dict(layout["xaxis"], tickformat=".0%", zeroline=True, zerolinecolor=p["axis"])
+    layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
+    fig.update_layout(**layout)
+    return fig

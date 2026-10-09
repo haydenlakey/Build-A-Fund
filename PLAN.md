@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-09 (Phase 2, steps 1–3 done)_
+_Last updated: 2026-10-09 (Phase 2, steps 1–4 done)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
-| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–3 done (ETF data, composition page, sensitivities + correlation clusters); 111 tests pass. Next: step 4. |
+| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–4 done (ETF data, composition, sensitivities + clusters, active bets); 118 tests pass. Next: step 5. |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
 | 5 | Fact sheet and polish | Not started |
@@ -55,6 +55,15 @@ _Last updated: 2026-10-09 (Phase 2, steps 1–3 done)_
 - **Data fix (affects Phase 1 numbers):** Yahoo's ZAR=X has isolated bad ticks (14.86 on 15 Nov 2024 between
   17.28 and 18.10; 15.43 on 17 Jan 2025). `data.remove_spikes` now repairs FX series daily on download and weekly
   on load. USD/ZAR vol for 2024–25 dropped from ~28% to ~10% a year; STX500 vs SPY-in-rand correlation 0.56 → 0.83.
+- **Step 4:** `benchmarks:` section in `universe.yaml` (Top 40 = STX40, MSCI World = STXWDM, S&P 500 = SPY in rand,
+  balanced proxy = 50/25/25 STX40/STXWDM/STXGOV). `active.analyse()` → `ActiveReport` (exact TE, TE budget, beta to
+  benchmark, expected active return, IR, |a|-weighted rule-of-thumb TE). New page `views/active_bets.py`
+  "Against a benchmark": benchmark picker (saved in `FundSettings.benchmark`, now a key; old ticker values fall
+  back to top40), 4 metric tiles, active-weight diverging bars, TE-budget bars + table, one-bet warning, pairwise
+  rule for biggest over vs under with a TE-target slider, maths for both rules of thumb.
+- **Picker fix (user-reported):** after Add the search box kept the stock with no amount box, so holdings couldn't be
+  resized. Widget keys now carry `picker_gen` (bumped in `apply()`); new holdings start with an empty amount (no
+  R1000 default preview); held ones prefill their amount.
 - Tests: `tests/test_factors.py` (10, incl. simulated CI coverage with AR(1) errors), 3 spike tests in `test_data.py`.
 - Tests: `tests/test_lookthrough.py` (25, incl. a fires/stays-quiet fund per tilt), 2 new AppTests.
   `scripts/browser_check.py` now also screenshots the composition page (3 views) via a share link.
@@ -66,7 +75,7 @@ explorer and side-by-side comparison. In order:
 1. ~~Research and add JSE ETF look-through data~~ Done (JSE `tracks` resolved; US `tracks: null` left: not verified).
 2. ~~`fundlab/lookthrough.py` + composition page~~ Done.
 3. ~~`fundlab/factors.py` + clustered correlation heatmap~~ Done.
-4. Active bets view: benchmark picker, active weights, TE, TE budget, rule-of-thumb comparisons (maths already in `active.py`).
+4. ~~Active bets view~~ Done.
 5. Risk detail: VaR/ES 3 ways side by side, simulated rand distribution, fan chart, stress tests
    (2008, Dec 2015, Mar 2020, 2022, Jul 2026), drawdown and rolling vol, leverage toggle.
 6. Reality check: costs drag (TER + editable brokerage, R lost over 10/20 years), backtest vs Top 40,
@@ -190,6 +199,10 @@ Made in Phase 2 (2026-10-09):
   jump and reverse, and a share-level filter flagged dozens of real weeks.
 - When the *Rand hedge* tilt (earnings) and a negative USD/ZAR beta (weekly co-movement) disagree, the page explains
   why both can be true instead of hiding one.
+- **Active bets are measured per holding against the benchmark's components** (no look-through into Top 40
+  constituents: that would cut the history window to 2023, when Richemont listed on the JSE). It is exact for TE because
+  r_F − r_B = a'r. A fund's own Satrix 40 nets against a Top 40 benchmark; direct Naspers is a bet on top of the index.
+- Rule-of-thumb inputs: |a|-weighted average vol and |a_i a_j|-weighted average pairwise correlation.
 - The browser check ignores Streamlit's own 404 probes of `<page>/_stcore/*` on deep links (benign; it falls back).
 
 ## Research done so far
@@ -251,6 +264,7 @@ Made in Phase 2 (2026-10-09):
 
 ## Next step
 
-Phase 2, step 4: active bets view (benchmark picker: Top 40, balanced proxy, global; active weights, tracking
-error, each bet's share of the TE budget, rule-of-thumb versions beside the exact calculation; maths already in
-`fundlab/active.py`). Benchmarks need look-through weights for overlap (e.g. Top 40 holdings vs a fund's shares).
+Phase 2, step 5: Risk detail page: VaR/ES three ways side by side (historical, parametric, Monte Carlo
+normal/t; maths in `fundlab/var.py`), simulated rand distribution, fan chart, stress tests (2008, Dec 2015, Mar 2020,
+2022, Jul 2026; use ^J200.JO for long history), drawdown and rolling vol, leverage toggle (2x/4x: drawdowns,
+chance of wipe-out, forced selling).

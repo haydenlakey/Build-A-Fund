@@ -4,7 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import analysis, data, factors, lookthrough
+from fundlab import active, analysis, data, factors, lookthrough
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -82,3 +82,31 @@ def _sensitivities(fund_json: str):
 def sensitivities(fund: Fund):
     """(single-factor betas, joint table, joint R², joint n) for the fund's estimation window, or None."""
     return _sensitivities(fund.to_json())
+
+
+def benchmark_key(fund: Fund) -> str:
+    keys = universe().benchmarks
+    return fund.settings.benchmark if fund.settings.benchmark in keys else "top40"
+
+
+@st.cache_data(max_entries=64, show_spinner=False)
+def _active(fund_json: str, key: str):
+    fund = Fund.from_json(fund_json)
+    bench = pd.Series(universe().benchmarks[key]["components"], dtype=float)
+    bench = bench / bench.sum()
+    w = fund.weights()
+    tickers = list(dict.fromkeys(list(w.index) + list(bench.index)))
+    est = analysis.estimate(prices(tickers), tickers, fund.settings)
+    missing = [t for t in bench.index if t not in est.mu.index]
+    if missing or est.mu.empty:
+        return None, est.report, missing
+    inc = [t for t in w.index if t in est.mu.index]
+    if not inc:
+        return None, est.report, []
+    fw = w[inc] / w[inc].sum()
+    return active.analyse(fw, bench, est.mu, est.cov), est.report, []
+
+
+def active_report(fund: Fund, key: str):
+    """(ActiveReport or None, HistoryReport, benchmark tickers lacking history)."""
+    return _active(fund.to_json(), key)

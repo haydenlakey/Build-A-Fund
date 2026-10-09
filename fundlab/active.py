@@ -1,6 +1,8 @@
 """Active bets against a benchmark: active weights, tracking error and its budget."""
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 
@@ -49,3 +51,64 @@ def te_rule_of_thumb(active_w: pd.Series, avg_vol: float, avg_corr: float) -> fl
     """
     a = active_w.to_numpy(dtype=float)
     return float(avg_vol * np.sqrt(max(1.0 - avg_corr, 0.0)) * np.sqrt(np.sum(a**2)))
+
+
+def abs_weighted_vol_corr(active_w: pd.Series, cov: pd.DataFrame) -> tuple[float, float]:
+    """Inputs for the rule of thumb: |a|-weighted average volatility, and |a_i a_j|-weighted
+    average pairwise correlation (i != j)."""
+    a = np.abs(active_w.to_numpy(dtype=float))
+    s = cov.loc[active_w.index, active_w.index].to_numpy(dtype=float)
+    sd = np.sqrt(np.clip(np.diag(s), 0, None))
+    avg_vol = float(a @ sd / a.sum()) if a.sum() > 0 else float("nan")
+    if len(a) < 2:
+        return avg_vol, float("nan")
+    corr = s / np.outer(sd, sd)
+    ww = np.outer(a, a)
+    np.fill_diagonal(ww, 0.0)
+    return avg_vol, float((ww * corr).sum() / ww.sum()) if ww.sum() > 0 else float("nan")
+
+
+@dataclass
+class ActiveReport:
+    fund_w: pd.Series
+    bench_w: pd.Series
+    active: pd.Series  # fund minus benchmark, per asset (sums to zero)
+    te: float  # exact tracking error, annualised
+    budget: pd.Series  # share of TE variance per bet (sums to one)
+    exp_active: float  # a' mu: expected active return (least reliable number)
+    info_ratio: float
+    beta: float  # beta of the fund to the benchmark
+    avg_vol: float
+    avg_corr: float
+    te_rule: float  # rule-of-thumb TE
+    cov: pd.DataFrame | None = None
+
+    @property
+    def top_bet(self) -> tuple[str, float]:
+        if self.budget.empty:
+            return "", 0.0
+        t = self.budget.idxmax()
+        return t, float(self.budget[t])
+
+
+def analyse(fund_w: pd.Series, bench_w: pd.Series, mu: pd.Series, cov: pd.DataFrame) -> ActiveReport:
+    """Active bets of a fund against a benchmark mix, both as weights over assets in `cov`.
+
+    Active return r_F - r_B = a'r with a = w_F - w_B, so TE = sqrt(a' Sigma a) exactly.
+    Beta to the benchmark = w_F' Sigma w_B / (w_B' Sigma w_B). IR = a' mu / TE.
+    """
+    a = active_weights(fund_w, bench_w)
+    a = a[a.abs() > 1e-12]
+    fw = fund_w.reindex(a.index.union(fund_w.index), fill_value=0.0)
+    bw = bench_w.reindex(fw.index, fill_value=0.0)
+    te = tracking_error(a, cov)
+    S = cov.loc[fw.index, fw.index].to_numpy(dtype=float)
+    bvar = float(bw.to_numpy() @ S @ bw.to_numpy())
+    beta = float(fw.to_numpy() @ S @ bw.to_numpy() / bvar) if bvar > 0 else float("nan")
+    exp_a = float(a @ mu.loc[a.index])
+    avg_vol, avg_corr = abs_weighted_vol_corr(a, cov)
+    return ActiveReport(fund_w=fund_w, bench_w=bench_w, active=a.sort_values(), te=te,
+                        budget=te_budget(a, cov), exp_active=exp_a,
+                        info_ratio=exp_a / te if te > 0 else float("nan"), beta=beta,
+                        avg_vol=avg_vol, avg_corr=avg_corr, te_rule=te_rule_of_thumb(a, avg_vol, avg_corr),
+                        cov=cov.loc[fw.index, fw.index])

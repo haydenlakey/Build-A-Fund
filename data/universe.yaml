@@ -200,3 +200,12 @@ factors:
   - {key: commodities, ticker: DBC,      name: Broad commodities in rand (Invesco DBC ETF x USD/ZAR), quote: USD, note: "Proxy: Yahoo has no Bloomberg Commodity index (^BCOM). From 2006."}
   - {key: sa_bonds,    ticker: STXGOV.JO, name: SA government bonds (Satrix SA Bond ETF), quote: ZAc,  note: "Only from May 2020 on Yahoo."}
   - {key: world,       ticker: VT,       name: Global equities in rand (VT x USD/ZAR), quote: USD,  note: "From 2008."}
+
+# Benchmarks for the active-bets view: weighted mixes of price series in this file,
+# rebalanced weekly like the fund. Edit or add freely. The balanced mix is a proxy chosen
+# for this app, not an official benchmark.
+benchmarks:
+  - {key: top40,    name: JSE Top 40,                     components: {STX40.JO: 1.0},  note: "Satrix 40 ETF (total return, after its 0.10% TER), from 2009."}
+  - {key: world,    name: Global shares (MSCI World),     components: {STXWDM.JO: 1.0}, note: "Satrix MSCI World Feeder ETF, in rand, from July 2017."}
+  - {key: sp500,    name: US shares (S&P 500 in rand),    components: {SPY: 1.0},       note: "SPDR S&P 500 ETF converted at USD/ZAR, from Dec 2003."}
+  - {key: balanced, name: Balanced fund proxy,            components: {STX40.JO: 0.5, STXWDM.JO: 0.25, STXGOV.JO: 0.25}, note: "App-made proxy: 50% Top 40, 25% MSCI World, 25% SA government bonds, rebalanced weekly. SA bond prices start in May 2020."}

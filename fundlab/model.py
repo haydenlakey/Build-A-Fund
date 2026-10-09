@@ -49,7 +49,7 @@ class FundSettings:
     var_alpha: float = 0.95
     var_horizon_weeks: int = 4
     seed: int = 42
-    benchmark: str = "STX40.JO"
+    benchmark: str = "top40"  # a key of universe.yaml benchmarks (older files: a ticker, read as top40)
 
 
 @dataclass

@@ -76,10 +76,10 @@ def main() -> int:
                                       device_scale_factor=2 if label == "phone" else 1)
             page = ctx.new_page()
             errors: list[str] = []
-            page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+            # deep links make Streamlit probe <page>/_stcore/* first (404, then it falls back): not our errors
+            page.on("console", lambda m: errors.append(m.text) if m.type == "error"
+                    and "/_stcore/" not in (m.location or {}).get("url", "") else None)
             page.on("pageerror", lambda e: errors.append(str(e)))
-            probes: list[str] = []  # deep links make Streamlit probe <page>/_stcore/* first (404, then falls back)
-            page.on("response", lambda r: probes.append(r.url) if r.status == 404 and "/_stcore/" in r.url else None)
             page.goto(URL)
             settle(page)
             page.screenshot(path=OUT / f"{label}-1-empty.png")
@@ -98,8 +98,9 @@ def main() -> int:
                 page.get_by_text(view, exact=True).click()
                 settle(page)
                 page.screenshot(path=OUT / f"{label}-5-composition-{i}.png")
-            n_probe = len(probes)
-            errors = [e for e in errors if not ("status of 404" in e and (n_probe := n_probe - 1) >= 0)]
+            page.goto(f"{URL}/active_bets?fund={EXAMPLE.to_share_code()}")
+            settle(page)
+            page.screenshot(path=OUT / f"{label}-6-active.png")
             print(f"{label}: console errors {errors[:5]}")
             problems += [f"{label}: {e}" for e in errors]
             ctx.close()

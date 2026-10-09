@@ -34,6 +34,7 @@ class Universe:
     entries: dict[str, dict]
     factors: dict[str, dict]
     as_of: str = ""
+    benchmarks: dict[str, dict] = field(default_factory=dict)  # key -> {name, components {ticker: weight}, note}
 
     def get(self, ticker: str) -> dict | None:
         return self.entries.get(ticker)
@@ -80,7 +81,8 @@ def load_universe(path: Path | str = UNIVERSE_PATH) -> Universe:
             e["currency"] = "ZAR" if kind.startswith("jse") else "USD"
             entries[e["ticker"]] = e
     factors = {f["key"]: dict(f) for f in raw.get("factors", []) or []}
-    return Universe(entries, factors, str(raw.get("as_of", "")))
+    benchmarks = {b["key"]: dict(b) for b in raw.get("benchmarks", []) or []}
+    return Universe(entries, factors, str(raw.get("as_of", "")), benchmarks)
 
 
 # ---- quoting conventions ---------------------------------------------------------
