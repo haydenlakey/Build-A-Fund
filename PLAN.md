@@ -9,7 +9,7 @@ _Last updated: 2026-10-09_
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
-| 1 | Fund builder and core risk maths | **In progress.** Core maths modules are written and pass a smoke check. No data layer, universe file, sample dataset, tests, verdict logic or UI yet. |
+| 1 | Fund builder and core risk maths | **In progress.** Maths, data layer, universe, bundled sample and 52 tests are done. Still to do: analysis/verdict layer and the whole UI. |
 | 2 | Composition, risk and reality-check views | Not started |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
@@ -23,14 +23,14 @@ _Last updated: 2026-10-09_
 - [x] `fundlab/frontier.py`: long-only efficient frontier, efficiency gap
 - [x] `fundlab/active.py`: active weights, TE, TE budget, pairwise bet, average-vol/average-corr rule of thumb (built early because the spec's quality bar tests it)
 - [x] `fundlab/model.py`: Fund / Holding / FundSettings, derived weights, JSON and share-link encoding
-- [ ] `tests/`: turn the smoke checks into pytest tests (weights sum to 1, RCs sum to vol, MC→parametric, pairwise bet 4.4%/87%/13%, LW delta < 1 when the target is wrong)
-- [ ] `data/universe.yaml`: Top 40 (constituents researched, see below), main JSE ETFs, popular US shares and ETFs, benchmarks/factors
-- [ ] `fundlab/data.py`: yfinance wrapper (cents→rand, USD→ZAR, 100× glitch repair, retries, parquet cache, bundled-sample fallback)
-- [ ] `scripts/build_sample.py` + `data/sample/*.parquet`: bundled weekly ZAR prices
+- [x] `tests/test_maths.py` (30 tests) and `tests/test_data.py` (22 tests, offline): weights sum to 1, RCs sum to vol, MC→parametric (normal and t), pairwise bet 4.43%/87.1%/12.9%, LW partial shrinkage, cents/FX/anchor handling, 100× repair, bundled-sample sanity
+- [x] `data/universe.yaml`: 41 Top 40 lines, 31 JSE ETFs, 37 US shares, 16 US ETFs, 8 factors. JSE ETF TERs, holdings and sector splits are **deferred to phase 2** (look-through)
+- [x] `fundlab/data.py`: Universe (load/search/kind_of), quote units, 100× repair, daily→Friday weekly resample, rand conversion, retrying download, PriceStore (sample → cache → live, failures recorded, `history_from` cut-offs)
+- [x] `scripts/build_sample.py` + `data/sample/prices_native.parquet` (129 tickers × 1 658 weeks, 1995-01-06 to 2026-10-09, about 740 KB) + `meta.json`
 - [ ] `fundlab/analysis.py`: history window rule, `FundStats`, before/after comparison on a common window
 - [ ] `fundlab/verdict.py`: plain-language verdict
 - [ ] `app.py` + Build page: name the fund, search a ticker, enter rands, preview → before/after panel, animated frontier marker, verdict, save/load/duplicate, share link, disclaimer
-- [ ] GitHub Action to refresh the sample data weekly (approved by the user)
+- [x] `.github/workflows/refresh-data.yml`: Saturdays 06:00 UTC plus manual run; commits only when the data changed. **Untested until the repo is on GitHub.**
 - [ ] Run the app, check it at desktop and phone widths, fix what's broken
 
 ## Architecture (as it exists)
@@ -52,9 +52,12 @@ Build A Fund/
     └── model.py           # Holding, FundSettings, Fund, HOLDING_KINDS, share codes
 ```
 
-Planned (not yet created): `app.py`, `pages/`, `ui/`, `content/` (library Markdown,
-glossary.yaml, rules.yaml), `data/universe.yaml`, `data/sample/`, `scripts/`,
-`tests/`, `.github/workflows/`.
+Also present: `fundlab/data.py`, `data/universe.yaml`, `data/sample/` (parquet + meta.json),
+`scripts/build_sample.py`, `tests/` (test_maths.py, test_data.py), `pytest.ini`,
+`.github/workflows/refresh-data.yml`. `data/cache/` (live downloads) is git-ignored.
+
+Planned (not yet created): `fundlab/analysis.py`, `fundlab/verdict.py`, `app.py`, `pages/`, `ui/`,
+`content/` (library Markdown, glossary.yaml, rules.yaml).
 
 ## Data model (as it exists in `fundlab/model.py`)
 
@@ -104,7 +107,16 @@ Inferred from the code (not discussed explicitly):
   chi-square mixing variable, so crashes hit all assets at once, and it's scaled to keep the
   same covariance. MC→parametric equality only holds exactly at a 1-week horizon (compounding).
 - *(inferred)* Efficiency gap = fund vol minus frontier vol at the same expected return, measured against **the fund's own holdings' frontier**.
-- *(inferred)* Prices will be total-return (yfinance `auto_adjust=True`).
+- Prices are total-return (yfinance `auto_adjust=True`, so dividends are reinvested via adjusted closes).
+- **Data pipeline (decided 2026-10-09):** download *daily* closes and resample to Friday week-ends
+  ourselves, because Yahoo's weekly bars use different anchors per ticker (Monday for JSE, Sunday for US,
+  Thursday-to-Wednesday weeks for some JSE ETFs). Store native units after cleaning (JSE ÷100 to rand);
+  convert USD→ZAR on load. Indices (`^J200.JO`) are in points, not cents.
+- Universe `sector` uses Yahoo/Morningstar sector names for both JSE and US, so there's one scheme. JSE
+  rows are curated: e.g. Naspers/Prosus are "Technology", not Yahoo's "Consumer Cyclical / Internet Retail".
+  `exposure` (sa / sa_dollar / africa / mixed / global) is a curated approximation and drives rand-hedge labelling.
+- Commodity factor = DBC ETF in rand (Yahoo has no ^BCOM). Gold = GC=F futures in rand.
+- Only JSE (.JO) and US-listed tickers are accepted as ad-hoc search entries (`data.is_supported`).
 - *(inferred)* Risk-free default 7% is a placeholder user assumption, not a sourced figure.
 
 ## Research done so far
@@ -138,20 +150,31 @@ Inferred from the code (not discussed explicitly):
   (streamlit 1.65.0, plotly 7.1.0, yfinance 1.7.0, pandas 2.3.3, numpy 2.2.6, scipy 1.15.3, pyarrow 25.0.1).
 - `Fund.with_amount` defaults `kind="jse_share"` when adding a new ticker. Callers must pass
   the correct kind, or US shares would be mislabelled. Fix when the universe lookup exists.
+- **Data limits found 2026-10-09:**
+  - Yahoo's USD/ZAR (ZAR=X) starts Dec 2003, so nothing priced in dollars has a rand series before 2004.
+    The 1997/1998/2001 episodes can't be replayed for US holdings.
+  - JSE share history on Yahoo starts Jan 2000 at the earliest. ^J200.JO (Top 40 price index) goes back to 1995.
+  - STX40.JO on Yahoo starts only in 2009 (the fund itself is older). SA bonds (STXGOV.JO) start only in May 2020,
+    which limits the balanced benchmark's history. Need a longer SA bond proxy (open question).
+  - Short JSE histories: CFR.JO from 2023, BHG.JO 2022, NPH.JO 2021, SSW.JO 2020, PRX.JO 2019, CRWV 2025.
+  - OUT.JO's history before 2011-03-18 is a predecessor company (−82% artefact week). Cut via `history_from`.
+  - Six ETF tickers return nothing: STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN.
+  - CoreShares ETFs are now branded 10X. ETFSWX is now "1nvest Capped All Share". Names were fixed from Yahoo longName.
+  - The scan of extreme weekly moves found no other glitches (remaining extremes like Sasol in Mar 2020 and BAC in Mar 2009 are real).
 - yfinance works locally (probe on 2026-10-09). STX40.JO returned 10 280, i.e. cents (R102.80,
   consistent with Satrix's NAV of R101.21 on 8 Oct), which confirms the ÷100 rule. Not yet tested from Streamlit Cloud.
 - Smoke test note: with data simulated from an exactly constant-correlation model, LW delta = 1.0.
   That's correct (the target is the truth), but the real test should use a non-constant correlation structure.
-- No tests in `tests/` yet. The smoke check lives outside the repo.
 
 ## Open questions
 
 - The risk-free rate default (7%) needs a sourced current SA 91-day T-bill rate, or a clear "your assumption" label.
 - Which JSE ETFs make the universe, and their TERs/holdings from current fact sheets (each with an as-of date).
-- Which broad commodity index is fetchable for free on yfinance (^BCOM vs a commodity ETF).
+- A longer free SA government bond series for the balanced benchmark (STXGOV.JO starts 2020).
+- `tracks: null` ETFs in universe.yaml: confirm each index from the provider's fact sheet in phase 2.
 - Browser checking: Playwright + headless Chromium (free) for desktop/phone screenshots. Not installed yet.
 
 ## Next step
 
-Convert the smoke checks into `tests/test_maths.py` (pytest), then build `data/universe.yaml`
-and `fundlab/data.py`, then download the sample dataset with `scripts/build_sample.py` and test yfinance's quirks on real JSE data.
+Write `fundlab/analysis.py` (history-window rule, `FundStats`, before/after on a common window, with tests)
+and `fundlab/verdict.py` (plain-language verdict, with tests). Then build `app.py` + the Build page.

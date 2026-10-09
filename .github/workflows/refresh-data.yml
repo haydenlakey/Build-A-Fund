@@ -1,0 +1,35 @@
+name: Refresh bundled price data
+
+on:
+  schedule:
+    - cron: "0 6 * * 6"   # Saturdays 06:00 UTC, after both JSE and US Friday closes
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install data dependencies
+        run: |
+          pip install $(grep -iE '^(numpy|pandas|pyarrow|pyyaml|yfinance)==' requirements.txt)
+      - name: Rebuild sample
+        run: python scripts/build_sample.py
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- data/sample; then
+            echo "No data changes."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/sample
+            git commit -m "Refresh bundled price data ($(date -u +%Y-%m-%d))"
+            git push
+          fi

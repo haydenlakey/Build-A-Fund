@@ -1,0 +1,187 @@
+# Preset universe for Build-a-Fund Lab.
+#
+# Edit freely: the app reads this file at start-up.
+#
+# Field guide
+#   ticker    Yahoo Finance symbol. JSE securities end in .JO and are quoted in cents.
+#   kind      jse_share | jse_etf | us_share | us_etf  (see fundlab/model.py)
+#   sector    Yahoo/Morningstar sector names, so JSE and US holdings share one scheme:
+#             Technology, Communication Services, Consumer Cyclical, Consumer Defensive,
+#             Financial Services, Healthcare, Industrials, Basic Materials, Energy,
+#             Real Estate, Utilities. ETFs use: Equity (broad), Bonds, Property, Commodity.
+#   industry  Finer description (curated).
+#   country   Where the company is domiciled / headquartered.
+#   exposure  Where the money is actually made (curated judgement, approximate):
+#               sa         mostly South African revenue and costs
+#               sa_dollar  South African operations selling US-dollar-priced output (miners, Sasol)
+#               africa     mostly African revenue outside South Africa
+#               mixed      substantial South African and offshore revenue
+#               global     mostly offshore revenue  (these are the "rand hedges")
+#   themes    Free tags used by insight rules (e.g. ai, gold, pgm, tencent).
+#   history_from  Optional date; earlier Yahoo history is ignored (bad or predecessor data).
+#
+# Sources
+#   Top 40 membership: Satrix Top 40 product page, constituent table "as at 08 Oct 2026"
+#     https://satrix.co.za/products/product-details?id=44  (accessed 2026-10-08).
+#     It lists 41 lines because Investec has a Ltd (INL) and a PLC (INP) listing.
+#   US sector/industry/country: Yahoo Finance via yfinance Ticker.info (accessed 2026-10-09).
+#   US ETF expense ratios: Yahoo Finance netExpenseRatio (accessed 2026-10-09).
+#   JSE sector, industry and exposure: curated for this app, guided by the ICB industry
+#     column on the Satrix page above. Treat "exposure" as an approximation.
+#   Ticker availability and history start dates: checked with yfinance on 2026-10-09.
+#
+# Not yet filled (phase 2): JSE ETF TERs, top holdings and sector splits for look-through.
+# Each will be copied from the provider's fact sheet with its as-of date.
+
+as_of: 2026-10-09
+
+jse_shares:
+  - {ticker: ABG.JO, name: Absa Group, sector: Financial Services, industry: Banks, country: ZA, exposure: sa, themes: [bank]}
+  - {ticker: AGL.JO, name: Anglo American, sector: Basic Materials, industry: Diversified mining (copper, iron ore), country: GB, exposure: global, themes: [mining, copper]}
+  - {ticker: ANG.JO, name: AngloGold Ashanti, sector: Basic Materials, industry: Gold mining, country: GB, exposure: global, themes: [mining, gold]}
+  - {ticker: ANH.JO, name: Anheuser-Busch InBev, sector: Consumer Defensive, industry: Brewers, country: BE, exposure: global, themes: [beverages]}
+  - {ticker: APN.JO, name: Aspen Pharmacare, sector: Healthcare, industry: Pharmaceuticals, country: ZA, exposure: mixed, themes: [pharma]}
+  - {ticker: BHG.JO, name: BHP Group, sector: Basic Materials, industry: Diversified mining (iron ore, copper), country: AU, exposure: global, themes: [mining, copper]}
+  - {ticker: BID.JO, name: Bid Corporation, sector: Consumer Defensive, industry: Food service distribution, country: ZA, exposure: global, themes: []}
+  - {ticker: BTI.JO, name: British American Tobacco, sector: Consumer Defensive, industry: Tobacco, country: GB, exposure: global, themes: [tobacco]}
+  - {ticker: BVT.JO, name: Bidvest Group, sector: Industrials, industry: Services and distribution conglomerate, country: ZA, exposure: mixed, themes: []}
+  - {ticker: CFR.JO, name: Compagnie Financiere Richemont, sector: Consumer Cyclical, industry: Luxury goods, country: CH, exposure: global, themes: [luxury]}
+  - {ticker: CLS.JO, name: Clicks Group, sector: Consumer Defensive, industry: Pharmacy and health retail, country: ZA, exposure: sa, themes: [sa_retail]}
+  - {ticker: CPI.JO, name: Capitec Bank, sector: Financial Services, industry: Banks, country: ZA, exposure: sa, themes: [bank]}
+  - {ticker: DSY.JO, name: Discovery, sector: Financial Services, industry: Health and life insurance, country: ZA, exposure: mixed, themes: [insurance]}
+  - {ticker: FSR.JO, name: FirstRand, sector: Financial Services, industry: Banks, country: ZA, exposure: sa, themes: [bank]}
+  - {ticker: GFI.JO, name: Gold Fields, sector: Basic Materials, industry: Gold mining, country: ZA, exposure: global, themes: [mining, gold]}
+  - {ticker: GLN.JO, name: Glencore, sector: Basic Materials, industry: Diversified mining and commodity trading, country: CH, exposure: global, themes: [mining, coal, copper]}
+  - {ticker: GRT.JO, name: Growthpoint Properties, sector: Real Estate, industry: Diversified REIT, country: ZA, exposure: sa, themes: [listed_property]}
+  - {ticker: HAR.JO, name: Harmony Gold Mining, sector: Basic Materials, industry: Gold mining, country: ZA, exposure: sa_dollar, themes: [mining, gold]}
+  - {ticker: IMP.JO, name: Impala Platinum, sector: Basic Materials, industry: Platinum group metals mining, country: ZA, exposure: sa_dollar, themes: [mining, pgm]}
+  - {ticker: INL.JO, name: Investec Ltd, sector: Financial Services, industry: Banking and wealth management, country: ZA, exposure: mixed, themes: [bank]}
+  - {ticker: INP.JO, name: Investec PLC, sector: Financial Services, industry: Banking and wealth management, country: GB, exposure: mixed, themes: [bank]}
+  - {ticker: MRP.JO, name: Mr Price Group, sector: Consumer Cyclical, industry: Apparel and homeware retail, country: ZA, exposure: sa, themes: [sa_retail]}
+  - {ticker: MTN.JO, name: MTN Group, sector: Communication Services, industry: Mobile telecoms, country: ZA, exposure: africa, themes: [telecoms]}
+  - {ticker: NED.JO, name: Nedbank Group, sector: Financial Services, industry: Banks, country: ZA, exposure: sa, themes: [bank]}
+  - {ticker: NPH.JO, name: Northam Platinum, sector: Basic Materials, industry: Platinum group metals mining, country: ZA, exposure: sa_dollar, themes: [mining, pgm]}
+  - {ticker: NPN.JO, name: Naspers, sector: Technology, industry: Internet holding company (mainly a Tencent stake via Prosus), country: ZA, exposure: global, themes: [tencent, china_tech]}
+  - {ticker: NRP.JO, name: NEPI Rockcastle, sector: Real Estate, industry: Retail REIT (Central and Eastern Europe), country: NL, exposure: global, themes: [listed_property]}
+  - {ticker: OMU.JO, name: Old Mutual, sector: Financial Services, industry: Life insurance and asset management, country: ZA, exposure: sa, themes: [insurance]}
+  # Yahoo's OUT.JO series falls 82% in the week of 11 Mar 2011: a corporate-action artefact
+  # from a predecessor company, not a real loss. History before that is ignored.
+  - {ticker: OUT.JO, name: OUTsurance Group, sector: Financial Services, industry: Short-term insurance, country: ZA, exposure: mixed, themes: [insurance], history_from: 2011-03-18}
+  - {ticker: PAN.JO, name: Pan African Resources, sector: Basic Materials, industry: Gold mining, country: ZA, exposure: sa_dollar, themes: [mining, gold]}
+  - {ticker: PPH.JO, name: Pepkor Holdings, sector: Consumer Cyclical, industry: Discount retail, country: ZA, exposure: sa, themes: [sa_retail]}
+  - {ticker: PRX.JO, name: Prosus, sector: Technology, industry: Internet holding company (mainly a Tencent stake), country: NL, exposure: global, themes: [tencent, china_tech]}
+  - {ticker: REM.JO, name: Remgro, sector: Financial Services, industry: Investment holding company, country: ZA, exposure: sa, themes: []}
+  - {ticker: RNI.JO, name: Reinet Investments, sector: Financial Services, industry: Investment holding company, country: LU, exposure: global, themes: []}
+  - {ticker: SBK.JO, name: Standard Bank Group, sector: Financial Services, industry: Banks, country: ZA, exposure: mixed, themes: [bank]}
+  - {ticker: SHP.JO, name: Shoprite Holdings, sector: Consumer Defensive, industry: Grocery retail, country: ZA, exposure: sa, themes: [sa_retail]}
+  - {ticker: SLM.JO, name: Sanlam, sector: Financial Services, industry: Life insurance, country: ZA, exposure: mixed, themes: [insurance]}
+  - {ticker: SOL.JO, name: Sasol, sector: Basic Materials, industry: Chemicals and synthetic fuels, country: ZA, exposure: sa_dollar, themes: [oil, chemicals]}
+  - {ticker: SSW.JO, name: Sibanye Stillwater, sector: Basic Materials, industry: Platinum group metals and gold mining, country: ZA, exposure: sa_dollar, themes: [mining, pgm, gold]}
+  - {ticker: VAL.JO, name: Valterra Platinum, sector: Basic Materials, industry: Platinum group metals mining, country: ZA, exposure: sa_dollar, themes: [mining, pgm]}
+  - {ticker: VOD.JO, name: Vodacom Group, sector: Communication Services, industry: Mobile telecoms, country: ZA, exposure: mixed, themes: [telecoms]}
+
+# JSE ETFs: tickers confirmed on Yahoo on 2026-10-09. STXSWX, SYGSW4, DIVTRX,
+# NFEMOM, NFTRCI and PTXTEN returned no data and are left out. Names checked against
+# Yahoo longName on 2026-10-09 (CoreShares is now branded 10X; ETFSWX is now 1nvest Capped All Share).
+# ter / holdings / sectors are added in phase 2 from each fund's fact sheet.
+jse_etfs:
+  - {ticker: STX40.JO,  name: Satrix 40,                      sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
+  - {ticker: SYGT40.JO, name: Sygnia Itrix Top 40,            sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
+  - {ticker: ETFT40.JO, name: 1nvest Top 40,                  sector: Equity, region: SA,     tracks: FTSE/JSE Top 40, themes: [sa_equity]}
+  - {ticker: ETFSWX.JO, name: 1nvest Capped All Share,         sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
+  - {ticker: CTOP50.JO, name: 10X S&P SA Top 50,              sector: Equity, region: SA,     tracks: S&P South Africa Top 50, themes: [sa_equity]}
+  - {ticker: STXCAP.JO, name: Satrix Capped All Share,        sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
+  - {ticker: STXRES.JO, name: Satrix RESI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Resource 10, themes: [sa_equity, mining]}
+  - {ticker: STXFIN.JO, name: Satrix FINI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Financial 15, themes: [sa_equity, bank]}
+  - {ticker: STXIND.JO, name: Satrix INDI,                    sector: Equity, region: SA,     tracks: FTSE/JSE Industrial 25, themes: [sa_equity]}
+  - {ticker: STXDIV.JO, name: Satrix Divi Plus,               sector: Equity, region: SA,     tracks: FTSE/JSE Dividend Plus, themes: [sa_equity]}
+  - {ticker: STXQUA.JO, name: Satrix Quality,                 sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
+  - {ticker: STXMMT.JO, name: Satrix Momentum,                sector: Equity, region: SA,     tracks: null, themes: [sa_equity]}
+  - {ticker: STXPRO.JO, name: Satrix Property,                sector: Property, region: SA,   tracks: null, themes: [listed_property]}
+  - {ticker: CSPROP.JO, name: 10X South African Property Income, sector: Property, region: SA,   tracks: null, themes: [listed_property]}
+  - {ticker: STXGOV.JO, name: Satrix SA Bond,                 sector: Bonds,  region: SA,     tracks: null, themes: [sa_bonds]}
+  - {ticker: STXILB.JO, name: Satrix ILBI,                    sector: Bonds,  region: SA,     tracks: null, themes: [sa_bonds, inflation_linked]}
+  - {ticker: STX500.JO, name: Satrix S&P 500,                 sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
+  - {ticker: SYG500.JO, name: Sygnia Itrix S&P 500,           sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
+  - {ticker: CSP500.JO, name: 10X S&P 500,                    sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
+  - {ticker: ETF500.JO, name: 1nvest S&P 500 Feeder,          sector: Equity, region: US,     tracks: S&P 500, themes: [offshore_equity]}
+  - {ticker: SYGUS.JO,  name: Sygnia Itrix MSCI USA,          sector: Equity, region: US,     tracks: MSCI USA, themes: [offshore_equity]}
+  - {ticker: STXNDQ.JO, name: Satrix Nasdaq 100,              sector: Equity, region: US,     tracks: Nasdaq-100, themes: [offshore_equity, us_tech]}
+  - {ticker: STXWDM.JO, name: Satrix MSCI World Feeder,       sector: Equity, region: Global, tracks: MSCI World, themes: [offshore_equity]}
+  - {ticker: SYGWD.JO,  name: Sygnia Itrix MSCI World,        sector: Equity, region: Global, tracks: MSCI World, themes: [offshore_equity]}
+  - {ticker: STXEMG.JO, name: Satrix MSCI Emerging Markets,   sector: Equity, region: EM,     tracks: MSCI Emerging Markets, themes: [offshore_equity]}
+  - {ticker: STXCHN.JO, name: Satrix MSCI China Feeder,       sector: Equity, region: China,  tracks: MSCI China, themes: [offshore_equity, china_tech]}
+  - {ticker: SYGEU.JO,  name: Sygnia Itrix Euro Stoxx 50,     sector: Equity, region: Europe, tracks: Euro Stoxx 50, themes: [offshore_equity]}
+  - {ticker: SYGJP.JO,  name: Sygnia Itrix MSCI Japan,        sector: Equity, region: Japan,  tracks: MSCI Japan, themes: [offshore_equity]}
+  - {ticker: GLD.JO,    name: NewGold Gold ETF,               sector: Commodity, region: Global, tracks: Gold price, themes: [gold]}
+  - {ticker: ETFGLD.JO, name: 1nvest Gold,                    sector: Commodity, region: Global, tracks: Gold price, themes: [gold]}
+  - {ticker: NGPLT.JO,  name: NewGold Platinum,               sector: Commodity, region: Global, tracks: Platinum price, themes: [pgm]}
+
+us_shares:
+  - {ticker: AAPL,  name: Apple,                       sector: Technology,             industry: Consumer Electronics,               country: US, themes: [us_tech]}
+  - {ticker: MSFT,  name: Microsoft,                   sector: Technology,             industry: Software - Infrastructure,          country: US, themes: [us_tech, ai]}
+  - {ticker: NVDA,  name: NVIDIA,                      sector: Technology,             industry: Semiconductors,                     country: US, themes: [us_tech, ai, semiconductors]}
+  - {ticker: AMZN,  name: Amazon,                      sector: Consumer Cyclical,      industry: Internet Retail,                    country: US, themes: [us_tech, ai]}
+  - {ticker: GOOGL, name: Alphabet,                    sector: Communication Services, industry: Internet Content & Information,     country: US, themes: [us_tech, ai]}
+  - {ticker: META,  name: Meta Platforms,              sector: Communication Services, industry: Internet Content & Information,     country: US, themes: [us_tech, ai]}
+  - {ticker: TSLA,  name: Tesla,                       sector: Consumer Cyclical,      industry: Auto Manufacturers,                 country: US, themes: [us_tech]}
+  - {ticker: BRK-B, name: Berkshire Hathaway,          sector: Financial Services,     industry: Insurance - Diversified,            country: US, themes: []}
+  - {ticker: JPM,   name: JPMorgan Chase,              sector: Financial Services,     industry: Banks - Diversified,                country: US, themes: [bank]}
+  - {ticker: BAC,   name: Bank of America,             sector: Financial Services,     industry: Banks - Diversified,                country: US, themes: [bank]}
+  - {ticker: V,     name: Visa,                        sector: Financial Services,     industry: Credit Services,                    country: US, themes: []}
+  - {ticker: MA,    name: Mastercard,                  sector: Financial Services,     industry: Credit Services,                    country: US, themes: []}
+  - {ticker: JNJ,   name: Johnson & Johnson,           sector: Healthcare,             industry: Drug Manufacturers - General,       country: US, themes: [pharma]}
+  - {ticker: LLY,   name: Eli Lilly,                   sector: Healthcare,             industry: Drug Manufacturers - General,       country: US, themes: [pharma]}
+  - {ticker: UNH,   name: UnitedHealth Group,          sector: Healthcare,             industry: Healthcare Plans,                   country: US, themes: []}
+  - {ticker: KO,    name: Coca-Cola,                   sector: Consumer Defensive,     industry: Beverages - Non-Alcoholic,          country: US, themes: [beverages]}
+  - {ticker: PEP,   name: PepsiCo,                     sector: Consumer Defensive,     industry: Beverages - Non-Alcoholic,          country: US, themes: [beverages]}
+  - {ticker: PG,    name: Procter & Gamble,            sector: Consumer Defensive,     industry: Household & Personal Products,      country: US, themes: []}
+  - {ticker: COST,  name: Costco,                      sector: Consumer Defensive,     industry: Discount Stores,                    country: US, themes: []}
+  - {ticker: WMT,   name: Walmart,                     sector: Consumer Defensive,     industry: Discount Stores,                    country: US, themes: []}
+  - {ticker: MCD,   name: McDonald's,                  sector: Consumer Cyclical,      industry: Restaurants,                        country: US, themes: []}
+  - {ticker: NKE,   name: Nike,                        sector: Consumer Cyclical,      industry: Footwear & Accessories,             country: US, themes: []}
+  - {ticker: DIS,   name: Walt Disney,                 sector: Communication Services, industry: Entertainment,                      country: US, themes: []}
+  - {ticker: NFLX,  name: Netflix,                     sector: Communication Services, industry: Entertainment,                      country: US, themes: [us_tech]}
+  - {ticker: XOM,   name: ExxonMobil,                  sector: Energy,                 industry: Oil & Gas Integrated,               country: US, themes: [oil]}
+  - {ticker: CVX,   name: Chevron,                     sector: Energy,                 industry: Oil & Gas Integrated,               country: US, themes: [oil]}
+  - {ticker: AVGO,  name: Broadcom,                    sector: Technology,             industry: Semiconductors,                     country: US, themes: [us_tech, ai, semiconductors]}
+  - {ticker: AMD,   name: Advanced Micro Devices,      sector: Technology,             industry: Semiconductors,                     country: US, themes: [us_tech, ai, semiconductors]}
+  - {ticker: INTC,  name: Intel,                       sector: Technology,             industry: Semiconductors,                     country: US, themes: [us_tech, semiconductors]}
+  - {ticker: MU,    name: Micron Technology,           sector: Technology,             industry: Semiconductors,                     country: US, themes: [us_tech, ai, semiconductors]}
+  - {ticker: TSM,   name: Taiwan Semiconductor (ADR),  sector: Technology,             industry: Semiconductors,                     country: TW, themes: [ai, semiconductors]}
+  - {ticker: ASML,  name: ASML Holding (ADR),          sector: Technology,             industry: Semiconductor Equipment & Materials, country: NL, themes: [ai, semiconductors]}
+  - {ticker: ORCL,  name: Oracle,                      sector: Technology,             industry: Software - Infrastructure,          country: US, themes: [us_tech, ai]}
+  - {ticker: PLTR,  name: Palantir Technologies,       sector: Technology,             industry: Software - Infrastructure,          country: US, themes: [us_tech, ai]}
+  - {ticker: CRWV,  name: CoreWeave,                   sector: Technology,             industry: Software - Infrastructure,          country: US, themes: [us_tech, ai]}
+  - {ticker: ADBE,  name: Adobe,                       sector: Technology,             industry: Software - Application,             country: US, themes: [us_tech, software]}
+  - {ticker: CRM,   name: Salesforce,                  sector: Technology,             industry: Software - Application,             country: US, themes: [us_tech, software]}
+
+us_etfs:
+  - {ticker: SPY,  name: SPDR S&P 500 ETF,                    sector: Equity,    region: US,     tracks: S&P 500,      ter: 0.000945, themes: [offshore_equity]}
+  - {ticker: VOO,  name: Vanguard S&P 500 ETF,                sector: Equity,    region: US,     tracks: S&P 500,      ter: 0.0003,   themes: [offshore_equity]}
+  - {ticker: VTI,  name: Vanguard Total Stock Market ETF,     sector: Equity,    region: US,     tracks: null,         ter: 0.0003,   themes: [offshore_equity]}
+  - {ticker: QQQ,  name: Invesco QQQ Trust,                   sector: Equity,    region: US,     tracks: Nasdaq-100,   ter: 0.0018,   themes: [offshore_equity, us_tech]}
+  - {ticker: VT,   name: Vanguard Total World Stock ETF,      sector: Equity,    region: Global, tracks: null,         ter: 0.0006,   themes: [offshore_equity]}
+  - {ticker: VEA,  name: Vanguard FTSE Developed Markets ETF, sector: Equity,    region: Global, tracks: null,         ter: 0.0003,   themes: [offshore_equity]}
+  - {ticker: VWO,  name: Vanguard FTSE Emerging Markets ETF,  sector: Equity,    region: EM,     tracks: null,         ter: 0.0006,   themes: [offshore_equity]}
+  - {ticker: ARKK, name: ARK Innovation ETF,                  sector: Equity,    region: US,     tracks: null,         ter: 0.0075,   themes: [offshore_equity, us_tech]}
+  - {ticker: SMH,  name: VanEck Semiconductor ETF,            sector: Equity,    region: Global, tracks: null,         ter: 0.0035,   themes: [offshore_equity, ai, semiconductors]}
+  - {ticker: XLE,  name: Energy Select Sector SPDR,           sector: Equity,    region: US,     tracks: null,         ter: 0.0008,   themes: [offshore_equity, oil]}
+  - {ticker: XLF,  name: Financial Select Sector SPDR,        sector: Equity,    region: US,     tracks: null,         ter: 0.0008,   themes: [offshore_equity, bank]}
+  - {ticker: VNQ,  name: Vanguard Real Estate ETF,            sector: Property,  region: US,     tracks: null,         ter: 0.0013,   themes: [listed_property]}
+  - {ticker: BND,  name: Vanguard Total Bond Market ETF,      sector: Bonds,     region: US,     tracks: null,         ter: 0.0003,   themes: [offshore_bonds]}
+  - {ticker: TLT,  name: iShares 20+ Year Treasury Bond ETF,  sector: Bonds,     region: US,     tracks: null,         ter: 0.0015,   themes: [offshore_bonds]}
+  - {ticker: GLD,  name: SPDR Gold Shares,                    sector: Commodity, region: Global, tracks: Gold price,   ter: 0.004,    themes: [gold]}
+  - {ticker: IAU,  name: iShares Gold Trust,                  sector: Commodity, region: Global, tracks: Gold price,   ter: 0.0025,   themes: [gold]}
+
+# Benchmarks and risk factors. Not shown in the holding search.
+# quote: how Yahoo quotes the raw series before conversion to rand.
+factors:
+  - {key: top40_index, ticker: ^J200.JO, name: FTSE/JSE Top 40 index (price only),   quote: points, note: "From 1995. Excludes dividends; use for long history and stress tests."}
+  - {key: top40,       ticker: STX40.JO, name: Satrix 40 ETF (total return proxy),   quote: ZAc,    note: "From 2009 on Yahoo. Includes dividends via adjusted prices."}
+  - {key: sp500,       ticker: SPY,      name: S&P 500 in rand (SPY ETF x USD/ZAR),  quote: USD,    note: "Rand series only from Dec 2003, when Yahoo's USD/ZAR history starts."}
+  - {key: usdzar,      ticker: ZAR=X,    name: US dollar in rand (USD/ZAR),          quote: rate,   note: "From Dec 2003 on Yahoo."}
+  - {key: gold,        ticker: GC=F,     name: Gold in rand (front-month futures x USD/ZAR), quote: USD, note: "From 2000; rand series from Dec 2003."}
+  - {key: commodities, ticker: DBC,      name: Broad commodities in rand (Invesco DBC ETF x USD/ZAR), quote: USD, note: "Proxy: Yahoo has no Bloomberg Commodity index (^BCOM). From 2006."}
+  - {key: sa_bonds,    ticker: STXGOV.JO, name: SA government bonds (Satrix SA Bond ETF), quote: ZAc,  note: "Only from May 2020 on Yahoo."}
+  - {key: world,       ticker: VT,       name: Global equities in rand (VT x USD/ZAR), quote: USD,  note: "From 2008."}
