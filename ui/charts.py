@@ -265,3 +265,24 @@ def budget_bars(budget, names: dict[str, str]) -> go.Figure:
     layout["yaxis"] = dict(layout["yaxis"], showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))
     fig.update_layout(**layout)
     return fig
+
+
+# ---- library -----------------------------------------------------------------------
+
+def history_lines(df, names: dict[str, str], y_title: str, log: bool = False) -> go.Figure:
+    """One line per column over time, in fixed categorical order; direct labels at the line ends."""
+    p = palette()
+    fig = go.Figure()
+    for i, c in enumerate(df.columns):
+        s = df[c].dropna()
+        colour = p["series"][i % len(p["series"])]
+        fig.add_trace(go.Scatter(
+            x=s.index, y=s.values, mode="lines+markers" if len(s) < 30 else "lines", name=names.get(c, c),
+            line=dict(color=colour, width=2), marker=dict(size=8, color=colour, line=dict(width=2, color=p["surface"])),
+            hovertemplate=f"<b>{names.get(c, c)}</b><br>%{{x|%d %b %Y}}<br>%{{y:,.2f}}<extra></extra>",
+        ))
+    layout = base_layout(p, height=380, margin=dict(l=8, r=8, t=40, b=8), showlegend=len(df.columns) > 1)
+    layout["yaxis"] = dict(layout["yaxis"], title=y_title, type="log" if log else "linear")
+    layout["xaxis"] = dict(layout["xaxis"], showgrid=False)
+    fig.update_layout(**layout)
+    return fig

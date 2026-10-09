@@ -4,7 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import active, analysis, data, factors, lookthrough
+from fundlab import active, analysis, content, data, factors, lookthrough
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -110,3 +110,14 @@ def _active(fund_json: str, key: str):
 def active_report(fund: Fund, key: str):
     """(ActiveReport or None, HistoryReport, benchmark tickers lacking history)."""
     return _active(fund.to_json(), key)
+
+
+@st.cache_data(show_spinner=False)
+def _library(stamp: tuple):
+    return content.load_library()
+
+
+def library() -> dict:
+    """All library articles; re-read whenever a file in content/library changes."""
+    files = sorted(content.LIBRARY_PATH.glob("*.md"))
+    return _library(tuple((f.name, f.stat().st_mtime_ns) for f in files))

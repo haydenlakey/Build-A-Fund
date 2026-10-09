@@ -144,3 +144,28 @@ def test_old_benchmark_ticker_in_saved_file_still_works():
     at.switch_page("views/active_bets.py").run()
     no_errors(at)
     assert any(m.label == "Tracking error" for m in at.metric)
+
+
+def test_library_index_and_article():
+    at = fresh()
+    at.switch_page("views/library.py").run()
+    no_errors(at)
+    assert any(t.value == "Library" for t in at.title)
+    next(b for b in at.button if b.key == "open_why-we-invest").click().run()
+    no_errors(at)
+    assert any("Why we invest" in t.value for t in at.title)
+    next(b for b in at.button if "Back to the library" in b.label).click().run()
+    no_errors(at)
+    at.segmented_control(key="lib_section").set_value("case").run()
+    no_errors(at)
+    next(b for b in at.button if b.key == "open_nenegate").click().run()
+    no_errors(at)
+    assert at.get("plotly_chart")  # the case file's chart from bundled prices
+
+
+def test_library_search():
+    at = fresh()
+    at.switch_page("views/library.py").run()
+    at.text_input(key="lib_q").set_value("leverage").run()
+    no_errors(at)
+    assert any(b.key == "open_ltcm" for b in at.button)
