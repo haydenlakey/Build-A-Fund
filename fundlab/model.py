@@ -44,6 +44,7 @@ class FundSettings:
     lookback_years: float = 5.0
     cov_method: str = "ledoit_wolf"
     mean_shrinkage: float = 0.5
+    prior_sharpe: float = 0.3  # user assumption: shrinkage target is rf + prior_sharpe * asset vol
     risk_free: float = 0.07  # user assumption, annual, in rand
     var_alpha: float = 0.95
     var_horizon_weeks: int = 4

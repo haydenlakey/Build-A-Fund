@@ -22,16 +22,32 @@ def prices_to_returns(prices: pd.DataFrame) -> pd.DataFrame:
     return prices.pct_change(fill_method=None).iloc[1:]
 
 
-def mean_returns(returns: pd.DataFrame, shrinkage: float = 0.0) -> pd.Series:
-    """Annualised historical mean, optionally shrunk toward the cross-sectional average.
+def mean_returns(returns: pd.DataFrame, shrinkage: float = 0.0,
+                 target: pd.Series | float | None = None) -> pd.Series:
+    """Annualised historical mean, optionally shrunk toward a target.
 
-    mu_i* = (1 - a) * mu_i + a * mean(mu)   with a in [0, 1].
-    Shrinkage is a blunt but honest response to how noisy sample means are.
+    mu_i* = (1 - a) * mu_i + a * target_i   with a in [0, 1].
+    The default target is the cross-sectional average of mu. Shrinkage is a blunt
+    but honest response to how noisy sample means are.
     """
     if not 0.0 <= shrinkage <= 1.0:
         raise ValueError("shrinkage must be between 0 and 1")
     mu = returns.mean() * PERIODS_PER_YEAR
-    return (1.0 - shrinkage) * mu + shrinkage * mu.mean()
+    if target is None:
+        target = mu.mean()
+    elif isinstance(target, pd.Series):
+        target = target.reindex(mu.index)
+    return (1.0 - shrinkage) * mu + shrinkage * target
+
+
+def equal_sharpe_target(returns: pd.DataFrame, risk_free: float, prior_sharpe: float) -> pd.Series:
+    """Prior expected return for each asset: rf + S * sigma_i (every asset earns the same Sharpe ratio S).
+
+    Depends only on each asset's own volatility, so an asset's prior does not change
+    with whatever else is being analysed alongside it.
+    """
+    sigma = returns.std(ddof=1) * np.sqrt(PERIODS_PER_YEAR)
+    return risk_free + prior_sharpe * sigma
 
 
 def mean_standard_error(returns: pd.Series) -> float:

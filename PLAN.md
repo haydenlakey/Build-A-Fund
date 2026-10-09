@@ -9,7 +9,7 @@ _Last updated: 2026-10-09_
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
-| 1 | Fund builder and core risk maths | **In progress.** Maths, data layer, universe, bundled sample and 52 tests are done. Still to do: analysis/verdict layer and the whole UI. |
+| 1 | Fund builder and core risk maths | **In progress.** All of `fundlab` (maths, data, analysis, verdict) is done, with 65 tests. Still to do: the UI (app.py + Build page) and the browser check. |
 | 2 | Composition, risk and reality-check views | Not started |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
@@ -27,8 +27,8 @@ _Last updated: 2026-10-09_
 - [x] `data/universe.yaml`: 41 Top 40 lines, 31 JSE ETFs, 37 US shares, 16 US ETFs, 8 factors. JSE ETF TERs, holdings and sector splits are **deferred to phase 2** (look-through)
 - [x] `fundlab/data.py`: Universe (load/search/kind_of), quote units, 100× repair, daily→Friday weekly resample, rand conversion, retrying download, PriceStore (sample → cache → live, failures recorded, `history_from` cut-offs)
 - [x] `scripts/build_sample.py` + `data/sample/prices_native.parquet` (129 tickers × 1 658 weeks, 1995-01-06 to 2026-10-09, about 740 KB) + `meta.json`
-- [ ] `fundlab/analysis.py`: history window rule, `FundStats`, before/after comparison on a common window
-- [ ] `fundlab/verdict.py`: plain-language verdict
+- [x] `fundlab/analysis.py`: `history_window` (short-history rule), `estimate`, `FundStats`, `compare` (common window + shared frontier), `correlation_with_rest`
+- [x] `fundlab/verdict.py`: plain-language verdict (add/increase/decrease/remove × correlation bands), plus Sharpe, frontier-distance and concentration notes. Tested to never use buy/sell/should/recommend
 - [ ] `app.py` + Build page: name the fund, search a ticker, enter rands, preview → before/after panel, animated frontier marker, verdict, save/load/duplicate, share link, disclaimer
 - [x] `.github/workflows/refresh-data.yml`: Saturdays 06:00 UTC plus manual run; commits only when the data changed. **Untested until the repo is on GitHub.**
 - [ ] Run the app, check it at desktop and phone widths, fix what's broken
@@ -100,13 +100,21 @@ Inferred from the code (not discussed explicitly):
 - *(inferred)* Ledoit-Wolf shrinks toward the **constant-correlation** target (LW 2004
   "Honey, I shrunk…"), not the scaled identity. A scaled-identity target pulls equity
   correlations toward 0 and understates risk.
-- *(inferred)* Mean shrinkage pulls each asset toward the cross-sectional average with
-  intensity `a` (default 0.5). That preserves the average.
+- **Mean shrinkage target (changed 2026-10-09):** each asset is shrunk toward an *equal-Sharpe prior*
+  rf + S·σᵢ (`prior_sharpe` S = 0.3, `mean_shrinkage` a = 0.5; both editable assumptions). The first version shrank
+  toward the cross-sectional mean, which made the 'before' fund's expected return change with whichever
+  candidate was being previewed (12.9% vs 21.6% for the same fund). The equal-Sharpe prior depends only on each
+  asset's own volatility, so bonds and gold aren't pulled toward equity returns. `estimators.mean_returns` still
+  defaults to the cross-sectional mean when no target is given.
 - *(inferred)* EWMA λ = 0.97 on weekly data (half-life of about 23 weeks), with weighted-sample bias correction.
 - *(inferred)* Monte Carlo rebalances weekly and simulates at fund level. Student-t uses a shared
   chi-square mixing variable, so crashes hit all assets at once, and it's scaled to keep the
   same covariance. MC→parametric equality only holds exactly at a 1-week horizon (compounding).
-- *(inferred)* Efficiency gap = fund vol minus frontier vol at the same expected return, measured against **the fund's own holdings' frontier**.
+- **Efficiency gap (changed 2026-10-09):** fund vol minus frontier vol at the same expected return, measured for
+  before *and* after against **one shared frontier built from the union of both versions' holdings**
+  (`Comparison.frontier`, `gap_before`, `gap_after`). Measuring each against its own frontier made every
+  addition look like it moved away from efficient, because the new asset also expands the frontier.
+  `FundStats.frontier`/`efficiency_gap` (own holdings) are kept for single-fund views.
 - Prices are total-return (yfinance `auto_adjust=True`, so dividends are reinvested via adjusted closes).
 - **Data pipeline (decided 2026-10-09):** download *daily* closes and resample to Friday week-ends
   ourselves, because Yahoo's weekly bars use different anchors per ticker (Monday for JSE, Sunday for US,
@@ -176,5 +184,7 @@ Inferred from the code (not discussed explicitly):
 
 ## Next step
 
-Write `fundlab/analysis.py` (history-window rule, `FundStats`, before/after on a common window, with tests)
-and `fundlab/verdict.py` (plain-language verdict, with tests). Then build `app.py` + the Build page.
+Build `app.py` + the Build page in `ui/`: disclaimer, fund name, ticker search (universe + any JSE/US ticker),
+rand amount, staged change → before/after panel, animated risk-return chart with the shared frontier, verdict,
+save/load/duplicate, share link, settings (lookback, covariance method, shrinkage, prior Sharpe, rf, seed).
+Then run it and check it at desktop and phone widths (AppTest + Playwright screenshots).
