@@ -3,140 +3,154 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-09_
+_Last updated: 2026-10-09 (end of Phase 1)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
-| 1 | Fund builder and core risk maths | **In progress.** All of `fundlab` (maths, data, analysis, verdict) is done, with 65 tests. Still to do: the UI (app.py + Build page) and the browser check. |
-| 2 | Composition, risk and reality-check views | Not started |
+| 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop, phone and dark mode. |
+| 2 | Composition, risk and reality-check views | Not started. **Next.** |
 | 3 | Library and insight pop-ups | Not started |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
 | 5 | Fact sheet and polish | Not started |
 
-### Phase 1 checklist
+### Phase 1: what was delivered
 
-- [x] `fundlab/estimators.py`: mean (+ shrinkage, standard error), sample / Ledoit-Wolf / EWMA covariance
-- [x] `fundlab/risk.py`: vol, Euler risk contributions, Sharpe, diversification ratio, effective holdings, drawdown, average correlation, rolling vol
-- [x] `fundlab/var.py`: parametric (normal, t), historical and Monte Carlo VaR/ES
-- [x] `fundlab/frontier.py`: long-only efficient frontier, efficiency gap
-- [x] `fundlab/active.py`: active weights, TE, TE budget, pairwise bet, average-vol/average-corr rule of thumb (built early because the spec's quality bar tests it)
-- [x] `fundlab/model.py`: Fund / Holding / FundSettings, derived weights, JSON and share-link encoding
-- [x] `tests/test_maths.py` (30 tests) and `tests/test_data.py` (22 tests, offline): weights sum to 1, RCs sum to vol, MC→parametric (normal and t), pairwise bet 4.43%/87.1%/12.9%, LW partial shrinkage, cents/FX/anchor handling, 100× repair, bundled-sample sanity
-- [x] `data/universe.yaml`: 41 Top 40 lines, 31 JSE ETFs, 37 US shares, 16 US ETFs, 8 factors. JSE ETF TERs, holdings and sector splits are **deferred to phase 2** (look-through)
-- [x] `fundlab/data.py`: Universe (load/search/kind_of), quote units, 100× repair, daily→Friday weekly resample, rand conversion, retrying download, PriceStore (sample → cache → live, failures recorded, `history_from` cut-offs)
-- [x] `scripts/build_sample.py` + `data/sample/prices_native.parquet` (129 tickers × 1 658 weeks, 1995-01-06 to 2026-10-09, about 740 KB) + `meta.json`
-- [x] `fundlab/analysis.py`: `history_window` (short-history rule), `estimate`, `FundStats`, `compare` (common window + shared frontier), `correlation_with_rest`
-- [x] `fundlab/verdict.py`: plain-language verdict (add/increase/decrease/remove × correlation bands), plus Sharpe, frontier-distance and concentration notes. Tested to never use buy/sell/should/recommend
-- [ ] `app.py` + Build page: name the fund, search a ticker, enter rands, preview → before/after panel, animated frontier marker, verdict, save/load/duplicate, share link, disclaimer
-- [x] `.github/workflows/refresh-data.yml`: Saturdays 06:00 UTC plus manual run; commits only when the data changed. **Untested until the repo is on GitHub.**
-- [ ] Run the app, check it at desktop and phone widths, fix what's broken
+- `fundlab/` (pure Python): estimators, risk, VaR/ES (3 ways), frontier, active bets, model, data, analysis, verdict
+- `data/universe.yaml` (125 holdings + 8 factors) and `data/sample/prices_native.parquet` (129 series × 1 658 weeks, 1995-01-06 → 2026-10-09)
+- `scripts/build_sample.py` and a weekly GitHub Action to refresh the sample (untested until the repo is on GitHub)
+- App: `app.py` (navigation + sidebar: fund picker, New/Copy/Delete, save to file, open file, share link,
+  assumptions and settings including a visible seed), `views/build.py`, `views/about.py`
+- Build page: search the universe or any JSE/US ticker → rand amount → live preview with **verdict**,
+  **before/after metric cards** (change highlighted, rounding-to-zero shown neutral), **risk-return chart**
+  (holdings, shared efficient frontier, hollow "before", orange "after", arrow, **▶ Replay the move** animation),
+  "What am I looking at?" + "Show me the maths" (LaTeX), history-window notes and warnings, holdings table with
+  share of rands vs share of risk. Nothing changes until the user presses Add/Apply.
+- Tests: `test_maths.py` (30), `test_data.py` (22), `test_analysis.py` (13), `test_app.py` (7, headless AppTest)
+- `scripts/browser_check.py`: Playwright screenshots at 3 viewports + console-error check + animation check
+
+### Moved from phase 1 to phase 2 (as in the original plan table)
+
+- Compare funds side by side (funds can already be duplicated, saved and loaded)
+- "Explore diversifiers" from the preset universe
+
+## Phase 2 plan (next)
+
+Pages: **What kind of fund is it?** (composition), **Risk detail**, **Reality check**, plus the diversifier
+explorer and side-by-side comparison. In order:
+1. Research and add JSE ETF look-through data to `universe.yaml`: TER, top holdings, sector split, each with
+   source URL and as-of date (from provider fact sheets). Resolve the `tracks: null` entries.
+2. `fundlab/lookthrough.py` + composition page: sunburst/treemap by sector, asset type, country, currency;
+   tilt labels (tech-heavy, resources-heavy, rand-hedge, bank-heavy); concentration (top-5, effective
+   holdings, dominance warning); risk-vs-money paired bars.
+3. `fundlab/factors.py`: betas to Top 40, S&P 500 (rand), USD/ZAR, gold, commodities with CIs (OLS + HAC);
+   clustered correlation heatmap.
+4. Active bets view: benchmark picker, active weights, TE, TE budget, rule-of-thumb comparisons (maths already in `active.py`).
+5. Risk detail: VaR/ES 3 ways side by side, simulated rand distribution, fan chart, stress tests
+   (2008, Dec 2015, Mar 2020, 2022, Jul 2026), drawdown and rolling vol, leverage toggle.
+6. Reality check: costs drag (TER + editable brokerage, R lost over 10/20 years), backtest vs Top 40,
+   S&P 500 in rand, balanced proxy, equal-weight, with rebalancing; optimiser comparison with caveats.
+7. Explore diversifiers; side-by-side fund comparison.
 
 ## Architecture (as it exists)
 
 ```
 Build A Fund/
-├── CLAUDE.md, PLAN.md, requirements.txt (pinned), .gitignore
-├── docs/ORIGINAL_PROMPT.md
-└── fundlab/               # pure Python, no Streamlit
-    ├── __init__.py        # PERIODS_PER_YEAR = 52
-    ├── estimators.py      # prices_to_returns, mean_returns, mean_standard_error, sample_cov, ewma_cov,
-    │                      # ledoit_wolf_cov (→ cov, delta), covariance(method), cov_to_corr
-    ├── risk.py            # portfolio_return/vol, risk_contributions, risk_shares, sharpe,
-    │                      # diversification_ratio, effective_holdings, portfolio_returns,
-    │                      # drawdown_series, max_drawdown, average_correlation, rolling_vol
-    ├── var.py             # parametric_var_es, horizon_returns, historical_var_es, simulate_paths, mc_var_es
-    ├── frontier.py        # Frontier dataclass (vol_at), efficient_frontier, efficiency_gap
-    ├── active.py          # active_weights, tracking_error, te_budget, pairwise_bet, te_rule_of_thumb
-    └── model.py           # Holding, FundSettings, Fund, HOLDING_KINDS, share codes
+├── app.py                 # entry: page config, st.navigation, sidebar (fund manager + settings)
+├── views/                 # pages (not pages/, to avoid Streamlit's legacy auto-pages)
+│   ├── build.py           # Build your fund (centrepiece)
+│   └── about.py           # About and data
+├── ui/                    # Streamlit-only helpers
+│   ├── state.py           # session funds, active fund, example fund, share-link parse/build
+│   ├── cached.py          # cached universe/PriceStore, labels, cached compare()
+│   ├── charts.py          # risk_return() Plotly figure with frames + Replay button
+│   ├── components.py      # disclaimer, chart_notes (what/maths), metric_panel, rand/pct formatting
+│   └── theme.py           # light/dark palette (reference data-viz palette), base Plotly layout
+├── fundlab/               # pure Python, never imports Streamlit
+│   ├── __init__.py        # PERIODS_PER_YEAR = 52
+│   ├── estimators.py      # returns, mean (+ target shrinkage, equal_sharpe_target, SE), sample/LW/EWMA cov
+│   ├── risk.py            # vol, Euler RCs, risk shares, Sharpe, div ratio, eff. holdings, drawdown, avg corr
+│   ├── var.py             # parametric (normal/t), historical, Monte Carlo VaR/ES
+│   ├── frontier.py        # long-only frontier (warm-started SLSQP), efficiency_gap
+│   ├── active.py          # active weights, TE, TE budget, pairwise bet, rule of thumb
+│   ├── model.py           # Holding, FundSettings, Fund, JSON + share codes
+│   ├── data.py            # Universe, quote units, cleaning, weekly resample, FX, download, PriceStore
+│   ├── analysis.py        # history_window, estimate, FundStats, compare (shared window + frontier)
+│   └── verdict.py         # plain-language verdict
+├── data/universe.yaml, data/sample/{prices_native.parquet, meta.json}, data/cache/ (git-ignored)
+├── scripts/build_sample.py, scripts/browser_check.py
+├── tests/ (test_maths, test_data, test_analysis, test_app), pytest.ini
+├── .streamlit/config.toml # theme primaryColor blue
+├── .github/workflows/refresh-data.yml
+└── requirements.txt (pinned), requirements-dev.txt (+ playwright)
 ```
 
-Also present: `fundlab/data.py`, `data/universe.yaml`, `data/sample/` (parquet + meta.json),
-`scripts/build_sample.py`, `tests/` (test_maths.py, test_data.py), `pytest.ini`,
-`.github/workflows/refresh-data.yml`. `data/cache/` (live downloads) is git-ignored.
+Not yet created: `content/` (library Markdown, glossary.yaml, rules.yaml), further views.
 
-Planned (not yet created): `fundlab/analysis.py`, `fundlab/verdict.py`, `app.py`, `pages/`, `ui/`,
-`content/` (library Markdown, glossary.yaml, rules.yaml).
-
-## Data model (as it exists in `fundlab/model.py`)
+## Data model
 
 - **Holding**: `ticker, name, kind, amount_zar, currency="ZAR", method="price_history"`.
   `kind` ∈ jse_share, jse_etf, us_share, us_etf, unit_trust, unlisted. `method` ∈
   price_history, uploaded, allocation_model, assumptions. Negative amounts are rejected.
-- **FundSettings**: `lookback_years=5, cov_method="ledoit_wolf", mean_shrinkage=0.5,
+- **FundSettings**: `lookback_years=5, cov_method="ledoit_wolf", mean_shrinkage=0.5, prior_sharpe=0.3,
   risk_free=0.07, var_alpha=0.95, var_horizon_weeks=4, seed=42, benchmark="STX40.JO"`.
-- **Fund**: `name, holdings, objective, settings, id` (8-hex uuid). `weights()` and
-  `amounts()` merge duplicate tickers and drop zero amounts. Edits (`with_amount`,
-  `without`, `copy`) return new Funds. Serialised as JSON with `schema_version = 1`.
-  Share code = zlib + URL-safe base64 of compact JSON (about 400 characters for 3 holdings).
-- Still to add (phase 4): unlisted parameters (`exp_return, low, high, lockin_years,
-  p_total_loss, assumed_corr`).
+  Unknown keys in a loaded file are ignored; missing keys take defaults.
+- **Fund**: `name, holdings, objective, settings, id`. `weights()`/`amounts()` merge duplicate tickers, drop zeros.
+  Edits return new Funds. JSON with `schema_version = 1`. Share code = zlib + URL-safe base64 (`?fund=`).
+- **Universe entry** (`universe.yaml`): ticker, name, sector, industry/region, country, exposure
+  (sa / sa_dollar / africa / mixed / global), themes, optional `history_from`, `tracks`, `ter`.
+  `kind` and `currency` are added on load.
+- Still to add (phase 4): unlisted parameters (`exp_return, low, high, lockin_years, p_total_loss, assumed_corr`).
 
 ## Decisions made
 
 Agreed with the user (2026-10-08):
 - Stack: Streamlit + Plotly, pure-Python `fundlab` core, Streamlit Community Cloud. Zero cost.
-- The case-file list (44 files in 10 groups) is approved. It's listed below.
-- Situational Awareness: report the conflicting figures as a sourced range (about $20bn
-  vs about $45bn AUM; about $16bn public book sold to Citadel at roughly a 10% discount),
-  not a single "$45bn→$10bn" figure.
-- Add a GitHub Action that refreshes the bundled data weekly. The repo will be public.
-- A new "Liquidity and locked money" lesson group, so the "can't sell in a hurry" rule has a case file to link to.
+- Case-file list approved (44 files, 10 groups; below).
+- Situational Awareness: report the conflicting figures as a sourced range (about $20bn vs about $45bn AUM; about $16bn
+  public book sold to Citadel at roughly a 10% discount), not a single "$45bn→$10bn" figure.
+- A weekly GitHub Action refreshes the bundled data. The repo will be public.
+- A new "Liquidity and locked money" lesson group (for the "can't sell in a hurry" rule).
 
-Proposed in the plan and accepted along with it:
-- **Weekly returns**, not daily: the JSE and US markets close at different times, which biases daily cross-market correlations down.
-- **Short-history rule**: stats use the window all holdings share. Below 156 weeks, warn.
-  Below 52 weeks, leave the holding out of the stats (with a label and an override option).
-  Before/after comparisons use the window of the union of both funds, so the change reflects the holding, not the window.
-- **Benchmark proxies**: Top 40 = STX40.JO; S&P 500 in rand = ^GSPC × USDZAR; the balanced
-  benchmark is a transparent ETF mix (60% SA equity / 20% SA bonds / 20% global), labelled as a proxy.
-- **Unlisted correlation** with listed equity is user-set, default 0.5 (not 0).
-- Bundled data is the primary source on Streamlit Cloud, because Yahoo often blocks cloud IPs. Live fetching is a bonus.
-- Fact-sheet PDF: fpdf2 + matplotlib (avoids kaleido/Chrome on Cloud).
-- Glossary tooltips must open on tap (there's no hover on phones).
+Accepted with the plan:
+- **Weekly returns** (JSE/US close at different times, which biases daily cross-market correlations).
+- **Short-history rule**: shared window; exclude a holding with < 52 weekly returns in it; warn if the window is
+  < 156 weeks. Before/after use the window of the union of both versions. (The planned "override to include
+  a short holding" is **not built yet**.)
+- Benchmark proxies: Top 40 = STX40.JO (or ^J200.JO for long history); S&P 500 in rand = SPY × USDZAR;
+  balanced = transparent ETF mix, labelled as a proxy.
+- Unlisted correlation with listed equity user-set, default 0.5.
+- Bundled data is primary on Streamlit Cloud; live fetching is a bonus.
+- Fact-sheet PDF: fpdf2 + matplotlib. Glossary tooltips must open on tap.
 
-Inferred from the code (not discussed explicitly):
-- *(inferred)* Ledoit-Wolf shrinks toward the **constant-correlation** target (LW 2004
-  "Honey, I shrunk…"), not the scaled identity. A scaled-identity target pulls equity
-  correlations toward 0 and understates risk.
-- **Mean shrinkage target (changed 2026-10-09):** each asset is shrunk toward an *equal-Sharpe prior*
-  rf + S·σᵢ (`prior_sharpe` S = 0.3, `mean_shrinkage` a = 0.5; both editable assumptions). The first version shrank
-  toward the cross-sectional mean, which made the 'before' fund's expected return change with whichever
-  candidate was being previewed (12.9% vs 21.6% for the same fund). The equal-Sharpe prior depends only on each
-  asset's own volatility, so bonds and gold aren't pulled toward equity returns. `estimators.mean_returns` still
-  defaults to the cross-sectional mean when no target is given.
-- *(inferred)* EWMA λ = 0.97 on weekly data (half-life of about 23 weeks), with weighted-sample bias correction.
-- *(inferred)* Monte Carlo rebalances weekly and simulates at fund level. Student-t uses a shared
-  chi-square mixing variable, so crashes hit all assets at once, and it's scaled to keep the
-  same covariance. MC→parametric equality only holds exactly at a 1-week horizon (compounding).
-- **Efficiency gap (changed 2026-10-09):** fund vol minus frontier vol at the same expected return, measured for
-  before *and* after against **one shared frontier built from the union of both versions' holdings**
-  (`Comparison.frontier`, `gap_before`, `gap_after`). Measuring each against its own frontier made every
-  addition look like it moved away from efficient, because the new asset also expands the frontier.
-  `FundStats.frontier`/`efficiency_gap` (own holdings) are kept for single-fund views.
-- Prices are total-return (yfinance `auto_adjust=True`, so dividends are reinvested via adjusted closes).
-- **Data pipeline (decided 2026-10-09):** download *daily* closes and resample to Friday week-ends
-  ourselves, because Yahoo's weekly bars use different anchors per ticker (Monday for JSE, Sunday for US,
-  Thursday-to-Wednesday weeks for some JSE ETFs). Store native units after cleaning (JSE ÷100 to rand);
-  convert USD→ZAR on load. Indices (`^J200.JO`) are in points, not cents.
-- Universe `sector` uses Yahoo/Morningstar sector names for both JSE and US, so there's one scheme. JSE
-  rows are curated: e.g. Naspers/Prosus are "Technology", not Yahoo's "Consumer Cyclical / Internet Retail".
-  `exposure` (sa / sa_dollar / africa / mixed / global) is a curated approximation and drives rand-hedge labelling.
-- Commodity factor = DBC ETF in rand (Yahoo has no ^BCOM). Gold = GC=F futures in rand.
-- Only JSE (.JO) and US-listed tickers are accepted as ad-hoc search entries (`data.is_supported`).
-- *(inferred)* Risk-free default 7% is a placeholder user assumption, not a sourced figure.
+Made during build (2026-10-09):
+- **Data pipeline:** daily closes resampled to Friday week-ends (Yahoo's weekly bars use inconsistent anchors);
+  store native units after cleaning (JSE ÷100); USD→ZAR on load; indices are points; total-return prices.
+- **Mean shrinkage toward an equal-Sharpe prior** rf + S·σᵢ (S = 0.3, a = 0.5, both editable). Shrinking toward the
+  cross-sectional mean made the "before" fund move with the previewed candidate (12.9% vs 21.6%).
+- **Efficiency gap against one shared frontier** (union of before and after holdings). Per-fund frontiers made every
+  addition look like a move away from efficient. `compare()` skips the per-fund frontiers (7 s → 1.1 s).
+- Universe sectors use Yahoo/Morningstar names for JSE and US alike; JSE rows curated (Naspers/Prosus = Technology).
+- Commodity factor = DBC in rand (no ^BCOM on Yahoo). Gold = GC=F in rand.
+- Ad-hoc tickers: only JSE (.JO) and US-listed (`data.is_supported`).
+- Verdict wording describes, never recommends (a test bans buy/sell/should/recommend).
+- Pages live in `views/` and are registered with `st.navigation`.
+- Theme primary colour is blue (#2a78d6), so neutral progress bars don't read as alarms.
+- VaR on the Build page is parametric normal, with the horizon/confidence from settings; historical VaR is computed
+  (`FundStats.var_hist`) but only shown in Phase 2's risk page.
+- *(inferred)* Ledoit-Wolf shrinks toward the constant-correlation target; EWMA λ = 0.97 weekly; MC rebalances weekly,
+  t innovations share one chi-square draw; risk-free 7% is a placeholder assumption.
 
 ## Research done so far
 
-- **Top 40 constituents** (41 lines, because Investec has Ltd and PLC listings) as at 8 Oct 2026, from Satrix's product page
-  (https://satrix.co.za/products/product-details?id=44, accessed 2026-10-08):
-  ABG, AGL, ANG, ANH, APN, BHG, BID, BTI, BVT, CFR, CLS, CPI, DSY, FSR, GFI, GLN, GRT, HAR,
-  IMP, INL, INP, MRP, MTN, NED, NPH, NPN, NRP, OMU, OUT, PAN, PPH, PRX, REM, RNI, SBK, SHP,
-  SLM, SOL, SSW, VAL, VOD. The same page gives an STX40 TER of 0.10%.
-- **Situational Awareness** and the **July 2026 AI sell-off** were confirmed on 2026-10-08. Sources: Quartz,
-  Yahoo Finance, CNBC (5 Aug and 21 Aug 2026), Crypto Briefing, SpotGamma, NBC News, CNBC
-  (29 Jul), Bloomberg (28 Jul), XTB. URLs are in the session transcript; copy them into the case files when writing them.
+- **Top 40** (41 lines incl. Investec Ltd + PLC) as at 8 Oct 2026, from https://satrix.co.za/products/product-details?id=44
+  (accessed 2026-10-08). STX40 TER 0.10% on the same page.
+- **Situational Awareness** and the **July 2026 AI sell-off** confirmed 2026-10-08. Sources: Quartz
+  (qz.com/situational-awareness-hedge-fund-margin-call-citadel-fire-sale-073126), Yahoo Finance, CNBC 5 Aug 2026
+  and 21 Aug 2026, Crypto Briefing, SpotGamma, NBC News (Nasdaq-100 correction 28 Jul), CNBC 29 Jul (chip
+  sell-off), Bloomberg 28 Jul, XTB 7 Jul. Copy the full URLs into the case files when writing them.
+- US sector/industry/country and US ETF expense ratios: Yahoo Finance via yfinance (accessed 2026-10-09).
 
 ## Approved case-file list (44)
 
@@ -153,38 +167,28 @@ Inferred from the code (not discussed explicitly):
 
 ## Known bugs and issues
 
-- **pip hung** on the first combined install of all packages (killed after about 15 min, cause unknown).
-  Installing in two smaller groups worked. Everything is now installed and pinned in `requirements.txt`
-  (streamlit 1.65.0, plotly 7.1.0, yfinance 1.7.0, pandas 2.3.3, numpy 2.2.6, scipy 1.15.3, pyarrow 25.0.1).
-- `Fund.with_amount` defaults `kind="jse_share"` when adding a new ticker. Callers must pass
-  the correct kind, or US shares would be mislabelled. Fix when the universe lookup exists.
-- **Data limits found 2026-10-09:**
-  - Yahoo's USD/ZAR (ZAR=X) starts Dec 2003, so nothing priced in dollars has a rand series before 2004.
-    The 1997/1998/2001 episodes can't be replayed for US holdings.
-  - JSE share history on Yahoo starts Jan 2000 at the earliest. ^J200.JO (Top 40 price index) goes back to 1995.
-  - STX40.JO on Yahoo starts only in 2009 (the fund itself is older). SA bonds (STXGOV.JO) start only in May 2020,
-    which limits the balanced benchmark's history. Need a longer SA bond proxy (open question).
-  - Short JSE histories: CFR.JO from 2023, BHG.JO 2022, NPH.JO 2021, SSW.JO 2020, PRX.JO 2019, CRWV 2025.
-  - OUT.JO's history before 2011-03-18 is a predecessor company (−82% artefact week). Cut via `history_from`.
-  - Six ETF tickers return nothing: STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN.
-  - CoreShares ETFs are now branded 10X. ETFSWX is now "1nvest Capped All Share". Names were fixed from Yahoo longName.
-  - The scan of extreme weekly moves found no other glitches (remaining extremes like Sasol in Mar 2020 and BAC in Mar 2009 are real).
-- yfinance works locally (probe on 2026-10-09). STX40.JO returned 10 280, i.e. cents (R102.80,
-  consistent with Satrix's NAV of R101.21 on 8 Oct), which confirms the ÷100 rule. Not yet tested from Streamlit Cloud.
-- Smoke test note: with data simulated from an exactly constant-correlation model, LW delta = 1.0.
-  That's correct (the target is the truth), but the real test should use a non-constant correlation structure.
+- **Cold start is slow on this machine:** importing the stack takes about 20 s on the first run (probably antivirus
+  scanning the venv). Each interaction then takes about 1.5 s. Check on Streamlit Cloud.
+- **Fund marker can hide a holding's label** on the risk-return chart when they coincide (e.g. "STX500" on a phone).
+  Phase 5 polish.
+- **The arrow is invisible for very small moves** (markers overlap); Replay still shows the motion.
+- **Holdings table on phones:** Ticker/Type scroll off to the right (by design: key columns first).
+- `Fund.with_amount` defaults `kind="jse_share"`; the Build page passes the universe kind, but other callers must too.
+- **Data limits:** USD/ZAR from Dec 2003 only; JSE shares from 2000 at the earliest; STX40.JO from 2009; STXGOV.JO
+  (SA bonds) from May 2020; short JSE listings (CFR 2023, BHG 2022, NPH 2021, SSW 2020, PRX 2019); CRWV from 2025.
+  OUT.JO before 2011-03-18 is a predecessor company (cut via `history_from`). Six ETF tickers return nothing
+  (STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN).
+- The GitHub Action and Streamlit Cloud deployment are untested (no GitHub repo yet).
+- CRLF warnings on commit (Windows). Harmless; add `.gitattributes` if they get annoying.
 
 ## Open questions
 
-- The risk-free rate default (7%) needs a sourced current SA 91-day T-bill rate, or a clear "your assumption" label.
-- Which JSE ETFs make the universe, and their TERs/holdings from current fact sheets (each with an as-of date).
+- Risk-free default (7%): replace with a sourced current SA 91-day T-bill yield (with date), or keep it as a labelled assumption.
 - A longer free SA government bond series for the balanced benchmark (STXGOV.JO starts 2020).
-- `tracks: null` ETFs in universe.yaml: confirm each index from the provider's fact sheet in phase 2.
-- Browser checking: Playwright + headless Chromium (free) for desktop/phone screenshots. Not installed yet.
+- Should a user be able to force-include a holding with < 52 weeks of history (planned override, not built)?
+- GitHub repo name/visibility, and when to deploy to Streamlit Community Cloud (needs the user's GitHub account).
 
 ## Next step
 
-Build `app.py` + the Build page in `ui/`: disclaimer, fund name, ticker search (universe + any JSE/US ticker),
-rand amount, staged change → before/after panel, animated risk-return chart with the shared frontier, verdict,
-save/load/duplicate, share link, settings (lookback, covariance method, shrinkage, prior Sharpe, rf, seed).
-Then run it and check it at desktop and phone widths (AppTest + Playwright screenshots).
+Phase 2, step 1: research JSE ETF fact sheets (TER, top holdings, sector split, index tracked, each with URL and
+as-of date) and add them to `universe.yaml`; then build `fundlab/lookthrough.py` and the composition page.

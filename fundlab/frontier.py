@@ -25,12 +25,15 @@ class Frontier:
         return float(np.interp(target_ret, self.rets, self.vols))
 
 
-def _min_var(cov: np.ndarray, mu: np.ndarray, target: float | None) -> np.ndarray | None:
+def _min_var(cov: np.ndarray, mu: np.ndarray, target: float | None,
+             w0: np.ndarray | None = None) -> np.ndarray | None:
     n = len(mu)
-    cons = [{"type": "eq", "fun": lambda w: w.sum() - 1.0}]
+    ones = np.ones(n)
+    cons = [{"type": "eq", "fun": lambda w: w.sum() - 1.0, "jac": lambda w: ones}]
     if target is not None:
-        cons.append({"type": "eq", "fun": lambda w: w @ mu - target})
-    res = minimize(lambda w: w @ cov @ w, np.full(n, 1.0 / n), jac=lambda w: 2 * cov @ w,
+        cons.append({"type": "eq", "fun": lambda w: w @ mu - target, "jac": lambda w: mu})
+    start = np.full(n, 1.0 / n) if w0 is None else w0
+    res = minimize(lambda w: w @ cov @ w, start, jac=lambda w: 2 * cov @ w,
                    bounds=[(0.0, 1.0)] * n, constraints=cons, method="SLSQP",
                    options={"maxiter": 500, "ftol": 1e-12})
     return res.x if res.success else None
@@ -48,10 +51,12 @@ def efficient_frontier(mu: pd.Series, cov: pd.DataFrame, n_points: int = 30) -> 
         return Frontier(np.array([]), np.array([]), [])
     r_lo, r_hi = float(w0 @ m), float(m.max())
     rets, vols, ws = [], [], []
+    prev = w0
     for t in np.linspace(r_lo, r_hi, n_points):
-        w = w0 if t == r_lo else _min_var(s, m, t)
+        w = w0 if t == r_lo else _min_var(s, m, t, prev)  # warm start from the previous point
         if w is None:
             continue
+        prev = w
         w = np.clip(w, 0, None)
         w /= w.sum()
         rets.append(float(w @ m))

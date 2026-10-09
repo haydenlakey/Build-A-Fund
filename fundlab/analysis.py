@@ -149,7 +149,11 @@ def fund_stats(fund: Fund, est: Estimates, settings: FundSettings | None = None,
     pr = risk.portfolio_returns(w, est.returns)
     p_var, p_es = var.parametric_var_es(ret, vol, s.var_horizon_weeks, s.var_alpha)
     h_var, _ = var.historical_var_es(pr, s.var_horizon_weeks, s.var_alpha)
-    fr = frontier.efficient_frontier(mu, cov, frontier_points)
+    if frontier_points:
+        fr = frontier.efficient_frontier(mu, cov, frontier_points)
+        gap = frontier.efficiency_gap(ret, vol, fr)
+    else:  # caller measures against a shared frontier instead
+        fr, gap = frontier.Frontier(np.array([]), np.array([]), []), float("nan")
     return FundStats(
         weights=w, coverage=coverage, total_zar=fund.total_zar,
         exp_return=ret, exp_return_se=estimators.mean_standard_error(pr),
@@ -157,7 +161,7 @@ def fund_stats(fund: Fund, est: Estimates, settings: FundSettings | None = None,
         max_drawdown=risk.max_drawdown(pr), var=p_var, es=p_es, var_hist=h_var,
         div_ratio=risk.diversification_ratio(w, cov), eff_holdings=risk.effective_holdings(w),
         avg_corr=risk.average_correlation(w, cov), risk_shares=risk.risk_shares(w, cov),
-        port_returns=pr, frontier=fr, efficiency_gap=frontier.efficiency_gap(ret, vol, fr),
+        port_returns=pr, frontier=fr, efficiency_gap=gap,
         excluded=excluded,
     )
 
@@ -187,8 +191,8 @@ def compare(before: Fund, after: Fund, prices: pd.DataFrame, settings: FundSetti
     s = settings or after.settings
     tickers = list(dict.fromkeys(list(before.weights().index) + list(after.weights().index)))
     est = estimate(prices, tickers, s)
-    b = fund_stats(before, est, s, frontier_points)
-    a = fund_stats(after, est, s, frontier_points)
+    b = fund_stats(before, est, s, frontier_points=0)
+    a = fund_stats(after, est, s, frontier_points=0)
     if est.mu.empty:
         return Comparison(b, a, est, frontier.Frontier(np.array([]), np.array([]), []))
     fr = frontier.efficient_frontier(est.mu, est.cov, frontier_points)

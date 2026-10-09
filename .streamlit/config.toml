@@ -1,0 +1,9 @@
+[theme]
+# Blue rather than Streamlit's default red, so neutral bars (e.g. "share of risk") don't read as alarms.
+primaryColor = "#2a78d6"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
