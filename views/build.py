@@ -50,20 +50,25 @@ mean, $a$ the shrinkage and $S$ the prior Sharpe ratio (both in *Assumptions and
 
 
 def holding_picker(fund: Fund):
-    """Returns (ticker, amount) for the change being considered, or (None, None)."""
+    """Returns (ticker, amount) for the change being considered. amount is None until one is entered.
+
+    Widget keys carry a generation number that apply() bumps, so after each change the picker
+    really starts afresh (deleting the keys alone leaves the browser showing the old choice).
+    """
     uni = cached.universe()
+    gen = st.session_state.setdefault("picker_gen", 0)
     held = [h.ticker for h in fund.holdings]
     options = held + [t for t in uni.entries if t not in held] + [OTHER]
     c1, c2 = st.columns([3, 2], vertical_alignment="bottom")
     sel = c1.selectbox(
-        "Search for a share or ETF", options, index=None, key="pick",
-        placeholder="Type a name or ticker, e.g. Naspers or NPN",
+        "Search for a share or ETF", options, index=None,
+        placeholder="Type a name or ticker, e.g. Naspers or NPN", key=f"pick_{gen}",
         format_func=lambda t: "Another JSE or US ticker…" if t == OTHER else
         ("✓ " if t in held else "") + cached.label(t))
     ticker = sel
     if sel == OTHER:
         raw = c1.text_input("Ticker", placeholder="JSE tickers end in .JO, e.g. KIO.JO; US tickers have no suffix, e.g. AAPL",
-                            key="other_ticker").strip().upper()
+                            key=f"other_ticker_{gen}").strip().upper()
         if not raw:
             return None, None
         if not data.is_supported(raw):
@@ -72,17 +77,20 @@ def holding_picker(fund: Fund):
         ticker = raw
     if not ticker:
         return None, None
-    current = float(fund.amounts().get(ticker, 0.0))
-    amount = c2.number_input("Rand amount", min_value=0.0, value=current or 1000.0, step=100.0,
-                             format="%.2f", key=f"amt_{ticker}",
+    current = fund.amounts().get(ticker)
+    amount = c2.number_input("Rand amount", min_value=0.0, value=float(current) if current else None, step=100.0,
+                             format="%.2f", key=f"amt_{gen}_{ticker}", placeholder="e.g. 1000",
                              help="How many rand you'd put into this holding. Set it to 0 to remove it.")
     return ticker, amount
 
 
 def apply(new: Fund, message: str) -> None:
     state.put(new)
-    for k in [k for k in st.session_state if str(k).startswith("amt_")] + ["pick", "other_ticker"]:
+    old = st.session_state.get("picker_gen", 0)
+    for k in [k for k in st.session_state if str(k) in (f"pick_{old}", f"other_ticker_{old}")
+              or str(k).startswith(f"amt_{old}_")]:
         st.session_state.pop(k, None)
+    st.session_state.picker_gen = old + 1
     st.toast(message, icon=":material/check:")
     st.rerun()
 
@@ -143,7 +151,9 @@ st.subheader("Add, resize or remove a holding")
 ticker, amount = holding_picker(fund)
 
 after, moved = fund, False
-if ticker:
+if ticker and amount is None:
+    st.caption("Enter a rand amount to see what this holding would do to your fund.")
+elif ticker:
     uni = cached.universe()
     failures = cached.store().ensure([ticker])
     if ticker in failures:

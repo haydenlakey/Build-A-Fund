@@ -38,9 +38,11 @@ def test_example_fund_shows_metrics_and_chart():
 def test_preview_and_apply_an_addition():
     at = fresh()
     next(b for b in at.button if b.label == "Open the example fund").click().run()
-    at.selectbox(key="pick").set_value("NPN.JO").run()
+    at.selectbox(key="pick_0").set_value("NPN.JO").run()
     no_errors(at)
-    at.number_input(key="amt_NPN.JO").set_value(4000.0).run()
+    assert at.number_input(key="amt_0_NPN.JO").value is None  # no amount until the user types one
+    assert not any("What does this change do?" in s.value for s in at.subheader)
+    at.number_input(key="amt_0_NPN.JO").set_value(4000.0).run()
     no_errors(at)
     assert any("What does this change do?" in s.value for s in at.subheader)
     vol = next(m for m in at.metric if m.label == "Volatility")
@@ -100,3 +102,22 @@ def test_composition_page_empty_fund():
     at.switch_page("views/composition.py").run()
     no_errors(at)
     assert any("This fund is empty" in i.value for i in at.info)
+
+
+def test_picker_resets_after_a_change_and_can_resize():
+    """Regression: after Add, the picker kept showing the stock with no amount box, so it couldn't be changed."""
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.selectbox(key="pick_0").set_value("NPN.JO").run()
+    at.number_input(key="amt_0_NPN.JO").set_value(2500.0).run()
+    next(b for b in at.button if b.label == "Add it").click().run()
+    no_errors(at)
+    assert at.selectbox(key="pick_1").value is None  # a fresh, empty picker
+    at.selectbox(key="pick_1").set_value("NPN.JO").run()
+    box = at.number_input(key="amt_1_NPN.JO")
+    assert box.value == pytest.approx(2500.0)  # prefilled with what you hold
+    box.set_value(6000.0).run()
+    next(b for b in at.button if b.label == "Apply the increase").click().run()
+    no_errors(at)
+    fund = at.session_state.funds[at.session_state.active]
+    assert fund.amounts()["NPN.JO"] == pytest.approx(6000.0)
