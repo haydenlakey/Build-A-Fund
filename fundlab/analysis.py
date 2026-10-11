@@ -122,7 +122,8 @@ class FundStats:
 
     @property
     def var_zar(self) -> float:
-        return self.var * self.total_zar
+        """Rand VaR of the measured part of the fund (coverage x total rands)."""
+        return self.var * self.total_zar * self.coverage
 
     def as_dict(self) -> dict[str, float]:
         return {k: getattr(self, k) for k in METRICS}

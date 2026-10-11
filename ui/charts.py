@@ -11,7 +11,11 @@ from .theme import FONT, base_layout, palette
 N_FRAMES = 14
 
 
-def _short(ticker: str) -> str:
+def _short(ticker: str, names: dict[str, str] | None = None) -> str:
+    """Chart label: the ticker without .JO; unit trusts (UT:...) have no readable ticker, so a short name."""
+    if ":" in ticker:
+        name = (names or {}).get(ticker, ticker.split(":", 1)[1])
+        return name if len(name) <= 16 else name[:15].rstrip() + "…"
     return ticker.removesuffix(".JO")
 
 
@@ -31,7 +35,7 @@ def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figur
     vols = np.sqrt(np.diag(est.cov.loc[tick, tick])) if tick else []
     fig.add_trace(go.Scatter(
         x=vols, y=est.mu.values, mode="markers+text", name="Individual holdings",
-        text=[_short(t) for t in tick], textposition="top center",
+        text=[_short(t, names) for t in tick], textposition="top center",
         textfont=dict(size=11, color=p["muted"]),
         marker=dict(size=8, color=p["muted"], line=dict(width=2, color=p["surface"])),
         customdata=[names.get(t, t) for t in tick],

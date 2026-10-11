@@ -169,3 +169,53 @@ def test_library_search():
     at.text_input(key="lib_q").set_value("leverage").run()
     no_errors(at)
     assert any(b.key == "open_ltcm" for b in at.button)
+
+
+def test_add_a_unit_trust_by_allocation_model():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.segmented_control(key="add_kind").set_value("unit_trust").run()
+    at.segmented_control(key="ut_level_0").set_value("low_medium").run()
+    at.selectbox(key="ut_pick_0_low_medium").set_value("UT:ZAE000177366").run()  # Allan Gray Stable
+    no_errors(at)
+    assert at.radio(key="ut_method_0_UT:ZAE000177366").value == "allocation_model"
+    at.number_input(key="amt_0_UT:ZAE000177366").set_value(5000.0).run()
+    no_errors(at)
+    assert any("What does this change do?" in s.value for s in at.subheader)
+    next(b for b in at.button if b.label == "Add it").click().run()
+    no_errors(at)
+    h = at.session_state.funds[at.session_state.active].holding("UT:ZAE000177366")
+    assert h.kind == "unit_trust" and h.method == "allocation_model" and h.params["allocation"]
+
+
+def test_add_an_unlisted_holding_shows_the_illiquid_sleeve():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.segmented_control(key="add_kind").set_value("unlisted").run()
+    at.text_input(key="ul_name_0___new__").set_value("Coffee shop").run()
+    at.number_input(key="ul_r_0___new__").set_value(60.0).run()
+    at.number_input(key="ul_hi_0___new__").set_value(80.0).run()
+    no_errors(at)
+    assert any("far beyond" in w.value for w in at.warning)  # promised-return warning
+    at.number_input(key="amt_0_UL:coffee-shop").set_value(3000.0).run()
+    no_errors(at)
+    assert any("Illiquid sleeve" in s.value for s in at.subheader)
+    illiquid = next(m for m in at.metric if m.label == "Can't be sold in a hurry")
+    assert illiquid.value == "14.0%"  # R3 000 of R21 500
+    next(b for b in at.button if b.label == "Add it").click().run()
+    no_errors(at)
+    fund = at.session_state.funds[at.session_state.active]
+    assert fund.holding("UL:coffee-shop").params["exp_return"] == pytest.approx(0.6)
+
+
+def test_unlisted_and_unit_trust_fund_from_link_renders_everywhere():
+    f = Fund("Mixed", [Holding("STX40.JO", "Satrix 40", "jse_etf", 5000),
+                       Holding("UT:custom-own", "Own balanced", "unit_trust", 2000, method="allocation_model",
+                               params={"allocation": {"sa_equity": 60, "sa_bonds": 30, "sa_cash": 10}, "ter": 0.01}),
+                       Holding("UL:farm", "Farm", "unlisted", 1000, method="assumptions", params={"lockin_years": 7})])
+    at = fresh({"fund": f.to_share_code()})
+    no_errors(at)
+    assert any("Illiquid sleeve" in s.value for s in at.subheader)
+    for page in ("views/composition.py", "views/active_bets.py"):
+        at.switch_page(page).run()
+        no_errors(at)

@@ -22,7 +22,7 @@ import yaml
 LOOKTHROUGH_PATH = Path(__file__).resolve().parent.parent / "data" / "lookthrough.yaml"
 
 ASSET_LABELS = {"equity": "Shares", "property": "Listed property", "bonds": "Bonds",
-                "commodity": "Commodities", "cash": "Cash"}
+                "commodity": "Commodities", "cash": "Cash", "unlisted": "Unlisted"}
 EARNINGS_LABELS = {
     "sa": "Mostly South Africa",
     "sa_dollar": "SA operations, dollar-priced output",
@@ -232,6 +232,63 @@ def _etf_earnings(asset: str, countries: pd.Series, holdings: list, universe: di
     return _norm(s)
 
 
+# app asset class (fundlab.synthetic.ASSET_CLASSES) -> (asset, sector, country, currency, earnings)
+_CLASS_MAP = {
+    "sa_equity": ("equity", NOT_DISCLOSED, "ZA", "ZAR", UNCLASSIFIED),
+    "sa_property": ("property", "Real Estate", "ZA", "ZAR", "sa"),
+    "sa_bonds": ("bonds", "Bonds", "ZA", "ZAR", "sa"),
+    "sa_ilb": ("bonds", "Inflation-linked bonds", "ZA", "ZAR", "sa"),
+    "sa_cash": ("cash", "Cash", "ZA", "ZAR", "sa"),
+    "global_equity": ("equity", NOT_DISCLOSED, "Other", "Foreign", "global"),
+    "global_bonds": ("bonds", "Bonds", "Other", "Foreign", "global"),
+    "global_property": ("property", "Real Estate", "Other", "Foreign", "global"),
+    "global_cash": ("cash", "Cash", "Other", "USD", "global"),
+    "commodities": ("commodity", "Commodities", "Other", "USD", "global"),
+}
+
+
+def allocation_profile(ticker: str, allocation: dict[str, float], holdings: list | None = None,
+                       universe: dict[str, dict] | None = None, ter: float = 0.0, tc: float = 0.0,
+                       note: str = "") -> Profile:
+    """Look-through for a unit trust from its published asset allocation (percent by app asset class).
+
+    Offshore parts have no country split on most fact sheets, so they show as "Other"; SA shares'
+    sector is "Not disclosed" except for the top holdings the sheet lists. Negative (derivative)
+    weights are netted within each dimension and the result rescaled to sum to one.
+    """
+    universe = universe or {}
+    a = {k: float(v) for k, v in allocation.items() if k in _CLASS_MAP and float(v) != 0}
+    total = sum(a.values()) or 1.0
+    rows, ctry, cur, earn = [], pd.Series(dtype=float), pd.Series(dtype=float), pd.Series(dtype=float)
+    for k, v in a.items():
+        asset, sector, c, cu, e = _CLASS_MAP[k]
+        rows.append({"asset": asset, "sector": sector, "industry": sector, "frac": v / total})
+        ctry[c] = ctry.get(c, 0.0) + v / total
+        cur[cu] = cur.get(cu, 0.0) + v / total
+        earn[e] = earn.get(e, 0.0) + v / total
+    sectors = pd.DataFrame(rows).groupby(["asset", "sector", "industry"], as_index=False)["frac"].sum()
+    sectors = sectors[sectors["frac"] > 0]
+    sectors["frac"] = sectors["frac"] / sectors["frac"].sum()
+    comp = [{"key": _company_key(t, n), "name": (universe.get(t) or {}).get("name", n) if t else n,
+             "frac": float(p) / 100} for t, n, p in (holdings or [])]
+    companies = pd.DataFrame(comp, columns=["key", "name", "frac"])
+    return Profile(ticker=ticker, sectors=sectors, countries=_norm(ctry), currencies=_norm(cur),
+                   earnings=_norm(earn), companies=companies, looked_through=True, ter=ter, tc=tc or 0.0,
+                   note=note or "From the fund's published asset allocation and top holdings.")
+
+
+def unlisted_profile(ticker: str, name: str, category: str = "Other", country: str = "ZA") -> Profile:
+    """An unlisted holding is its own asset class; its sector is the category the user picked."""
+    return Profile(
+        ticker=ticker,
+        sectors=pd.DataFrame([{"asset": "unlisted", "sector": "Unlisted", "industry": category, "frac": 1.0}]),
+        countries=pd.Series({country: 1.0}), currencies=pd.Series({"ZAR" if country == "ZA" else "Foreign": 1.0}),
+        earnings=pd.Series({"sa" if country == "ZA" else "global": 1.0}),
+        companies=pd.DataFrame([{"key": ticker, "name": name or ticker, "frac": 1.0}]),
+        looked_through=False, note="Unlisted: described by your own assumptions.",
+    )
+
+
 def profile(ticker: str, universe: dict[str, dict], lt: LookThroughData, name: str = "") -> Profile:
     entry = universe.get(ticker)
     if entry is None:
@@ -290,11 +347,14 @@ def _is_bank(industry: str) -> bool:
 
 
 def compose(weights: pd.Series, universe: dict[str, dict], lt: LookThroughData,
-            names: dict[str, str] | None = None) -> Composition:
-    """Look-through breakdowns of a fund given its weights (fractions summing to one)."""
-    names = names or {}
+            names: dict[str, str] | None = None, extra: dict[str, Profile] | None = None) -> Composition:
+    """Look-through breakdowns of a fund given its weights (fractions summing to one).
+
+    `extra` supplies ready-made profiles (unit trusts, unlisted holdings) by ticker.
+    """
+    names, extra = names or {}, extra or {}
     w = weights[weights > 0]
-    profs = {t: profile(t, universe, lt, names.get(t, "")) for t in w.index}
+    profs = {t: extra.get(t) or profile(t, universe, lt, names.get(t, "")) for t in w.index}
 
     frames = []
     for t, wt in w.items():

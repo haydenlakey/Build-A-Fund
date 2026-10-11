@@ -87,7 +87,7 @@ def metric_panel(cmp: Comparison, settings, moved: bool) -> None:
         if attr == "exp_return":
             extra = f"± {pct(cur.exp_return_se)} (1 standard error)"
         elif attr == "var":
-            extra = f"about {rand(cur.var_zar)} on {rand(cur.total_zar)}"
+            extra = f"about {rand(cur.var_zar)} on {rand(cur.total_zar * cur.coverage)}"
         with cols[i % per_row].container(border=True, height="stretch"):
             st.metric(label, fmt(value), delta, delta_color=colour, help=help_)
             if extra:

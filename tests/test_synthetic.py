@@ -37,6 +37,7 @@ def test_allocation_is_normalised_and_waits_for_the_latest_proxy():
         {"sa_equity": 60 / 99.9, "sa_bonds": 39.9 / 99.9})
     with pytest.raises(ValueError):
         synthetic.normalise_allocation({"sa_equity": 0})
+    assert synthetic.normalise_allocation({"sa_bonds": 115, "sa_cash": -15}) == pytest.approx({"sa_bonds": 1.15, "sa_cash": -0.15})
 
 
 def test_cash_only_fund_grows_at_the_risk_free_rate_less_fees():

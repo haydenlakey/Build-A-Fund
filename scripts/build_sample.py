@@ -1,6 +1,6 @@
 """Download the whole preset universe and write the bundled sample dataset.
 
-Usage:  python scripts/build_sample.py
+Usage:  python scripts/build_sample.py   (Yahoo for the universe; EasyEquities' feed for data/unit_trusts.yaml)
 Writes  data/sample/prices_native.parquet  and  data/sample/meta.json
 Run weekly by .github/workflows/refresh-data.yml.
 """
@@ -14,13 +14,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from fundlab import data  # noqa: E402
+from fundlab import data, unit_trusts  # noqa: E402
 
 
 def main() -> int:
     uni = data.load_universe()
-    tickers = uni.all_tickers()
-    print(f"Downloading {len(tickers)} tickers from Yahoo...")
+    tickers = uni.all_tickers() + list(unit_trusts.load_unit_trusts().funds)
+    print(f"Downloading {len(tickers)} tickers (Yahoo, and EasyEquities for unit trusts)...")
     native, failures = data.download_native(tickers)
     if native.empty:
         print("Nothing downloaded; keeping the existing sample.")
@@ -39,7 +39,8 @@ def main() -> int:
     native.astype("float32").to_parquet(data.SAMPLE_PATH, compression="zstd")
     meta = {
         "built_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "source": "Yahoo Finance via yfinance, weekly adjusted closes (auto_adjust=True)",
+        "source": "Yahoo Finance via yfinance, weekly adjusted closes (auto_adjust=True); unit trusts (UT:<ISIN>): "
+                  "EasyEquities' public price feed, unit prices without distributions",
         "first_week": str(native.index.min().date()),
         "last_week": str(native.index.max().date()),
         "n_tickers": int(native.shape[1]),

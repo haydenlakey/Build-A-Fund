@@ -60,7 +60,7 @@ def test_fund_stats_coverage_excludes_unmeasurable(prices):
     assert st.weights.sum() == pytest.approx(1.0)
     assert "TINY" in st.excluded
     assert st.risk_shares.sum() == pytest.approx(1.0)
-    assert st.var_zar == pytest.approx(st.var * 1000)
+    assert st.var_zar == pytest.approx(st.var * 750)  # VaR in rand covers only the measured R750
 
 
 def test_compare_uses_common_window(prices):

@@ -22,6 +22,8 @@ SAMPLE_PATH = ROOT / "data" / "sample" / "prices_native.parquet"
 CACHE_PATH = ROOT / "data" / "cache" / "prices_native.parquet"
 USDZAR = "ZAR=X"
 START = "1995-01-01"
+UNIT_TRUST_PREFIX = "UT:"  # UT:<ISIN>, priced from EasyEquities' public feed (unit prices in cents)
+EE_PRICES = "https://pricing.easyequities.co.za/api/prices?ISINCode={isin}&period=0"
 
 KIND_BY_SECTION = {"jse_shares": "jse_share", "jse_etfs": "jse_etf",
                    "us_shares": "us_share", "us_etfs": "us_etf"}
@@ -90,6 +92,8 @@ def load_universe(path: Path | str = UNIVERSE_PATH) -> Universe:
 def quote_unit(ticker: str) -> str:
     """How Yahoo quotes a ticker: 'ZAc' (JSE cents), 'points' (an index), 'rate' (FX) or 'USD'."""
     t = ticker.upper()
+    if t.startswith(UNIT_TRUST_PREFIX):
+        return "ZAc"
     if t == USDZAR:
         return "rate"
     if t.startswith("^"):
@@ -203,10 +207,19 @@ def download_native(tickers: list[str], start: str = START, retries: int = 3,
     Returns (clean native prices, failures {ticker: reason}). Never raises on
     network trouble: a ticker that cannot be fetched is reported as a failure.
     """
-    import yfinance as yf  # imported lazily so the app can run from the bundled sample alone
-
     failures: dict[str, str] = {}
     tickers = list(dict.fromkeys(t.strip().upper() for t in tickers))
+    ut = [t for t in tickers if t.startswith(UNIT_TRUST_PREFIX)]
+    if ut:
+        got, fail = download_unit_trusts(ut, retries=retries, pause=pause)
+        failures.update(fail)
+        rest, fail2 = download_native([t for t in tickers if t not in ut], start, retries, pause)             if len(ut) < len(tickers) else (pd.DataFrame(), {})
+        failures.update(fail2)
+        frames = [f for f in (got, rest) if not f.empty]
+        return (pd.concat(frames, axis=1).sort_index() if frames else pd.DataFrame()), failures
+
+    import yfinance as yf  # imported lazily so the app can run from the bundled sample alone
+
     bad = [t for t in tickers if not is_supported(t)]
     failures.update({t: "Only JSE (.JO) and US-listed tickers are supported." for t in bad})
     tickers = [t for t in tickers if t not in bad]
@@ -238,6 +251,44 @@ def download_native(tickers: list[str], start: str = START, retries: int = 3,
         if t not in raw.columns:
             failures[t] = "No price history on Yahoo (ticker may be wrong, delisted or renamed)."
     return clean_native(raw), failures
+
+
+def download_unit_trusts(tickers: list[str], retries: int = 3, pause: float = 2.0,
+                         fetch=None) -> tuple[pd.DataFrame, dict[str, str]]:
+    """Daily unit prices (cents) for UT:<ISIN> tickers from EasyEquities' public price feed, cleaned
+    to weekly rand like everything else. The feed starts in mid-2021 and has no distributions added
+    back. `fetch(url) -> dict` can be injected for tests."""
+    import json
+    import urllib.request
+
+    def _get(url: str) -> dict:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Build-a-Fund Lab)"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    fetch = fetch or _get
+    series, failures = {}, {}
+    for t in tickers:
+        isin = t[len(UNIT_TRUST_PREFIX):]
+        err = ""
+        for attempt in range(retries):
+            try:
+                d = fetch(EE_PRICES.format(isin=isin))
+                pts = d.get("Prices") or []
+                if pts:
+                    s = pd.Series({pd.Timestamp(p["ClosingDate"]): float(p["Price"]) for p in pts}).sort_index()
+                    series[t] = s[~s.index.duplicated(keep="last")]
+                else:
+                    err = "EasyEquities returned no prices for this fund."
+                break
+            except Exception as e:  # noqa: BLE001 - network and JSON errors alike
+                err = f"{type(e).__name__}: {e}"
+                time.sleep(pause * (attempt + 1))
+        if t not in series:
+            failures[t] = err or "No prices."
+    if not series:
+        return pd.DataFrame(), failures
+    return clean_native(pd.DataFrame(series)), failures
 
 
 # ---- the store -------------------------------------------------------------------

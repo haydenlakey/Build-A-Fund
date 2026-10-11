@@ -126,6 +126,34 @@ puts modelled series beside store prices), `fundlab/unlisted.py` (Assumptions, w
 whole-fund view, buy-and-hold simulation whose weekly sd compounds to exactly the stated annual sd, weekly failure
 hazard). `ui/cached.compare`/active use `fund_prices`. 30 new tests (197 total).
 
+**Steps 2–3 done (2026-10-11): unit trusts and unlisted holdings in the app.**
+- `data/unit_trusts.yaml`: 28 EasyEquities unit trusts (8 low, 6 low–medium, 7 medium–high, 7 high), each with
+  ASISA category, published risk label, benchmark, inception, size, TER/TC (EasyEquities class), allocation mapped to
+  the app's asset classes, top holdings (tickers where in the universe), and the fact sheet used (url, as_of, host).
+  **Sources (user's request, 2026-10-11): managers' own sites first** (Coronation, Nedgroup, Prescient, Discovery),
+  then Discovery's platform library (current July/Aug 2026 copies of Allan Gray, M&G, Ninety One sheets), then
+  EasyEquities' resource copies (older for some: Sanlam Mar 2025, Ninety One Managed May 2025, Steyn Oct 2025).
+  Sygnia's site blocks scripts (Incapsula). Chart-only allocations were read by word coordinates (pdfplumber in the
+  system Python, not the venv). Funds left out and why are listed in the file header.
+- **Risk level rule:** the fund's own published label; "Medium" or no label resolved by ASISA category.
+- **Prices:** `UT:<ISIN>` tickers from EasyEquities' public price feed
+  (`pricing.easyequities.co.za/api/prices?ISINCode=…&period=0`, no key; daily unit prices in cents, mostly from
+  mid-2021). **Distributions are not added back**, so low and low–medium funds default to the allocation model
+  (money market prices are flat at R1.00). Bundled in the sample by `build_sample.py` (157 series now).
+- Asset classes gain `global_cash` (USD in rand); allocations may hold negative (derivative) weights.
+  `lookthrough.allocation_profile` / `unlisted_profile`, `compose(..., extra=)`, `unit_trusts.extra_profiles`.
+- Build page: "What are you adding?" (Share or ETF | Unit trust | Unlisted investment). Unit trust picker by risk
+  level (fund card: TER, size, label, category, allocation, dated source) with method choice (price history /
+  model from allocation / upload a CSV) and "Describe your own". Unlisted picker with assumptions, derived numbers
+  and warnings. **Illiquid sleeve and the whole fund** panel (share that can't be sold in a hurry, whole-fund
+  expected return and volatility, seeded 1-year simulation VaR and P(loss > 20%), liquidity ladder, maths).
+  Unlisted holdings get their own verdict. Holdings table shows "Measured by". VaR in rand now uses the measured
+  share of the fund only.
+- Known limitation, shown in the app: the SA bond proxy is the whole government bond market (long duration), so
+  modelled short-dated income funds look more volatile than they are.
+- Tests: `test_unit_trusts.py` (62), 3 AppTests (unit trust by allocation, unlisted with warning and sleeve, mixed
+  fund through every page). 262 pass. Browser check covers the mixed fund (build + composition).
+
 
 Finding: Yahoo's search returns no SA unit trusts (tried Allan Gray, Coronation, Ninety One, PSG; `0P…` Morningstar
 codes 404). So "price history" for a unit trust is best-effort (a Yahoo code the user types in); upload and the

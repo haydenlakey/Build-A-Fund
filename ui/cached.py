@@ -4,13 +4,18 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import active, analysis, content, data, factors, lookthrough, synthetic
+from fundlab import active, analysis, content, data, factors, lookthrough, synthetic, unit_trusts
 from fundlab.model import HOLDING_KINDS, Fund
 
 
 @st.cache_resource
 def universe() -> data.Universe:
     return data.load_universe()
+
+
+@st.cache_resource
+def unit_trust_list() -> unit_trusts.UnitTrustList:
+    return unit_trusts.load_unit_trusts()
 
 
 @st.cache_resource
@@ -39,6 +44,8 @@ def name_of(ticker: str, fund: Fund | None = None) -> str:
     e = universe().get(ticker)
     if e:
         return e["name"]
+    if ut := unit_trust_list().get(ticker):
+        return ut.name
     if fund and (h := fund.holding(ticker)):
         return h.name
     return ticker
@@ -63,7 +70,8 @@ def lookthrough_data() -> lookthrough.LookThroughData:
 def _compose(fund_json: str) -> lookthrough.Composition:
     fund = Fund.from_json(fund_json)
     names = {h.ticker: h.name for h in fund.holdings}
-    return lookthrough.compose(fund.weights(), universe().entries, lookthrough_data(), names)
+    extra = unit_trusts.extra_profiles(fund, universe().entries, unit_trust_list())
+    return lookthrough.compose(fund.weights(), universe().entries, lookthrough_data(), names, extra)
 
 
 def compose(fund: Fund) -> lookthrough.Composition:

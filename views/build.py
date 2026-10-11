@@ -1,16 +1,37 @@
 """Build your fund: add, resize and remove holdings, and see what each change does."""
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fundlab import data, verdict
+from fundlab import data, unlisted, var, verdict
 from fundlab.analysis import Comparison
 from fundlab.model import HOLDING_KINDS, Fund
-from ui import cached, charts, state
+from ui import cached, charts, pickers, state
 from ui import components as C
 
 OTHER = "__other__"
+ADD_KINDS = {"listed": "Share or ETF", "unit_trust": "Unit trust", "unlisted": "Unlisted investment"}
+
+WHOLE_MATHS = r"""
+History-based numbers above cover only holdings with prices. Here the listed part $S$ (its expected
+return $\mu_S$ and volatility $\sigma_S$ from history) is combined with each unlisted holding $i$'s
+stated assumptions: return if it goes to plan $r_i$, a bad and a good year read as the 5th and 95th
+percentiles, a yearly chance of total loss $p_i$, and a correlation $\rho_i$ with the listed part.
+
+$$\sigma_i^{\text{survive}} = \frac{\text{good} - \text{bad}}{2 \times 1.645}, \qquad
+E[R_i] = (1-p_i)(1+r_i) - 1, \qquad
+\operatorname{Var}[R_i] = p_i + (1-p_i)\big(\sigma_i^2 + r_i^2\big) - E[R_i]^2$$
+
+Covariances follow a one-factor model, $\operatorname{Cov}(i,S) = \rho_i\,\mathrm{sd}_i\,\sigma_S$ and
+$\operatorname{Cov}(i,j) = \rho_i\rho_j\,\mathrm{sd}_i\,\mathrm{sd}_j$, so the whole fund has
+$\mu = w^\top\mu$ and $\sigma = \sqrt{w^\top\Sigma w}$ with $w$ from the rand amounts.
+
+The simulation holds everything for a year without rebalancing (unlisted holdings can't be traded):
+weekly normal returns, with each unlisted holding failing in any week with probability
+$1-(1-p_i)^{1/52}$, after which it is worth nothing. The seed is the one in *Assumptions and settings*.
+"""
 
 RR_WHAT = """
 Each grey dot is one holding: further right means it swings more, higher up means it has
@@ -95,6 +116,107 @@ def apply(new: Fund, message: str) -> None:
     st.rerun()
 
 
+def change_picker(fund: Fund):
+    """(ticker, amount, spec) for the change being considered; spec feeds Fund.with_amount."""
+    gen = st.session_state.setdefault("picker_gen", 0)
+    kind = st.segmented_control("What are you adding?", list(ADD_KINDS), format_func=ADD_KINDS.get,
+                                default="listed", key="add_kind") or "listed"
+    if kind == "unit_trust":
+        return pickers.unit_trust_picker(fund, gen)
+    if kind == "unlisted":
+        return pickers.unlisted_picker(fund, gen)
+    ticker, amount = holding_picker(fund)
+    if not ticker:
+        return None, None, None
+    uni = cached.universe()
+    e = uni.get(ticker)
+    h = fund.holding(ticker)
+    spec = {"name": cached.name_of(ticker, fund), "kind": h.kind if h else uni.kind_of(ticker),
+            "currency": e["currency"] if e else ("ZAR" if ticker.endswith(".JO") else "USD")}
+    return ticker, amount, spec
+
+
+def whole_numbers(f: Fund, stats) -> dict | None:
+    """Whole-fund figures: the listed part from history plus unlisted holdings from their assumptions."""
+    if not f.holdings:
+        return None
+    if stats is None and any(h.kind != "unlisted" for h in f.holdings if h.amount_zar > 0):
+        return None
+    mu, vol = (stats.exp_return, stats.vol) if stats is not None else (0.0, 0.0)
+    wf = unlisted.whole_fund(f, mu, vol)
+    if wf is None:
+        return None
+    sims = unlisted.simulate(f, mu, vol, 52, n_sims=20_000, seed=f.settings.seed)
+    v, _ = var.mc_var_es(sims, 0.95)
+    return {"illiquid": unlisted.illiquid_share(f), "exp_return": wf.exp_return, "vol": wf.vol, "var1y": v,
+            "p_down20": float(np.mean(sims < -0.2))}
+
+
+def unlisted_verdict(fund: Fund, after: Fund, cmp: Comparison, ticker: str, name: str) -> verdict.Verdict:
+    """The verdict for an unlisted holding, from the whole-fund numbers (it has no price history)."""
+    b_amt, a_amt = fund.amounts().get(ticker, 0.0), after.amounts().get(ticker, 0.0)
+    action = ("add" if b_amt == 0 and a_amt > 0 else "remove" if a_amt == 0 else
+              "increase" if a_amt > b_amt else "decrease" if a_amt < b_amt else "none")
+    b, a = whole_numbers(fund, cmp.before), whole_numbers(after, cmp.after)
+    if a is None:
+        return verdict.Verdict(f"{name} is unlisted, so it has no price history to measure.", [], action)
+    head = (f"Using your assumptions, the whole fund's expected return "
+            + (f"goes from {C.pct(b['exp_return'])} to {C.pct(a['exp_return'])}" if b else f"is {C.pct(a['exp_return'])}")
+            + f", and {C.pct(a['illiquid'], 0)} of it can't be sold in a hurry.")
+    details = [f"{name} is unlisted, so the history-based numbers below leave it out. The whole-fund panel adds it "
+               "with the return, range, lock-in and chance of loss you entered."]
+    if b:
+        details.append(f"Whole-fund volatility goes from {C.pct(b['vol'])} to {C.pct(a['vol'])}; the chance of losing "
+                       f"over 20% in a year goes from {C.pct(b['p_down20'])} to {C.pct(a['p_down20'])}.")
+    return verdict.Verdict(head, details, action)
+
+
+def whole_fund_panel(fund: Fund, after: Fund, cmp: Comparison, moved: bool) -> None:
+    """Listed part (history) + unlisted holdings (stated assumptions): the illiquid sleeve and whole-fund numbers."""
+    st.subheader("Illiquid sleeve and the whole fund")
+    b, a = whole_numbers(fund, cmp.before), whole_numbers(after, cmp.after)
+    cur = a or b
+    if cur is None:
+        st.info("Add at least one holding with a price history to see the whole-fund numbers.")
+        return
+    labels = [("illiquid", "Can't be sold in a hurry", "lower", "Share of the fund's rands in unlisted holdings."),
+              ("exp_return", "Expected return (whole fund)", "higher", "History for the listed part, your assumptions "
+               "for the unlisted part, after the chance of total loss."),
+              ("vol", "Volatility (whole fund)", "lower", "Includes the chance of total loss of unlisted holdings."),
+              ("var1y", "1-year loss exceeded 1 year in 20", "lower", "From 20 000 simulated years (seeded)."),
+              ("p_down20", "Chance of losing over 20% in a year", "lower", "From the same simulation.")]
+    for i in range(0, len(labels), 3):  # rows of three, so phones keep the order
+        cols = st.columns(3)
+        for col, (k, label, better, help_) in zip(cols, labels[i:i + 3]):
+            delta = None
+            if moved and a and b:
+                d = a[k] - b[k]
+                delta = f"{d * 100:+.1f} pp" if abs(d) >= 0.0005 else None
+            with col.container(border=True, height="stretch"):
+                st.metric(label, C.pct(cur[k]), delta, delta_color="normal" if better == "higher" else "inverse",
+                          help=help_)
+    lad = unlisted.liquidity_ladder(after)
+    if lad.iloc[1:].sum() > 0:
+        df = pd.DataFrame({"How soon it could become cash": lad.index, "Amount": [C.rand(x) for x in lad.values],
+                           "Share": lad.values / max(lad.sum(), 1e-9) * 100})
+        st.dataframe(df, hide_index=True, width="stretch", column_config={
+            "Share": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, max_value=100)})
+    rows = []
+    for h in after.unlisted():
+        x = unlisted.assumptions_of(h)
+        rows.append({"Holding": h.name, "Amount": C.rand(h.amount_zar), "What it is": x.category,
+                     "If it goes to plan": C.pct(x.exp_return), "Expected (after loss chance)": C.pct(x.expected_return),
+                     "Locked in (years)": f"{x.lockin_years:g}", "Chance lost a year": C.pct(x.p_loss),
+                     "Correlation": f"{x.corr:.2f}"})
+    if rows:
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    st.caption("These numbers rest on your own assumptions for the unlisted holdings, so they are only as good as "
+               "those guesses. The Library's Woodford and MTI case files show what locked-up money and promised "
+               "returns have meant in practice.")
+    with st.expander("Show me the maths"):
+        st.markdown(WHOLE_MATHS)
+
+
 def history_notes(cmp: Comparison, fund: Fund) -> None:
     rep = cmp.est.report
     if rep.start is not None:
@@ -107,8 +229,21 @@ def history_notes(cmp: Comparison, fund: Fund) -> None:
             st.warning(f"Only {rep.n_weeks} weeks of shared history (under three years). Every number here is "
                        "rough, and the expected returns especially so.", icon=":material/history:")
     for t, why in rep.excluded.items():
+        h = fund.holding(t)
+        if h is not None and h.kind == "unlisted":
+            continue  # explained in the illiquid sleeve panel
         st.warning(f"**{cached.name_of(t, fund)}** is left out of the statistics: {why} Its rands still count "
                    "toward the fund's size.", icon=":material/warning:")
+    if fund.unlisted():
+        st.caption("Unlisted holdings have no price history, so the numbers above cover the listed part of the "
+                   f"fund ({C.pct(cmp.after.coverage if cmp.after else 0, 0)} of its rands). The whole-fund view "
+                   "below adds them using your assumptions.")
+    uts = [h for h in fund.holdings if h.kind == "unit_trust"]
+    if uts:
+        st.caption("Unit trusts: " + "; ".join(f"**{h.name}** ({pickers.method_label(h.method).lower()})"
+                                               for h in uts) + ". Unit price histories leave out the income a "
+                   "fund pays out; modelled ones use index ETFs for each asset class (SA bonds: the whole "
+                   "government bond market, so short-dated income funds come out more volatile than they are).")
 
 
 def holdings_table(fund: Fund, cmp: Comparison) -> None:
@@ -123,7 +258,7 @@ def holdings_table(fund: Fund, cmp: Comparison) -> None:
         # most important columns first: on a phone the right-hand columns scroll off-screen
         rows.append({"Holding": cached.name_of(t, fund), "Amount": C.rand(amt, 2), "Share of rands": w[t] * 100,
                      "Share of risk": risk.get(t, float("nan")) * 100, "Ticker": t,
-                     "Type": HOLDING_KINDS[h.kind]})
+                     "Type": HOLDING_KINDS[h.kind], "Measured by": pickers.method_label(h.method)})
     df = pd.DataFrame(rows)
     st.dataframe(df, hide_index=True, width="stretch", column_config={
         "Amount": st.column_config.TextColumn(),
@@ -148,21 +283,24 @@ if name != fund.name:
     state.put(fund)
 
 st.subheader("Add, resize or remove a holding")
-ticker, amount = holding_picker(fund)
+ticker, amount, spec = change_picker(fund)
 
 after, moved = fund, False
 if ticker and amount is None:
     st.caption("Enter a rand amount to see what this holding would do to your fund.")
 elif ticker:
-    uni = cached.universe()
-    failures = cached.store().ensure([ticker])
+    method = spec.get("method", "price_history")
+    failures = cached.store().ensure([ticker]) if method == "price_history" else {}
     if ticker in failures:
-        st.error(f"Couldn't get prices for {ticker}: {failures[ticker]}")
+        st.error(f"Couldn't get prices for {spec['name']}: {failures[ticker]}")
     else:
-        e = uni.get(ticker)
-        after = fund.with_amount(ticker, amount, name=cached.name_of(ticker, fund), kind=uni.kind_of(ticker),
-                                 currency=e["currency"] if e else ("ZAR" if ticker.endswith(".JO") else "USD"))
-        moved = after.amounts().round(2).to_dict() != fund.amounts().round(2).to_dict()
+        after = fund.with_amount(ticker, amount, **spec)
+        held = fund.holding(ticker)
+        inputs_changed = held is not None and amount > 0 and (
+            held.method != method or held.params != spec.get("params", held.params))
+        if inputs_changed:
+            after.holding(ticker).method = method
+        moved = after.amounts().round(2).to_dict() != fund.amounts().round(2).to_dict() or inputs_changed
 
 if not fund.holdings and not moved:
     st.info("Start by searching for a holding above and entering a rand amount, or open an example.",
@@ -177,7 +315,8 @@ with st.spinner("Crunching the numbers…"):
 
 if moved:
     st.subheader("What does this change do?")
-    v = verdict.explain(cmp, ticker, cached.name_of(ticker, fund))
+    v = (unlisted_verdict(fund, after, cmp, ticker, spec["name"]) if spec.get("kind") == "unlisted"
+         else verdict.explain(cmp, ticker, spec["name"]))
     with st.container(border=True):
         st.markdown(f"**{v.headline}**")
         for d in v.details:
@@ -187,9 +326,9 @@ if moved:
                 "remove": "Remove it"}.get(v.action, "Apply")
         b1, b2, _ = st.columns([1, 1, 2])
         if b1.button(verb, type="primary", width="stretch"):
-            apply(after, f"{v.action.title()}: {cached.name_of(ticker, fund)}")
+            apply(after, f"{v.action.title()}: {spec['name']}")
         if held_now and amount > 0 and b2.button("Remove instead", width="stretch"):
-            apply(fund.without(ticker), f"Removed {cached.name_of(ticker, fund)}")
+            apply(fund.without(ticker), f"Removed {spec['name']}")
     st.caption("Numbers below show **after** the change, with the change from before underneath. "
                "Nothing is applied until you press the button.")
 else:
@@ -197,6 +336,9 @@ else:
 
 C.metric_panel(cmp, after.settings, moved)
 history_notes(cmp, after)
+
+if fund.unlisted() or after.unlisted():
+    whole_fund_panel(fund, after, cmp, moved)
 
 st.subheader("Risk and return")
 names = {t: cached.name_of(t, after) for t in cmp.est.mu.index}

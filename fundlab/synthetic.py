@@ -37,6 +37,7 @@ ASSET_CLASSES: dict[str, tuple[str, str, str]] = {
     "global_equity": ("Global shares", "VT", "Vanguard Total World Stock ETF in rand"),
     "global_bonds": ("Global bonds", "BND", "Vanguard Total Bond Market ETF (US bonds) in rand"),
     "global_property": ("Global property", "VNQ", "Vanguard Real Estate ETF (US property) in rand"),
+    "global_cash": ("Offshore cash", "ZAR=X", "the US dollar in rand (currency moves only, no interest)"),
     "commodities": ("Gold and commodities", "GLD.JO", "NewGold gold ETF"),
 }
 MIN_UPLOAD_WEEKS = 53  # 52 weekly returns, the same minimum the statistics use
@@ -44,14 +45,17 @@ MIN_UPLOAD_WEEKS = 53  # 52 weekly returns, the same minimum the statistics use
 
 def proxy_tickers(allocation: dict[str, float]) -> list[str]:
     return [ASSET_CLASSES[k][1] for k, a in allocation.items()
-            if a > 0 and k in ASSET_CLASSES and ASSET_CLASSES[k][1] != CASH]
+            if a != 0 and k in ASSET_CLASSES and ASSET_CLASSES[k][1] != CASH]
 
 
 def normalise_allocation(allocation: dict[str, float]) -> dict[str, float]:
-    """Drop zero or unknown classes and scale to sum to one (fact sheets often add up to 99.9%)."""
-    a = {k: float(v) for k, v in (allocation or {}).items() if k in ASSET_CLASSES and float(v) > 0}
+    """Drop zero or unknown classes and scale to sum to one (fact sheets often add up to 99.9%).
+
+    Negative weights (derivative overlays some fact sheets publish, e.g. cash -14.9%) are kept.
+    """
+    a = {k: float(v) for k, v in (allocation or {}).items() if k in ASSET_CLASSES and float(v) != 0}
     total = sum(a.values())
-    if total <= 0:
+    if total <= 0 or not any(v > 0 for v in a.values()):
         raise ValueError("the allocation needs at least one asset class above zero")
     return {k: v / total for k, v in a.items()}
 

@@ -1,0 +1,701 @@
+# Unit trusts available on EasyEquities, curated by risk level (Phase 4).
+#
+# Edit freely: the app reads this file at start-up. Every fund names where each figure comes from.
+#
+# Which funds: all 28 are on EasyEquities' public unit trust list (sitemap of wealth.easyequities.co.za,
+# read 2026-10-11). Funds were left out when their fact sheet gives no usable asset-class split
+# (Bidvest Prime Preserver, 10X Stable Income, 27four Shari'ah Income, Harvard House BCI Property),
+# when the sheet on EasyEquities belongs to a different fund (Sanlam Diversified Income), or when the
+# PDF has no readable text (Fairtree Equity Prescient).
+#
+# Field guide
+#   ticker      UT:<ISIN>. Price history (unit prices, in cents) comes from EasyEquities' public price
+#               feed, the one its fund pages use. Unit prices fall when a fund pays out income, and the
+#               feed doesn't add distributions back, so returns from it are understated by roughly the
+#               fund's distribution yield (large for income funds, small for equity funds).
+#   risk        low | low_medium | medium_high | high. Taken from the fund's own published risk label
+#               (risk_label, and who published it). A plain "Medium" label, or no label, is resolved by
+#               the ASISA category: interest-bearing and multi-asset income -> low; multi-asset low and
+#               medium equity -> low_medium; multi-asset high equity and flexible -> medium_high;
+#               equity and real estate -> high.
+#   ter, tc     Annual, as fractions, for the class sold on EasyEquities, from its fund page (fees
+#               block), else from the fact sheet (fees_src says which).
+#   size        As shown on the EasyEquities fund page (read 2026-10-11) unless noted.
+#   allocation  Percent of the fund by the app's asset classes (fundlab/synthetic.py ASSET_CLASSES),
+#               mapped from the fact sheet's asset allocation table:
+#                 - "hedged equities" (shares with their market exposure hedged away) -> cash
+#                 - floating-rate notes and NCDs, where listed separately -> SA cash (their interest
+#                   resets with short-term rates, so their prices barely move)
+#                 - preference shares, credit-linked notes, fixed-rate and corporate bonds -> SA bonds
+#                 - "domestic income" -> SA cash; "offshore/foreign" with no split -> global bonds
+#               Negative weights (derivative overlays) are kept as published.
+#   holdings    Top holdings as [ticker or null, name, percent], ticker only where the same company is
+#               in universe.yaml (for overlap). Omitted where the sheet gives no weights.
+#   method      Default modelling method in the app: allocation_model for low and low_medium funds
+#               (their unit prices miss most of the return, which is paid out as income), price_history
+#               otherwise. The user can switch.
+#   sheet       The fact sheet / minimum disclosure document (MDD) used: url, as_of (date of the data),
+#               host (manager = the manager's own site; discovery = Discovery's investment platform
+#               library, used when the manager's site has no newer copy; easyequities = EasyEquities'
+#               resource site, used when neither is reachable or newer).
+
+accessed: 2026-10-11
+ee_list: https://wealth.easyequities.co.za/sitemap.xml
+ee_prices: https://pricing.easyequities.co.za/api/prices?ISINCode={isin}&period=0
+
+risk_levels:
+  low: {name: Low, blurb: "Money market, short-term interest and multi-asset income funds. Small, steady returns; capital rarely falls far."}
+  low_medium: {name: Low to medium, blurb: "Cautious multi-asset funds: mostly bonds and cash with a minority in shares."}
+  medium_high: {name: Medium to high, blurb: "Balanced and flexible funds: mostly shares, with bonds and cash to soften falls."}
+  high: {name: High, blurb: "Equity and property funds: the highest long-run growth potential and the deepest falls."}
+
+funds:
+  # ---------------------------------------------------------------- low
+  - ticker: UT:ZAE000223681
+    code: STXB1
+    name: Satrix Money Market Fund (B1)
+    manager: Satrix
+    risk: low
+    risk_label: Conservative (fact sheet)
+    asisa: SA - Interest Bearing - SA Money Market
+    benchmark: STeFI Composite Index
+    inception: 2016-12-01
+    size: R934.8 million
+    ter: 0.0030
+    tc: null
+    fees_src: easyequities
+    allocation: {sa_cash: 100}
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/STXB1.pdf", as_of: 2025-12-31, host: easyequities}
+
+  - ticker: UT:ZAE000199840
+    code: CABFA
+    name: Cartesian BCI Money Market Fund (A)
+    manager: Cartesian Capital (BCI)
+    risk: low
+    risk_label: Low (fact sheet)
+    asisa: SA - Interest Bearing - SA Money Market
+    benchmark: SteFI Call Deposit Index
+    inception: 2015-02-11
+    size: R980.2 million
+    ter: 0.0031
+    tc: 0.0
+    fees_src: easyequities
+    allocation: {sa_cash: 100}
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/CABFA.pdf", as_of: 2025-11-30, host: easyequities}
+
+  - ticker: UT:ZAE000288817
+    code: ABCIIB
+    name: Anchor BCI Core Income Fund (B)
+    manager: Anchor Capital
+    risk: low
+    risk_label: Low (fact sheet)
+    asisa: SA - Interest Bearing - Short Term
+    benchmark: SteFI Composite Index
+    inception: 2020-09-01
+    size: R7 662.8 million (fact sheet, 30 June 2026)
+    ter: 0.0065
+    tc: 0.0
+    fees_src: fact sheet (March 2026)
+    allocation: {sa_cash: 99.4, sa_bonds: 0.6}
+    allocation_note: "Floating-rate bonds 93.8%, local cash 4.0%, NCDs 1.6% (modelled as cash); nominal bonds 0.6%."
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/ABCIIB.pdf", as_of: 2026-06-30, host: easyequities}
+
+  - ticker: UT:ZAE000171542
+    code: IDICH
+    name: Ninety One Diversified Income Fund (H)
+    manager: Ninety One
+    risk: low
+    risk_label: "Not readable on the sheet (a 1-7 scale graphic); ASISA multi-asset income"
+    asisa: SA - Multi-Asset - Income
+    benchmark: STeFI Composite
+    inception: 2008-09-01
+    size: R36 886.5 million
+    ter: 0.0052
+    tc: 0.0002
+    fees_src: easyequities
+    allocation: {sa_cash: 62.9, sa_bonds: 33.1, sa_ilb: 0.2, sa_property: 2.8, sa_equity: 0.6, global_bonds: 0.4}
+    allocation_note: "From the sheet's instrument table: floating-rate notes 49.4 and cash/money market/FX 15.1 (cash), less 'other' -1.6; government 18.2, corporate 8.1, parastatal 6.0 and SPV 0.8 bonds; property 2.8; equity 0.6; inflation-linked 0.2; developed-market sovereign 0.4. The asset table on the same sheet shows local 88.4% / foreign 11.6%; its 'bonds 90.5' includes the floating-rate notes."
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/IDICH.pdf", as_of: 2025-10-31, host: easyequities}
+
+  - ticker: UT:ZAE000099867
+    code: SIAB4
+    name: Sanlam Investment Management Active Income Fund (B4)
+    manager: Sanlam Investment Management
+    risk: low
+    risk_label: Conservative (fact sheet)
+    asisa: SA - Multi Asset - Income
+    benchmark: STeFI + 1% a year
+    inception: 2006-11-03
+    size: R3 602.9 million
+    ter: 0.0071
+    tc: 0.0001
+    fees_src: easyequities
+    allocation: {sa_cash: 71.66, sa_bonds: 21.74, sa_ilb: 4.71, sa_property: 1.89}
+    allocation_note: "Bonds by term: 0-3 years 2.38, 3-7 years 11.71, 7-12 years 7.53, 12+ years 0.12."
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SIAB4.pdf", as_of: 2025-03-31, host: easyequities}
+
+  - ticker: UT:ZAE000156097
+    code: SEYB1
+    name: SIM Enhanced Yield Fund (B1)
+    manager: Sanlam Investment Management
+    risk: low
+    risk_label: Conservative (fact sheet)
+    asisa: SA - Interest Bearing - Short Term
+    benchmark: STeFI + 0.5% a year
+    inception: 2011-05-03
+    size: R8.8 billion (fact sheet, March 2025)
+    ter: 0.0050
+    tc: null
+    fees_src: fact sheet (April 2022 to March 2025)
+    allocation: {sa_cash: 71.63, sa_bonds: 24.81, sa_ilb: 3.56}
+    allocation_note: "Bonds by term: 0-3 years 5.69, 3-7 years 12.79, 7-12 years 6.22, 12+ years 0.11."
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SEYB1.pdf", as_of: 2025-03-31, host: easyequities}
+
+  - ticker: UT:ZAE000087540
+    code: PIPFB5
+    name: Prescient Income Provider Fund (B5)
+    manager: Prescient
+    risk: low
+    risk_label: Conservative (fact sheet risk indicator)
+    asisa: South African - Multi Asset - Income
+    benchmark: 110% of STeFI Call
+    inception: 2005-12-31
+    size: R51 150.7 million
+    ter: 0.0060
+    tc: 0.0001
+    fees_src: easyequities
+    allocation: {sa_bonds: 53.9, sa_ilb: 7.1, sa_cash: 23.7, global_bonds: 15.4}
+    allocation_note: "Preference shares 0.7, credit-linked notes 17.6 and fixed-rate bonds 35.6 (modelled as SA bonds, with prefs); inflation-linked 7.1; floating-rate bonds 9.6 and cash 14.1 (cash); total foreign 15.4 (no split given, modelled as global bonds). Read from the A2 class sheet; values matched to labels by their position on the chart."
+    method: allocation_model
+    sheet: {url: "https://www.prescient.co.za/media/dfqpsndv/prescient-income-provider-fund-a2-august-2026-pipfa2.pdf", as_of: 2026-08-31, host: manager}
+
+  - ticker: UT:ZAE000210522
+    code: DCDAOF
+    name: Cogence Discovery Cautious Dynamic Asset Optimiser Fund of Funds (A)
+    manager: Cogence / Discovery (asset allocation advised by BlackRock)
+    risk: low
+    risk_label: Low (fact sheet)
+    asisa: SA - Multi Asset - Low Equity
+    benchmark: ASISA Multi-Asset Low Equity category average
+    inception: 2015-11-23
+    size: R4 353.2 million (fact sheet, August 2026)
+    ter: 0.0172
+    tc: 0.0007
+    fees_src: fact sheet
+    allocation: {sa_equity: 11.2, sa_bonds: 55.0, sa_property: 1.2, sa_cash: 0.7, global_equity: 23.8, global_bonds: 6.5, global_property: 0.1, global_cash: 0.6}
+    holdings:
+      - [NVDA, NVIDIA, 0.9]
+      - [AAPL, Apple, 0.9]
+      - [SBK.JO, Standard Bank Group, 0.8]
+      - [MTN.JO, MTN Group, 0.8]
+      - [null, Physical gold bullion, 0.8]
+      - [null, "Eskom Holdings 8.5% bond", 0.8]
+      - [AMZN, Amazon, 0.7]
+      - [null, BGF Continental European Flexible Fund, 0.7]
+      - [MSFT, Microsoft, 0.7]
+      - [ANG.JO, AngloGold Ashanti, 0.7]
+    method: allocation_model
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/DCDAOF", as_of: 2026-08-31, host: discovery}
+
+  # ---------------------------------------------------------------- low to medium
+  - ticker: UT:ZAE000177366
+    code: AGSC
+    name: Allan Gray Stable Fund (C)
+    manager: Allan Gray
+    risk: low_medium
+    risk_label: Medium/Low (EasyEquities fund page)
+    asisa: South African - Multi Asset - Low Equity
+    benchmark: "FirstRand Bank's daily call rate + 2%"
+    inception: 2000-07-01
+    size: R63 942.9 million
+    ter: 0.0143
+    tc: 0.0004
+    fees_src: easyequities
+    allocation: {sa_equity: 15.1, global_equity: 15.3, sa_cash: 17.7, global_cash: 13.4, global_property: 0.7, commodities: 1.6, sa_bonds: 29.6, global_bonds: 6.7}
+    allocation_note: "Net equities SA 15.1 / foreign 15.3; hedged equities SA 8.4 / foreign 10.1 (modelled as cash); money market SA 9.3 / foreign 3.3; bonds SA 29.6 / foreign 6.7; property 0.7 (foreign); commodity-linked 1.6."
+    holdings:
+      - [ANH.JO, AB InBev, 2.9]
+      - [BTI.JO, British American Tobacco, 1.4]
+      - [ANG.JO, AngloGold Ashanti, 1.3]
+      - [SBK.JO, Standard Bank, 1.3]
+      - [CFR.JO, Richemont, 1.2]
+      - [REM.JO, Remgro, 1.2]
+      - [null, Woolworths, 1.2]
+      - [SHP.JO, Shoprite, 1.0]
+      - [TSM, Taiwan Semiconductor, 0.9]
+      - [SOL.JO, Sasol, 0.9]
+    method: allocation_model
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/AGSC", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000041026
+    code: PRCB
+    name: M&G Inflation Plus Fund (B)
+    manager: M&G Investments
+    risk: low_medium
+    risk_label: '"Low- to medium-risk" (fact sheet investor profile)'
+    asisa: South African - Multi-Asset - Low Equity
+    benchmark: CPI (objective CPI + 5% a year before fees)
+    inception: 2001-06-01
+    size: R23 469.8 million (fact sheet, July 2026)
+    ter: 0.0089
+    tc: 0.0006
+    fees_src: fact sheet (B class)
+    allocation: {sa_bonds: 30.3, sa_equity: 26.3, sa_ilb: 12.5, global_bonds: 10.7, global_equity: 10.4, sa_cash: 5.5, sa_property: 4.1, global_cash: 0.1}
+    holdings:
+      - [null, "Republic of SA bond R2044", 4.4]
+      - [null, "Republic of SA bond R2040", 4.3]
+      - [null, "Republic of SA bond R2035", 3.8]
+      - [null, "Republic of SA inflation-linked bond I2046", 3.8]
+      - [null, "Republic of SA bond R2037", 3.7]
+      - [NPN.JO, Naspers/Prosus, 3.4]
+      - [null, "Republic of SA inflation-linked bond R202", 2.6]
+      - [null, "Republic of SA bond R2048", 2.4]
+      - [null, "Republic of SA bond R2032", 2.3]
+      - [null, "Eskom bond 7.50% 2033", 2.1]
+    method: allocation_model
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/PRCB", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000157020
+    code: NISA
+    name: Nedgroup Investments Stable Fund (A2)
+    manager: Nedgroup Investments (managed by Foord)
+    risk: low_medium
+    risk_label: Low-Medium (fact sheet)
+    asisa: South African - Multi Asset - Low Equity
+    benchmark: SA inflation + 4%
+    inception: 2007-11-01
+    size: R15.6 billion (fact sheet, August 2026)
+    ter: 0.0147
+    tc: 0.0003
+    fees_src: easyequities
+    allocation: {sa_equity: 12.0, sa_property: 3.6, sa_bonds: 2.3, sa_ilb: 20.9, sa_cash: 8.9, global_equity: 28.0, global_property: 2.1, global_bonds: 8.3, global_cash: 5.7, commodities: 8.3}
+    allocation_note: "Foreign bonds 7.7 and foreign inflation-linked bonds 0.6 are combined. Read from the class C sheet (same portfolio); values matched to labels by their position on the bar chart."
+    holdings:
+      - [null, "RSA inflation-linked bond 1.875% 2029", 9.3]
+      - [null, "RSA inflation-linked bond 1.875% 2033", 8.2]
+      - [GLD.JO, NewGold ETF, 6.9]
+      - [null, "RSA inflation-linked bond 2.6% (R210)", 2.9]
+      - [PRX.JO, Prosus, 2.4]
+      - [null, "US TIPS 1.875% 2035", 1.8]
+      - [null, "Sasol convertible 4.5% 2027", 1.7]
+      - [null, "US TIPS 1.875% 2036", 1.4]
+      - [ANH.JO, Anheuser-Busch InBev, 1.4]
+      - [FSR.JO, FirstRand, 1.3]
+    method: allocation_model
+    sheet: {url: "https://www.nedgroupinvestments.com/content/dam/NGISingleSiteContent/south-africa/pdfs/factsheets/202608/Nedgroup%20Investments%20Stable%20Fund%20C.pdf", as_of: 2026-08-31, host: manager}
+
+  - ticker: UT:ZAE000107512
+    code: DDIF
+    name: Discovery Diversified Income Fund (A)
+    manager: Discovery (managed by Ninety One)
+    risk: low_medium
+    risk_label: Low/medium (fact sheet)
+    asisa: South African - Multi Asset - Income
+    benchmark: STeFI Composite
+    inception: 2007-10-22
+    size: R12 907.2 million (fact sheet, August 2026)
+    ter: 0.0116
+    tc: 0.0002
+    fees_src: fact sheet
+    allocation: {sa_bonds: 91.4, sa_property: 3.9, sa_cash: -14.9, global_bonds: -4.1, global_cash: 23.7}
+    allocation_note: "Local assets 80.4% (bonds 91.4, property 3.9, cash -14.9); foreign 19.6% (bonds -4.1, cash 23.7). Negative weights are derivative positions, as published."
+    method: allocation_model
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/DDIF", as_of: 2026-08-31, host: manager}
+
+  - ticker: UT:ZAE000163440
+    code: MEIA
+    name: Counterpoint SCI Enhanced Income Fund (A1)
+    manager: Counterpoint Asset Management
+    risk: low_medium
+    risk_label: Cautious (fact sheet)
+    asisa: South African - Multi Asset - Income
+    benchmark: STeFI
+    inception: 2012-01-03
+    size: R707.8 million
+    ter: 0.0070
+    tc: null
+    fees_src: easyequities
+    allocation: {sa_cash: 49.5, sa_bonds: 34.5, sa_ilb: 14.8, sa_property: 1.2}
+    allocation_note: "SA floating-rate notes 38.2 and cash 11.3 (cash); fixed-interest bonds 34.0 and preference shares 0.5 (bonds); inflation-linked 14.8; property 1.2."
+    method: allocation_model
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/MEIA.pdf", as_of: 2025-03-31, host: easyequities}
+
+  - ticker: UT:ZAE000210530
+    code: DMDAOF
+    name: Cogence Discovery Moderate Dynamic Asset Optimiser Fund of Funds (A)
+    manager: Cogence / Discovery (asset allocation advised by BlackRock)
+    risk: low_medium
+    risk_label: "Medium (fact sheet); ASISA multi-asset medium equity"
+    asisa: SA - Multi Asset - Medium Equity
+    benchmark: ASISA Multi-Asset Medium Equity category average
+    inception: 2015-11-23
+    size: R13 274.6 million (fact sheet, August 2026)
+    ter: 0.0181
+    tc: 0.0014
+    fees_src: fact sheet
+    allocation: {sa_equity: 26.2, sa_bonds: 33.7, sa_property: 1.9, sa_cash: 1.1, global_equity: 28.5, global_bonds: 6.9, global_property: 0.1, global_cash: 0.6}
+    holdings:
+      - [NPN.JO, Naspers, 2.3]
+      - [CPI.JO, Capitec Bank, 2.1]
+      - [SBK.JO, Standard Bank Group, 1.9]
+      - [MTN.JO, MTN Group, 1.9]
+      - [ANG.JO, AngloGold Ashanti, 1.6]
+      - [GFI.JO, Gold Fields, 1.5]
+      - [FSR.JO, FirstRand, 1.3]
+      - [VAL.JO, Valterra Platinum, 1.2]
+      - [AGL.JO, Anglo American, 1.2]
+      - [ABG.JO, Absa Group, 1.1]
+    method: allocation_model
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/DMDAOF", as_of: 2026-08-31, host: discovery}
+
+  # ---------------------------------------------------------------- medium to high
+  - ticker: UT:ZAE000177358
+    code: AGBC
+    name: Allan Gray Balanced Fund (C)
+    manager: Allan Gray (foreign assets mostly in Orbis funds)
+    risk: medium_high
+    risk_label: "None on the sheet; ASISA multi-asset high equity"
+    asisa: South African - Multi Asset - High Equity
+    benchmark: Market value-weighted average of the Multi Asset High Equity category (excluding Allan Gray funds)
+    inception: 1999-10-01
+    size: R257 765.1 million
+    ter: 0.0148
+    tc: 0.0007
+    fees_src: easyequities
+    allocation: {sa_equity: 38.7, global_equity: 29.0, sa_cash: 5.9, global_cash: 7.2, global_property: 0.9, commodities: 2.2, sa_bonds: 10.7, global_bonds: 5.3}
+    allocation_note: "Net equities SA 38.7 / foreign 29.0; hedged equities SA 1.9 / foreign 5.9 and money market SA 4.0 / foreign 1.3 (cash); bonds SA 10.7 / foreign 5.3; property 0.9 (foreign); commodity-linked 2.2."
+    holdings:
+      - [ANH.JO, AB InBev, 4.4]
+      - [NPN.JO, Naspers & Prosus, 3.1]
+      - [GLN.JO, Glencore, 2.8]
+      - [BTI.JO, British American Tobacco, 2.5]
+      - [SBK.JO, Standard Bank, 2.4]
+      - [ANG.JO, AngloGold Ashanti, 2.3]
+      - [NED.JO, Nedbank, 1.9]
+      - [REM.JO, Remgro, 1.7]
+      - [DIS, The Walt Disney Company, 1.4]
+      - [null, Woolworths, 1.4]
+    method: price_history
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/AGBC", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000165205
+    code: CBFB4
+    name: Coronation Balanced Plus Fund (B4)
+    manager: Coronation
+    risk: medium_high
+    risk_label: Medium (EasyEquities fund page); ASISA multi-asset high equity
+    asisa: South African - Multi-asset - High Equity
+    benchmark: ASISA category average (excluding Coronation funds)
+    inception: 1996-04-15
+    size: R145.66 billion (fact sheet, August 2026)
+    ter: 0.0115
+    tc: 0.0018
+    fees_src: easyequities
+    allocation: {sa_equity: 36.0, sa_property: 6.4, sa_bonds: 14.2, sa_cash: 1.6, global_equity: 38.7, global_bonds: 2.6, global_cash: 0.5}
+    allocation_note: "Effective exposure: domestic 58.2% (equities 36.0 incl. 2.4 derivatives, real estate 6.4, bonds 14.2, cash 1.6); international 41.8% (equities 38.7, bonds 2.6, cash 0.5). Read from the class A sheet (same portfolio)."
+    holdings:
+      - [SBK.JO, Standard Bank Group, 3.1]
+      - [NPN.JO, Naspers, 3.0]
+      - [PRX.JO, Prosus, 2.9]
+      - [CPI.JO, Capitec, 2.4]
+      - [null, Fortress REIT, 1.9]
+      - [null, Auto1 Group, 1.7]
+      - [MTN.JO, MTN Group, 1.5]
+      - [null, Advtech, 1.5]
+      - [TSM, TSMC, 1.5]
+      - [null, Hammerson, 1.2]
+    method: price_history
+    sheet: {url: "https://www.coronation.com/globalassets/asset-library/monthly-fact-sheets/2026/august/retail/2026-august-balanced-plus-fund_corb.pdf", as_of: 2026-08-31, host: manager}
+
+  - ticker: UT:ZAE000041018
+    code: PRAB
+    name: M&G Balanced Fund (B)
+    manager: M&G Investments
+    risk: medium_high
+    risk_label: "None on the sheet; ASISA multi-asset high equity"
+    asisa: South African - Multi-Asset - High Equity
+    benchmark: ASISA South African Multi-Asset High Equity category average
+    inception: 1999-08-02
+    size: R35 491.0 million (fact sheet, July 2026)
+    ter: 0.0095
+    tc: 0.0009
+    fees_src: easyequities
+    allocation: {sa_equity: 44.0, global_equity: 25.8, sa_bonds: 15.2, global_bonds: 6.9, sa_cash: 3.5, sa_property: 2.6, global_cash: 1.9, global_property: 0.2}
+    holdings:
+      - [NPN.JO, Naspers/Prosus, 5.9]
+      - [MTN.JO, MTN Group, 3.2]
+      - [SBK.JO, Standard Bank Group, 3.1]
+      - [ANG.JO, AngloGold Ashanti, 3.0]
+      - [GFI.JO, Gold Fields, 2.8]
+      - [FSR.JO, FirstRand, 2.5]
+      - [ABG.JO, Absa Group, 2.4]
+      - [null, "Republic of SA bond R2044", 2.2]
+      - [null, "Republic of SA bond R2040", 2.1]
+      - [null, "Republic of SA bond R2035", 1.9]
+    method: price_history
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/PRAB", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000181087
+    code: SSBCA
+    name: Sygnia Skeleton Balanced 70 Fund (A)
+    manager: Sygnia
+    risk: medium_high
+    risk_label: Medium/High (EasyEquities fund page)
+    asisa: South African - Multi-Asset - High Equity
+    benchmark: Median of the South African Multi-Asset High Equity category
+    inception: 2013-10-10
+    size: R12 709.6 million
+    ter: 0.0045
+    tc: 0.0005
+    fees_src: easyequities
+    allocation: {sa_equity: 38.4, sa_property: 0.8, sa_bonds: 12.9, sa_cash: 6.5, global_equity: 32.7, global_bonds: 2.7, global_cash: 6.0}
+    allocation_note: "Domestic income 6.5 modelled as cash. Sygnia's own site blocks automated downloads, so the newest copy on EasyEquities is used."
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SSBCA.pdf", as_of: 2026-04-30, host: easyequities}
+
+  - ticker: UT:ZAE000200606
+    code: ABMFB
+    name: Anchor BCI Managed Fund (B)
+    manager: Anchor Capital
+    risk: medium_high
+    risk_label: Moderate-High (fact sheet)
+    asisa: SA Multi Asset High Equity
+    benchmark: ASISA SA Multi Asset High Equity category average
+    inception: 2015-02-02
+    size: R676.4 million (fact sheet, June 2026)
+    ter: 0.0151
+    tc: 0.0013
+    fees_src: fact sheet (March 2026)
+    allocation: {sa_equity: 37.4, global_equity: 24.9, sa_bonds: 21.8, sa_cash: 4.9, sa_property: 3.9, global_bonds: 3.6, global_cash: 3.5}
+    holdings:
+      - [SBK.JO, Standard Bank Group, 2.9]
+      - [NPN.JO, Naspers, 2.6]
+      - [FSR.JO, FirstRand, 2.6]
+      - [null, "Bidvest Group UK 2032 bond", 2.5]
+      - [PRX.JO, Prosus, 2.2]
+      - [ABG.JO, Absa Group, 2.1]
+      - [null, "Republic of South Africa 2031 bond", 1.9]
+      - [CPI.JO, Capitec Bank, 1.8]
+      - [null, "Republic of South Africa 2030 bond", 1.7]
+      - [null, iShares Core MSCI World, 1.7]
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/ABMFB.pdf", as_of: 2026-06-30, host: easyequities}
+
+  - ticker: UT:ZAE000258901
+    code: MTBTE
+    name: Ninety One Managed Fund (E)
+    manager: Ninety One
+    risk: medium_high
+    risk_label: "Not readable on the sheet (a 1-7 scale graphic); ASISA multi-asset high equity"
+    asisa: ASISA SA Multi-Asset High Equity
+    benchmark: Peer group median
+    inception: 1994-02-09
+    size: R27 609.5 million
+    ter: 0.0117
+    tc: 0.0076
+    fees_src: easyequities
+    allocation: {sa_equity: 29.8, sa_bonds: 11.3, commodities: 4.2, sa_cash: 3.1, global_equity: 37.4, global_cash: 9.9, global_bonds: 4.4}
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/MTBTE.pdf", as_of: 2025-05-31, host: easyequities}
+
+  - ticker: UT:ZAE000175691
+    code: AMWFB
+    name: Anchor BCI Worldwide Flexible Fund (B)
+    manager: Anchor Capital
+    risk: medium_high
+    risk_label: Moderate-High (fact sheet)
+    asisa: Worldwide Multi Asset Flexible
+    benchmark: SA CPI + 4% a year
+    inception: 2013-05-14
+    size: R3 367.6 million (fact sheet, March 2026)
+    ter: 0.0123
+    tc: 0.0001
+    fees_src: fact sheet (December 2025)
+    allocation: {global_equity: 71.0, sa_cash: 18.2, global_cash: 10.1, sa_equity: 0.7}
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/AMWFB.pdf", as_of: 2026-03-31, host: easyequities}
+
+  # ---------------------------------------------------------------- high
+  - ticker: UT:ZAE000177341
+    code: AGEC
+    name: Allan Gray Equity Fund (C)
+    manager: Allan Gray (foreign assets mostly in Orbis funds)
+    risk: high
+    risk_label: High (EasyEquities fund page)
+    asisa: South African - Equity - General
+    benchmark: Market value-weighted average of the SA Equity General category (excluding Allan Gray funds)
+    inception: 1998-10-01
+    size: R60 340.7 million
+    ter: 0.0169
+    tc: 0.0009
+    fees_src: easyequities
+    allocation: {sa_equity: 52.4, global_equity: 43.7, global_property: 1.4, global_bonds: 0.2, sa_cash: 1.6, global_cash: 0.6}
+    allocation_note: "Property 1.5 (1.4 foreign). Net equities SA 52.4 / foreign 43.7."
+    holdings:
+      - [ANH.JO, AB InBev, 5.5]
+      - [NPN.JO, Naspers & Prosus, 3.9]
+      - [GLN.JO, Glencore, 3.5]
+      - [BTI.JO, British American Tobacco, 3.4]
+      - [SBK.JO, Standard Bank, 3.2]
+      - [ANG.JO, AngloGold Ashanti, 3.0]
+      - [REM.JO, Remgro, 2.2]
+      - [null, Booking Holdings, 2.1]
+      - [NED.JO, Nedbank, 2.1]
+      - [null, Woolworths, 1.9]
+    method: price_history
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/AGEC", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000171526
+    code: GLOH
+    name: Ninety One Global Franchise Feeder Fund (H)
+    manager: Ninety One
+    risk: high
+    risk_label: "Not readable on the sheet (a 1-7 scale graphic); ASISA global equity"
+    asisa: ASISA Global Equity General
+    benchmark: MSCI AC World Net Return
+    inception: 1996-05-21
+    size: R39.4 billion (fact sheet, July 2026)
+    ter: 0.0134
+    tc: 0.0003
+    fees_src: fact sheet
+    allocation: {global_equity: 99.3, global_cash: 0.5, sa_cash: 0.2}
+    holdings:
+      - [V, Visa, 9.4]
+      - [ASML, ASML Holding, 7.9]
+      - [null, Philip Morris International, 6.0]
+      - [MSFT, Microsoft, 5.3]
+      - [null, Marsh & McLennan, 5.2]
+      - [null, Booking Holdings, 5.1]
+      - [GOOGL, Alphabet, 4.8]
+      - [null, NetEase, 4.1]
+      - [JNJ, Johnson & Johnson, 3.8]
+      - [null, London Stock Exchange Group, 3.6]
+    method: price_history
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/GLOH", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000171443
+    code: PPFH
+    name: Ninety One Property Equity Fund (H)
+    manager: Ninety One
+    risk: high
+    risk_label: "Not readable on the sheet (a 1-7 scale graphic); ASISA real estate"
+    asisa: ASISA SA Real Estate General
+    benchmark: FTSE/JSE All Property Index (SA listed)
+    inception: 2004-05-31
+    size: R5.5 billion (fact sheet, July 2026)
+    ter: 0.0099
+    tc: 0.0007
+    fees_src: fact sheet
+    allocation: {sa_property: 99.5, sa_equity: 0.1, sa_cash: 0.4}
+    holdings:
+      - [GRT.JO, Growthpoint Properties, 15.3]
+      - [null, Redefine Properties, 12.5]
+      - [NRP.JO, NEPI Rockcastle, 12.4]
+      - [null, Vukile Property Fund, 10.4]
+      - [null, Hyprop Investments, 8.2]
+      - [null, Resilient REIT, 7.0]
+      - [null, Fairvest, 5.4]
+      - [null, Fortress Real Estate Investments, 5.4]
+      - [null, Equites Property Fund, 4.8]
+      - [null, Hammerson, 4.8]
+    method: price_history
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/PPFH", as_of: 2026-07-31, host: discovery}
+
+  - ticker: UT:ZAE000260774
+    code: SYFCLA
+    name: Sygnia FANG.AI Equity Fund (A)
+    manager: Sygnia
+    risk: high
+    risk_label: '"More risk" end of the sheet''s scale; ASISA global equity'
+    asisa: Global - Equity - General
+    benchmark: NYSE FANG+ Index
+    inception: 2018-08-31
+    size: R1 968.3 million
+    ter: 0.0090
+    tc: 0.0002
+    fees_src: easyequities
+    performance_fee: "20% (EasyEquities fund page)"
+    allocation: {global_equity: 100}
+    holdings:
+      - [GOOGL, Alphabet, 10.6]
+      - [META, Meta Platforms, 10.6]
+      - [NVDA, NVIDIA, 10.4]
+      - [AMZN, Amazon, 10.1]
+      - [AVGO, Broadcom, 9.4]
+      - [AAPL, Apple, 8.8]
+      - [null, CrowdStrike, 8.8]
+      - [MSFT, Microsoft, 8.4]
+      - [NFLX, Netflix, 8.2]
+      - [PLTR, Palantir Technologies, 7.9]
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SYFCLA.pdf", as_of: 2026-01-31, host: easyequities}
+
+  - ticker: UT:ZAE000218558
+    code: ACPB2
+    name: Methodical BCI Equity Fund (B1)
+    manager: Methodical Investment Management
+    risk: high
+    risk_label: High (fact sheet)
+    asisa: South Africa Equity General
+    benchmark: ASISA South African Equity General category average
+    inception: 2016-06-01
+    size: R1 585.5 million (fact sheet, June 2026)
+    ter: 0.0109
+    tc: 0.0067
+    fees_src: easyequities
+    allocation: {sa_equity: 52.25, global_equity: 27.06, sa_cash: 16.07, global_cash: 3.46, sa_bonds: 1.15}
+    allocation_note: "Other 0.21 modelled as SA cash. Holdings at 31 May 2026; the largest line is a Top 40 index future."
+    holdings:
+      - [null, "JSE Top 40 index future (June 2026)", 10.2]
+      - [GLN.JO, Glencore, 5.4]
+      - [PAN.JO, Pan African Resources, 4.8]
+      - [null, Thungela Resources, 4.7]
+      - [SOL.JO, Sasol, 4.6]
+      - [BHG.JO, BHP Group, 4.5]
+      - [null, iShares MSCI USA Quality Factor ETF, 4.4]
+      - [null, South32, 3.9]
+      - [AGL.JO, Anglo American, 3.8]
+      - [VAL.JO, Valterra Platinum, 3.4]
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/ACPB2.pdf", as_of: 2026-06-30, host: easyequities}
+
+  - ticker: UT:ZAE000209078
+    code: ABGEFF
+    name: Anchor BCI Global Equity Feeder Fund (A)
+    manager: Anchor Capital
+    risk: high
+    risk_label: High (fact sheet)
+    asisa: Global Equity - General
+    benchmark: "See fact sheet (feeder into the Anchor Global Equity Fund, Ireland)"
+    inception: 2015-11-02
+    size: R788.1 million (fact sheet, June 2026)
+    ter: 0.0168
+    tc: 0.0
+    fees_src: fact sheet (March 2026)
+    allocation: {global_equity: 95.4, global_cash: 4.6}
+    allocation_note: "Top ten holdings are published in alphabetical order without weights (Alphabet, Amazon, AppLovin, Astera Labs, Eli Lilly, Flex, Fortinet, Intel, Marex, Nvidia), so they aren't used for overlap."
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/ABGEFF.pdf", as_of: 2026-06-30, host: easyequities}
+
+  - ticker: UT:ZAE000222352
+    code: SEPB1
+    name: Steyn Capital Equity Prescient Fund (B1)
+    manager: Steyn Capital Management
+    risk: high
+    risk_label: High (fact sheet)
+    asisa: South African - Equity - SA General
+    benchmark: FTSE/JSE Capped SWIX (J433PR)
+    inception: 2016-07-31
+    size: R1 094.1 million
+    ter: 0.0095
+    tc: 0.0042
+    fees_src: easyequities
+    allocation: {sa_equity: 97.07, sa_cash: 2.93}
+    method: price_history
+    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SEPB1.pdf", as_of: 2025-10-31, host: easyequities}
