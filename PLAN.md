@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-11 (Phase 2 steps 1–4 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–4 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -12,7 +12,7 @@ _Last updated: 2026-10-11 (Phase 2 steps 1–4 done; Phase 3 library parts 1–2
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **In progress.** Steps 1–4 done (ETF data, composition, sensitivities + clusters, active bets); 118 tests pass. Next: step 5. |
 | 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary and pop-up rules engine still to do. |
-| 4 | Due diligence, unit trusts and unlisted holdings | Not started |
+| 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
 ### Phase 1: what was delivered
@@ -153,6 +153,24 @@ hazard). `ui/cached.compare`/active use `fund_prices`. 30 new tests (197 total).
   modelled short-dated income funds look more volatile than they are.
 - Tests: `test_unit_trusts.py` (62), 3 AppTests (unit trust by allocation, unlisted with warning and sleeve, mixed
   fund through every page). 262 pass. Browser check covers the mixed fund (build + composition).
+
+**Step 4 done (2026-10-11): due-diligence checklists.**
+- `content/due_diligence.yaml` (editable): company (7 items), fund/ETF (7), unlisted (8), each with why it matters,
+  auto/manual, library "read more" slug and links (FSCA register and warnings pages, checked live 2026-10-11; the
+  older `Fais/Search_FSP.htm` links quoted in news articles now 404).
+- `fundlab/fundamentals.py` + `scripts/build_fundamentals.py` -> `data/sample/fundamentals.json` (78 shares, Yahoo
+  info + annual income/cash flow + dividends; added to the weekly GitHub Action). Ad-hoc tickers are fetched live.
+- `fundlab/diligence.py` fills findings with rule-of-thumb flags (stated in the text): net debt > 3x EBITDA,
+  cash from operations < 0.8x profit, any loss year or shrinking sales, P/E > 1.5x the app's sector peers (app
+  sectors) or (US shares only) its own year-end P/E median, missed dividends or 2+ yearly cuts, ISS overall >= 8,
+  commodity sectors; funds: TER+TC > 1.5%, 3+ top holdings already owned; unlisted: promised return >= 20%,
+  lock-in >= 5 years, guarantee-like or no-loss inputs. Banks get a capital-ratio note instead of debt ratios.
+- **Decision:** no P/E-vs-own-history for JSE shares: Yahoo's per-share history mixes cents and rand and ignores
+  splits (Naspers' share count jumps 187m -> 855m). Dividend "cuts" are calendar-year totals, caveated.
+- `ui/diligence.py`: "Before you add it: due-diligence checklist (n worth a closer look)" expander on the Build page
+  for every holding type, with session-only "Done" ticks and library deep links (`st.page_link` with
+  `?article=`; the library now lets the link's query param win over session state).
+- Tests: `test_diligence.py` (fires/stays-quiet per flag, content neutral, every universe share builds), 1 AppTest.
 
 
 Finding: Yahoo's search returns no SA unit trusts (tried Allan Gray, Coronation, Ninety One, PSG; `0P…` Morningstar
@@ -375,10 +393,12 @@ Made in Phase 2 (2026-10-09):
 ## Next step
 
 1. ~~Phase 3 case-file batch 2~~ Done (2026-10-11).
-2. **Phase 4** (the user asked for it next): due-diligence checklists by holding type; unit trusts (price history,
-   upload, or allocation model; look-through and overlap); unlisted holdings (stated assumptions, illiquid sleeve,
-   included in Monte Carlo/scenarios, illiquid share). See spec sections 8 and 9.
-3. Later: remaining case files (44 approved), glossary tooltips and the pop-up rules engine (Phase 3), then Phase 2
+2. ~~Phase 4~~ Done (2026-10-11).
+3. Phase 4 follow-ups: Phase 2 step 5's risk page should reuse `unlisted.simulate` so stress tests and fan charts
+   include the illiquid sleeve; a "can't sell in a hurry" pop-up rule (Phase 3 rules engine) using
+   `unlisted.illiquid_share`; refresh the older unit-trust sheets (Sanlam 2025, Ninety One Managed 2025, Steyn 2025)
+   from managers' sites; consider a short-duration SA bond proxy for income funds.
+4. Later: remaining case files (44 approved), glossary tooltips and the pop-up rules engine (Phase 3), then Phase 2
    steps 5–7.
 
 Phase 2, step 5 (when resumed): Risk detail page: VaR/ES three ways side by side (historical, parametric, Monte Carlo

@@ -219,3 +219,19 @@ def test_unlisted_and_unit_trust_fund_from_link_renders_everywhere():
     for page in ("views/composition.py", "views/active_bets.py"):
         at.switch_page(page).run()
         no_errors(at)
+
+
+def test_due_diligence_checklist_for_each_holding_type():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.selectbox(key="pick_0").set_value("GLN.JO").run()
+    no_errors(at)
+    assert any(e.label.startswith("Before you add it") for e in at.expander)
+    at.segmented_control(key="add_kind").set_value("unit_trust").run()
+    at.selectbox(key="ut_pick_0_medium_high").set_value("UT:ZAE000177358").run()
+    no_errors(at)
+    assert any(e.label.startswith("Before you add it") for e in at.expander)
+    at.segmented_control(key="add_kind").set_value("unlisted").run()
+    at.text_input(key="ul_name_0___new__").set_value("Syndication").run()
+    no_errors(at)
+    assert any(e.label.startswith("Before you add it") for e in at.expander)

@@ -22,6 +22,8 @@ jobs:
           pip install $(grep -iE '^(numpy|pandas|pyarrow|pyyaml|yfinance)==' requirements.txt)
       - name: Rebuild sample
         run: python scripts/build_sample.py
+      - name: Refresh company fundamentals
+        run: python scripts/build_fundamentals.py
       - name: Commit if changed
         run: |
           if git diff --quiet -- data/sample; then

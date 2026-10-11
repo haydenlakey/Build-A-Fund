@@ -9,6 +9,7 @@ from fundlab import data, unlisted, var, verdict
 from fundlab.analysis import Comparison
 from fundlab.model import HOLDING_KINDS, Fund
 from ui import cached, charts, pickers, state
+from ui import diligence as dd
 from ui import components as C
 
 OTHER = "__other__"
@@ -284,6 +285,11 @@ if name != fund.name:
 
 st.subheader("Add, resize or remove a holding")
 ticker, amount, spec = change_picker(fund)
+
+if ticker and spec:
+    cl = dd.build(fund, ticker, spec)
+    if cl is not None:
+        dd.show(cl, f"{st.session_state.get('picker_gen', 0)}_{ticker}")
 
 after, moved = fund, False
 if ticker and amount is None:

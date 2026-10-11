@@ -128,7 +128,7 @@ def index_view(articles: dict[str, Article]) -> None:
 # ---------------------------------------------------------------------------------
 
 articles = cached.library()
-slug = st.session_state.get("article") or st.query_params.get("article")
+slug = st.query_params.get("article") or st.session_state.get("article")  # a link's ?article= wins
 if slug and slug in articles:
     article_view(articles[slug], articles)
 else:

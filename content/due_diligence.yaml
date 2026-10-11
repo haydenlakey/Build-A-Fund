@@ -1,0 +1,131 @@
+# Due-diligence checklists, shown on the Build page before a holding is added.
+#
+# Edit freely: wording lives here, the app only fills in the numbers. Each item has
+#   id        stable key (the app's auto-fill looks items up by id; keep it unchanged)
+#   question  what to look at
+#   why       one or two sentences on why it matters
+#   auto      true if the app fills in a finding from data; false = for the reader to check
+#   read      optional library article slug for "read more"
+# Text describes and explains; it never tells anyone to buy or sell.
+
+links:
+  fsca_register: {title: "FSCA: search for a financial services provider", url: "https://www.fsca.co.za/Entity-Persons-Search/?iframe_target=financial-services-providers", accessed: 2026-10-11}
+  fsca_warnings: {title: "FSCA: warnings and alerts", url: "https://www.fsca.co.za/Latest-News/", accessed: 2026-10-11}
+
+company:
+  title: A company's shares
+  intro: "A share is a slice of one business, so the questions are about that business."
+  items:
+    - id: business
+      question: What does it do and how does it earn its money?
+      why: If you can't say in a sentence where the profits come from, it is hard to judge what could make them disappear.
+      auto: true
+    - id: earnings
+      question: Are sales, profits and cash flow growing, shrinking or erratic?
+      why: Profits can be flattered by accounting choices; cash coming in from operations is harder to fake. A business that reports profits but little cash deserves a closer look.
+      auto: true
+      read: steinhoff
+    - id: debt
+      question: How much does it owe?
+      why: Debt magnifies good and bad years alike. A company that owes many years of earnings has less room when business turns down, and lenders get paid before shareholders.
+      auto: true
+      read: african-bank
+    - id: valuation
+      question: Is the share priced high or low compared with its own past and with similar companies?
+      why: A high price-to-earnings ratio means investors expect strong growth; when that growth disappoints, the price can fall even if the business does fine.
+      auto: true
+      read: dot-com
+    - id: dividends
+      question: Has it paid dividends steadily?
+      why: A long, unbroken dividend record says something about how stable the cash flows have been. Cuts often come in hard times.
+      auto: true
+    - id: governance
+      question: Are there governance red flags?
+      why: "Warning signs include auditor changes, restated accounts, complex structures with many related companies, and a dominant chief executive whom the board rarely challenges. None proves wrongdoing; they make problems harder to see."
+      auto: true
+      read: steinhoff
+    - id: dependence
+      question: Does it depend on one commodity, customer or currency?
+      why: A company whose profits follow one commodity price, one big customer or one currency carries that single risk into your fund.
+      auto: true
+      read: sa-property-2018
+
+fund:
+  title: A unit trust or ETF
+  intro: "A fund is a basket someone else chose, so the questions are about the basket, its costs and its manager."
+  items:
+    - id: mandate
+      question: What is it allowed to hold, and what benchmark is it measured against?
+      why: The mandate and benchmark tell you what job the fund is meant to do, and what its performance should be compared with.
+      auto: true
+    - id: fees
+      question: What does it cost in total (TER, transaction costs, performance fees)?
+      why: Fees come off every year whether returns are good or bad, and they compound. Small differences add up over decades.
+      auto: true
+      read: fees
+    - id: performance
+      question: How has it done after fees against its benchmark over long periods?
+      why: Short periods are mostly luck. Fact sheets show 5-, 10-year and since-launch figures after fees; the longer the record, the more it says.
+      auto: true
+      read: buffett-bet
+    - id: overlap
+      question: What are its top holdings, and do they overlap with what you already own?
+      why: Two funds can hold the same big companies, so adding a second fund may add less diversification than it seems.
+      auto: true
+      read: diversification
+    - id: manager
+      question: Who manages it, and for how long?
+      why: A long record under the same team says more than one built by people who have since left.
+      auto: true
+    - id: size
+      question: How big is the fund?
+      why: Very small funds can be expensive to run or be closed; very large ones can find it hard to buy small companies without moving prices.
+      auto: true
+    - id: classification
+      question: How is it classified?
+      why: The ASISA category (e.g. multi-asset high equity) sets limits on what it can hold and tells you which peers it competes with.
+      auto: true
+
+unlisted:
+  title: An unlisted or alternative investment
+  intro: "Property developments, private businesses and syndications have no market price and little regulation, so more of the checking falls on you."
+  items:
+    - id: promoter
+      question: Who is behind it, and what is their track record?
+      why: Look for projects they finished, what investors got back, and anything that went wrong. A record you can verify independently counts for far more than a brochure.
+      auto: false
+    - id: licensed
+      question: Is the provider authorised by the FSCA, and for this kind of product?
+      why: An authorised financial services provider has to follow conduct rules and can be complained about to an ombud. The FSCA's public register shows who is authorised; its warnings page lists entities it has flagged.
+      auto: false
+      links: [fsca_register, fsca_warnings]
+      read: mti
+    - id: source
+      question: Where do the returns actually come from?
+      why: Rent, business profits or interest on a loan can be explained and checked. "Trading", "bots" or "arbitrage" without detail cannot.
+      auto: false
+      read: mti
+    - id: realistic
+      question: How realistic are the projections?
+      why: Compare the promised return with what listed markets have paid. Very high promised returns usually mean very high risk, or that the returns are not real.
+      auto: true
+      read: mti
+    - id: withdrawal
+      question: How and when can you get your money out?
+      why: Locked-up money can't be used in an emergency, and it can't be pulled out if things start to go wrong.
+      auto: true
+      read: woodford
+    - id: debt
+      question: How much debt does the project carry?
+      why: A property development funded mostly with debt can wipe out investors after a small overrun or price fall, because lenders are repaid first.
+      auto: false
+      read: leverage
+    - id: structure
+      question: What exactly do you own, and under what legal structure?
+      why: Shares in a company, a loan to it, or a unit in a scheme give you very different rights if it fails. Ask for the documents that say what you own.
+      auto: false
+    - id: scam_signs
+      question: Are there classic scam warning signs?
+      why: "Guaranteed high returns, pressure to commit quickly, rewards for recruiting others, and early investors being paid out of new investors' money are the classic patterns of Ponzi and pyramid schemes. MTI, for example, promised at least 10% a month."
+      auto: true
+      read: mti

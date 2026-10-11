@@ -96,6 +96,9 @@ def main() -> int:
             page.screenshot(path=OUT / f"{label}-2-example.png")
             pick(page, "NewGold Platinum", "8000")
             page.screenshot(path=OUT / f"{label}-3-preview.png")
+            page.get_by_text("Before you add it", exact=False).first.click()
+            settle(page)
+            page.screenshot(path=OUT / f"{label}-3b-checklist.png")
             if label == "desktop" and not marker_moves(page):
                 problems.append("risk-return marker did not animate on Replay")
             page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 3400})
