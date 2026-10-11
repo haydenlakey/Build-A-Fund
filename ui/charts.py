@@ -461,3 +461,67 @@ def leverage_chart(hist, lev: float, amount: float) -> go.Figure:
     fig.update_layout(**_axes(layout, dict(showgrid=False),
                               dict(title="Your money in rand", tickprefix="R", tickformat=",.0f", rangemode="tozero")))
     return fig
+
+
+# ---- reality check -----------------------------------------------------------------
+
+def cost_paths(df) -> go.Figure:
+    """Fund value year by year with no costs, after fund costs and after all costs."""
+    p = palette()
+    styles = {"No costs": (p["muted"], "dot"), "After fund costs": (p["series"][0], "solid"),
+              "After all costs": (p["series"][1], "solid")}
+    fig = go.Figure()
+    for c in df.columns:
+        colour, dash = styles[c]
+        fig.add_trace(go.Scatter(
+            x=df.index, y=df[c], mode="lines", name=c, line=dict(color=colour, width=2, dash=dash),
+            hovertemplate=f"<b>{c}</b><br>Year %{{x}}: R%{{y:,.0f}}<extra></extra>"))
+    layout = base_layout(p, height=380, hovermode="x unified")
+    fig.update_layout(**_axes(layout, dict(title="Years from now", dtick=5, showgrid=False),
+                              dict(title="Fund value in rand", tickprefix="R", tickformat=",.0f")))
+    return fig
+
+
+def backtest_lines(lines: dict, amount: float) -> go.Figure:
+    """Growth of the fund's rands under each line; the fund first and thickest, fixed colour order."""
+    p = palette()
+    fig = go.Figure()
+    for i, (name, w) in enumerate(lines.items()):
+        colour = p["series"][i % len(p["series"])]
+        fig.add_trace(go.Scatter(
+            x=w.index, y=w.values * amount, mode="lines", name=name,
+            line=dict(color=colour, width=2.5 if i == 0 else 1.5),
+            hovertemplate=f"<b>{name}</b><br>%{{x|%d %b %Y}}<br>R%{{y:,.0f}}<extra></extra>"))
+    fig.add_hline(y=amount, line=dict(color=p["muted"], width=1, dash="dot"))
+    layout = base_layout(p, height=420)
+    fig.update_layout(**_axes(layout, dict(showgrid=False),
+                              dict(title="Value in rand", tickprefix="R", tickformat=",.0f")))
+    return fig
+
+
+def weights_compare(current, optimised, lo, hi, names: dict[str, str]) -> go.Figure:
+    """Your weights next to the optimiser's, with the 10th-90th percentile range of the optimiser's weight
+    when expected returns are varied within their uncertainty."""
+    p = palette()
+    order = current.sort_values().index
+    labels = [names.get(t, t) for t in order]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=labels, x=[optimised[t] for t in order], orientation="h", name="Optimiser",
+        marker=dict(color=p["series"][1], cornerradius=4),
+        error_x=dict(type="data", symmetric=False, array=[hi[t] - optimised[t] for t in order],
+                     arrayminus=[optimised[t] - lo[t] for t in order], color=p["ink2"], thickness=1.5, width=5),
+        customdata=[[lo[t], hi[t]] for t in order],
+        hovertemplate="<b>%{y}</b><br>Optimiser %{x:.1%}<br>Re-runs: %{customdata[0]:.0%} to %{customdata[1]:.0%}"
+                      "<extra></extra>"))
+    fig.add_trace(go.Bar(
+        y=labels, x=[current[t] for t in order], orientation="h", name="Your fund",
+        marker=dict(color=p["series"][0], cornerradius=4), text=[f"{current[t]:.0%}" for t in order],
+        textposition="outside", cliponaxis=False, textfont=dict(color=p["ink2"], size=11),
+        hovertemplate="<b>%{y}</b><br>Your fund %{x:.1%}<extra></extra>"))
+    layout = base_layout(p, height=max(220, 90 + 56 * len(order)), barmode="group", bargap=0.3, bargroupgap=0.08,
+                         margin=dict(l=8, r=48, t=40, b=8))
+    layout["legend"] = dict(layout["legend"], traceorder="reversed")
+    fig.update_layout(**_axes(layout, dict(tickformat=".0%", range=[0, 1.05]),
+                              dict(showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))))
+    return fig

@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–5 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
-| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–5 done (ETF data, composition, sensitivities + clusters, active bets, risk detail); 304 tests pass. Next: step 6 (reality check). |
+| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–6 done (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check); 320 tests pass. Next: step 7 (diversifier explorer, side-by-side comparison). |
 | 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary and pop-up rules engine still to do. |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
@@ -88,6 +88,19 @@ _Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–5 done; Phase 3 libra
     `unlisted.simulate_paths` (`simulate` = its last column), cached wrappers in `ui/cached.py`, 7 charts in `ui/charts.py`.
   - Tests: `tests/test_risk_detail.py` (20), 3 AppTests (example fund incl. t shocks + 2× + episode switch, empty fund,
     unlisted fund rows). Browser check screenshots the page with 2× selected.
+- **Step 6 (2026-10-11): Reality check** (`views/reality.py`, after "Risk in detail").
+  - *Costs* (`fundlab/costs.py`, sourced defaults in `data/platform_costs.yaml`: EasyEquities ZAR & TFSA cost profile
+    of 12 Feb 2026 + "Fees and costs" support page): editable buy/sell costs, FX fee for US holdings, unit trust
+    platform fee, monthly account fee (Thrive R25, waivable). Tiles (fund charges inside prices, platform + account,
+    one-off cost to buy, yearly drag), 20-year value lines (no costs / after fund costs / after all), 10- and 20-year
+    rands lost split into fund charges vs platform, account and trading; costs by holding.
+  - *Backtest* (`fundlab/backtest.py`): today's weights over the measured window, rebalanced never/yearly/quarterly/
+    monthly/weekly at the previous week's close, trading costs on turnover; vs equal-weight version, Top 40 (STX40),
+    S&P 500 in rand, balanced proxy (left out if its prices don't cover the window). Stats table + hindsight-bias note.
+  - *Optimiser* (`frontier.optimise`, `frontier.resampled_weights`): same risk / same return / max Sharpe over the
+    fund's own measured holdings (long only); weights vs yours with 10–90% whiskers from 200 seeded re-runs with
+    each mean drawn from N(mu, SE²); Michaud (FAJ 1989, "estimation-error maximizers") cited.
+  - Tests: `tests/test_reality.py` (14), 2 AppTests + reality page in the mixed-fund loop; browser check screenshot.
 
 ## Phase 2 plan
 
@@ -98,8 +111,7 @@ explorer and side-by-side comparison. In order:
 3. ~~`fundlab/factors.py` + clustered correlation heatmap~~ Done.
 4. ~~Active bets view~~ Done.
 5. ~~Risk detail~~ Done (2026-10-11).
-6. Reality check: costs drag (TER + editable brokerage, R lost over 10/20 years), backtest vs Top 40,
-   S&P 500 in rand, balanced proxy, equal-weight, with rebalancing; optimiser comparison with caveats.
+6. ~~Reality check~~ Done (2026-10-11).
 7. Explore diversifiers; side-by-side fund comparison.
 
 ### Phase 3: delivered so far (library part 1, commit a29b29e)
@@ -235,6 +247,7 @@ Build A Fund/
 │   ├── composition.py     # What kind of fund is it? (look-through, tilts, concentration, risk vs money, betas, clusters)
 │   ├── active_bets.py     # Against a benchmark (active weights, TE, TE budget, rules of thumb)
 │   ├── risk.py            # Risk in detail (estimate uncertainty, VaR/ES 3 ways, fan, stress tests, drawdown, leverage)
+│   ├── reality.py         # Reality check (costs, backtest with rebalancing, optimiser + resampling)
 │   ├── library.py         # Library (articles from content/library)
 │   └── about.py           # About and data
 ├── ui/                    # Streamlit-only helpers
@@ -250,7 +263,9 @@ Build A Fund/
 │   ├── var.py             # parametric (normal/t), historical, Monte Carlo VaR/ES, weekly sims, fan bands
 │   ├── stress.py          # stress-test episodes, buy-and-hold replay, two-factor proxies for missing history
 │   ├── leverage.py        # borrowing to invest: margin calls, forced sales, wipe-outs
-│   ├── frontier.py        # long-only frontier (warm-started SLSQP), efficiency_gap
+│   ├── costs.py           # fund charges, platform/account fees, trading costs, rands lost over n years
+│   ├── backtest.py        # rebalanced backtests with trading costs
+│   ├── frontier.py        # long-only frontier (warm-started SLSQP), efficiency_gap, optimise goals, resampling
 │   ├── active.py          # active weights, TE, TE budget, pairwise bet, rule of thumb
 │   ├── model.py           # Holding, FundSettings, Fund, JSON + share codes
 │   ├── data.py            # Universe, quote units, cleaning, weekly resample, FX, download, PriceStore
@@ -305,6 +320,16 @@ Accepted with the plan:
 - Unlisted correlation with listed equity user-set, default 0.5.
 - Bundled data is primary on Streamlit Cloud; live fetching is a bonus.
 - Fact-sheet PDF: fpdf2 + matplotlib. Glossary tooltips must open on tap.
+
+Made during Phase 2 step 6 (2026-10-11):
+- **Costs are layered:** TER/TC are already inside ETF and unit-trust prices (so history-based numbers are after
+  them; shown, not deducted again); platform/account fees and trading costs are not in prices and are applied only
+  on the Reality check page. Growth before costs is a labelled assumption (default 10%), not the app's expected return.
+- **STT (0.25%) only on JSE share purchases**: the cost profile says "purchases of shares"; whether it applies to ETF
+  units was **not verified** (no source found). The input's help text says to add 0.25 if it does.
+- **US shares:** only the EasyFX transfer fee (0.5%) is included; no published USD-account cost profile was found.
+- **Backtest trades at the previous week's close**, so weekly rebalancing without costs reproduces `port_returns`.
+- **Optimiser uncertainty uses unshrunk standard errors** σᵢ/√years (uncertainty about the true mean).
 
 Made during Phase 2 step 5 (2026-10-11):
 - **Stress windows** come from the app's own weekly data (Top 40 index peak 16 May 2008 → trough 21 Nov 2008, −47%)
@@ -431,7 +456,8 @@ Made in Phase 2 (2026-10-09):
 2. ~~Phase 4~~ Done (2026-10-11).
 3. ~~Phase 2 step 5 (Risk in detail)~~ Done (2026-10-11); it reuses `unlisted.simulate_paths` for the
    whole-fund VaR row and fan chart, and moves unlisted holdings with the listed part in stress tests.
-4. **Next: Phase 2 step 6 (Reality check)**, then step 7 (diversifier explorer, side-by-side comparison).
+4. ~~Phase 2 step 6 (Reality check)~~ Done (2026-10-11). Next in Phase 2: step 7 (diversifier explorer,
+   side-by-side comparison).
 5. Phase 4 follow-ups: a "can't sell in a hurry" pop-up rule (Phase 3 rules engine) using
    `unlisted.illiquid_share`; refresh the older unit-trust sheets (Sanlam 2025, Ninety One Managed 2025, Steyn 2025)
    from managers' sites; consider a short-duration SA bond proxy for income funds.
@@ -439,7 +465,5 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips and the pop-up rules engine (Phase 3, incl. "leverage switched on" once leverage is saved
    in the fund, if wanted).
 
-Phase 2, step 6 (next): Reality check page: costs drag (weighted TER/TC from `lookthrough`, plus an editable
-brokerage fee) as return lost a year and rands lost over 10 and 20 years; backtest against the Top 40, S&P 500 in rand,
-the balanced proxy and an equal-weight version of the fund, with periodic rebalancing; "the optimiser would hold these
-same assets in these weights instead" with the difference and a note on why optimisers are unreliable.
+Phase 2, step 7 (next in Phase 2): "Explore diversifiers" (from the preset universe, which holdings would historically
+have lowered the fund's risk most per rand added, framed as exploration) and side-by-side comparison of saved funds.

@@ -95,6 +95,7 @@ pages = [
     st.Page("views/composition.py", title="What kind of fund is it?", icon=":material/donut_large:"),
     st.Page("views/active_bets.py", title="Against a benchmark", icon=":material/compare_arrows:"),
     st.Page("views/risk.py", title="Risk in detail", icon=":material/monitoring:"),
+    st.Page("views/reality.py", title="Reality check", icon=":material/fact_check:"),
     st.Page("views/library.py", title="Library", icon=":material/menu_book:"),
     st.Page("views/about.py", title="About and data", icon=":material/info:"),
 ]

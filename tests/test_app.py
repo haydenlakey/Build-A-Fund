@@ -216,7 +216,7 @@ def test_unlisted_and_unit_trust_fund_from_link_renders_everywhere():
     at = fresh({"fund": f.to_share_code()})
     no_errors(at)
     assert any("Illiquid sleeve" in s.value for s in at.subheader)
-    for page in ("views/composition.py", "views/active_bets.py", "views/risk.py"):
+    for page in ("views/composition.py", "views/active_bets.py", "views/risk.py", "views/reality.py"):
         at.switch_page(page).run()
         no_errors(at)
 
@@ -274,3 +274,36 @@ def test_risk_page_with_unlisted_has_whole_fund_rows():
     assert "Whole fund, with unlisted" in at.dataframe[0].value["Method"].tolist()
     stress = next(d.value for d in at.dataframe if "Episode" in d.value.columns)
     assert "Whole fund, with unlisted" in stress.columns
+
+
+def test_reality_page_with_example_fund():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.switch_page("views/reality.py").run()
+    no_errors(at)
+    assert any("Reality check" in t.value for t in at.title)
+    labels = [m.label for m in at.metric]
+    assert {"Fund charges", "Yearly drag", "Expected return"} <= set(labels)
+    assert len(at.get("plotly_chart")) >= 3  # costs, backtest, optimiser weights
+    lines = next(d.value for d in at.dataframe if "Total return" in d.value.columns)[""].tolist()
+    assert lines[:2] == ["Your fund", "Equal-weight version"] and "S&P 500 in rand" in lines
+    at.number_input(key="c_month").set_value(0.0).run()
+    no_errors(at)
+    for sched in ("never", "weekly"):
+        at.segmented_control(key="bt_sched").set_value(sched).run()
+        no_errors(at)
+    for goal in ("same_return", "max_sharpe"):
+        at.segmented_control(key="opt_goal").set_value(goal).run()
+        no_errors(at)
+
+
+def test_reality_page_empty_and_single_holding():
+    at = fresh()
+    at.switch_page("views/reality.py").run()
+    no_errors(at)
+    assert any("This fund is empty" in i.value for i in at.info)
+    f = Fund("One", [Holding("STX40.JO", "Satrix 40", "jse_etf", 5000)])
+    at = fresh({"fund": f.to_share_code()})
+    at.switch_page("views/reality.py").run()
+    no_errors(at)
+    assert any("at least two holdings" in i.value for i in at.info)

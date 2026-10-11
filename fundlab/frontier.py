@@ -72,3 +72,67 @@ def efficiency_gap(port_ret: float, port_vol: float, frontier: Frontier) -> floa
     Zero means the fund sits on its own frontier.
     """
     return max(0.0, port_vol - frontier.vol_at(port_ret))
+
+
+# ---- single optimised portfolios --------------------------------------------------------
+
+GOALS = {"same_risk": "Same risk, highest expected return", "same_return": "Same expected return, lowest risk",
+         "max_sharpe": "Highest Sharpe ratio"}
+
+
+def _slsqp(obj, jac, n: int, cons: list, w0: np.ndarray | None = None) -> np.ndarray | None:
+    cons = [{"type": "eq", "fun": lambda w: w.sum() - 1.0, "jac": lambda w: np.ones(n)}] + cons
+    res = minimize(obj, np.full(n, 1.0 / n) if w0 is None else w0, jac=jac, bounds=[(0.0, 1.0)] * n,
+                   constraints=cons, method="SLSQP", options={"maxiter": 500, "ftol": 1e-12})
+    if not res.success:
+        return None
+    w = np.clip(res.x, 0, None)
+    return w / w.sum()
+
+
+def optimise(mu: pd.Series, cov: pd.DataFrame, goal: str, target_vol: float = float("nan"),
+             target_ret: float = float("nan"), rf: float = 0.0) -> pd.Series | None:
+    """Long-only weights (sum to one, each 0..1) for one goal:
+
+    same_risk:   max w'mu       subject to w' Sigma w <= target_vol^2
+    same_return: min w' Sigma w subject to w'mu >= target_ret
+    max_sharpe:  max (w'mu - rf) / sqrt(w' Sigma w)
+    """
+    idx = mu.index
+    m = mu.to_numpy(dtype=float)
+    s = cov.loc[idx, idx].to_numpy(dtype=float)
+    n = len(m)
+    if n == 1:
+        return pd.Series([1.0], index=idx)
+    if goal == "same_risk":
+        cons = [{"type": "ineq", "fun": lambda w: target_vol ** 2 - w @ s @ w, "jac": lambda w: -2 * s @ w}]
+        w = _slsqp(lambda w: -(w @ m), lambda w: -m, n, cons)
+    elif goal == "same_return":
+        cons = [{"type": "ineq", "fun": lambda w: w @ m - target_ret, "jac": lambda w: m}]
+        w = _slsqp(lambda w: w @ s @ w, lambda w: 2 * s @ w, n, cons)
+    elif goal == "max_sharpe":
+        def neg_sr(w):
+            v = np.sqrt(max(w @ s @ w, 1e-16))
+            return -(w @ m - rf) / v
+
+        def neg_sr_jac(w):
+            v = np.sqrt(max(w @ s @ w, 1e-16))
+            return -(m * v - (w @ m - rf) * (s @ w) / v) / v ** 2
+        w = _slsqp(neg_sr, neg_sr_jac, n, [])
+    else:
+        raise ValueError(f"unknown goal {goal!r}")
+    return None if w is None else pd.Series(w, index=idx)
+
+
+def resampled_weights(mu: pd.Series, se: pd.Series, cov: pd.DataFrame, goal: str, n_draws: int = 200,
+                      seed: int = 42, **targets) -> pd.DataFrame:
+    """Re-run `optimise` with expected returns drawn from N(mu_i, se_i^2) (independently), to show how much the
+    'best' weights depend on estimates nobody knows precisely. Rows = draws, columns = holdings."""
+    rng = np.random.default_rng(seed)
+    out = []
+    for _ in range(n_draws):
+        m = mu + rng.standard_normal(len(mu)) * se.loc[mu.index].to_numpy()
+        w = optimise(m, cov, goal, **targets)
+        if w is not None:
+            out.append(w)
+    return pd.DataFrame(out, columns=mu.index)

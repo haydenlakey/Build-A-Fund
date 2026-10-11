@@ -1,0 +1,26 @@
+# EasyEquities costs used as editable defaults on the Reality check page.
+# Source: EasyEquities Cost Profile, "EasyEquities ZAR & TFSA Account", dated 12 February 2026,
+#   https://resources.easyequities.co.za/EasyEquities_CostProfile.pdf (accessed 2026-10-11)
+# and the support article "Fees and costs" (Thrive fee),
+#   https://support.easyequities.co.za/support/solutions/articles/13000075565-fees-and-costs (accessed 2026-10-11).
+# All fractions. The cost profile lists costs excluding VAT; VAT at 15% applies "on applicable costs".
+# The app applies VAT to broker commission, settlement and the investor protection levy, not to STT (a tax).
+# STT: Note 2 says it is levied "at 0.25% of the nominal value of any purchases of shares". Whether it applies to
+# ETF units was not verified, so the app applies it to JSE shares only and says so.
+# Costs for US shares held in an EasyEquities USD account were not found (no USD cost profile located), so only
+# the EasyFX transfer fee for moving rand to dollars is included.
+
+as_of: 2026-02-12
+accessed: 2026-10-11
+source: https://resources.easyequities.co.za/EasyEquities_CostProfile.pdf
+source_title: "EasyEquities Cost Profile: ZAR & TFSA Account (12 February 2026)"
+support_source: https://support.easyequities.co.za/support/solutions/articles/13000075565-fees-and-costs
+
+broker_commission: 0.0025        # each buy and sell, 1c minimum (Note 1)
+stt_on_share_purchases: 0.0025   # Securities Transfer Tax, purchases of shares (Note 2)
+settlement: 0.000795             # settlement and administration, of value traded (Note 3)
+investor_protection_levy: 0.0000031
+vat: 0.15
+unit_trust_platform_fee: 0.0025  # a year, of unit trust net asset value (Note 13); unit trusts have no brokerage
+easyfx_transfer_fee: 0.005       # moving rand to the USD account (Note 12)
+thrive_fee_monthly: 25.0         # rand a month; waived at Thrive Level 3, or if under 21 or over 65 (support article)

@@ -120,6 +120,11 @@ def main() -> int:
             if page.locator(".js-plotly-plot").count() < 7:
                 problems.append(f"{label}: risk page shows fewer than 7 charts")
             page.screenshot(path=OUT / f"{label}-10-risk.png")
+            page.goto(f"{URL}/reality?fund={EXAMPLE.to_share_code()}")
+            settle(page)
+            if page.locator(".js-plotly-plot").count() < 3:
+                problems.append(f"{label}: reality check page shows fewer than 3 charts")
+            page.screenshot(path=OUT / f"{label}-11-reality.png")
             page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 3400})
             page.goto(f"{URL}/?fund={MIXED.to_share_code()}")
             settle(page)

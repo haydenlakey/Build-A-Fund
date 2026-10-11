@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fundlab import (active, analysis, content, data, estimators, factors, lookthrough, risk,
+from fundlab import (active, analysis, backtest, content, costs, data, estimators, factors, frontier, lookthrough, risk,
                      stress, synthetic, unit_trusts, unlisted, var)
 from fundlab.model import HOLDING_KINDS, Fund
 
@@ -208,3 +208,63 @@ def _whole_paths(fund_json: str, h_weeks: int, n_sims: int) -> np.ndarray:
 def whole_paths(fund: Fund, h_weeks: int, n_sims: int) -> np.ndarray:
     """Whole-fund value paths including unlisted holdings (buy and hold), (n_sims, h_weeks + 1)."""
     return _whole_paths(fund.to_json(), h_weeks, n_sims)
+
+
+# ---- reality check ----------------------------------------------------------------
+
+@st.cache_resource
+def platform_costs() -> dict:
+    return costs.load_platform_costs()
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _backtests(fund_json: str, schedule: str, buy: float, sell: float, bench_buy: float):
+    fund = Fund.from_json(fund_json)
+    a = compare(fund, fund).after
+    if a is None:
+        return {}, []
+    idx = a.port_returns.index
+    rets = compare(fund, fund).est.returns.loc[idx, a.weights.index]
+    lines = {"Your fund": backtest.run(rets, a.weights, schedule, buy, sell)}
+    if len(a.weights) > 1:
+        eq = pd.Series(1.0, index=a.weights.index)
+        lines["Equal-weight version"] = backtest.run(rets, eq, schedule, buy, sell)
+    notes = []
+    bms = universe().benchmarks
+    for key, label in [("top40", "Top 40 (Satrix 40)"), ("sp500", "S&P 500 in rand"), ("balanced", "Balanced proxy")]:
+        comp = pd.Series(bms[key]["components"], dtype=float)
+        px = prices(list(comp.index)).reindex(idx.union([idx[0] - pd.Timedelta(weeks=1)]))
+        r = estimators.prices_to_returns(px).reindex(idx)
+        if r.isna().any().any():
+            notes.append(f"{label} is left out: its prices don't cover the whole window.")
+            continue
+        lines[label] = backtest.run(r, comp, schedule, bench_buy, sell)
+    return lines, notes
+
+
+def backtests(fund: Fund, schedule: str, buy: float, sell: float, bench_buy: float):
+    """({line name: backtest.Run}, notes) over the fund's measured window."""
+    return _backtests(fund.to_json(), schedule, round(buy, 6), round(sell, 6), round(bench_buy, 6))
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _optimised(fund_json: str, goal: str):
+    fund = Fund.from_json(fund_json)
+    cmp = compare(fund, fund)
+    a = cmp.after
+    if a is None or len(a.weights) < 2:
+        return None
+    idx = a.weights.index
+    mu, cov = cmp.est.mu[idx], cmp.est.cov.loc[idx, idx]
+    targets = dict(target_vol=a.vol, target_ret=a.exp_return, rf=fund.settings.risk_free)
+    w = frontier.optimise(mu, cov, goal, **targets)
+    if w is None:
+        return None
+    se = pd.Series({t: estimators.mean_standard_error(cmp.est.returns[t]) for t in idx})
+    draws = frontier.resampled_weights(mu, se, cov, goal, 200, fund.settings.seed, **targets)
+    return w, draws, se
+
+
+def optimised(fund: Fund, goal: str):
+    """(optimiser weights, resampled weights (draws x holdings), per-holding standard errors) or None."""
+    return _optimised(fund.to_json(), goal)
