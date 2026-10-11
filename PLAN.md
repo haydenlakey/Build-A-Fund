@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-11 (Phase 2 steps 1–4 done; Phase 3 library part 1 done)_
+_Last updated: 2026-10-11 (Phase 2 steps 1–4 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-11 (Phase 2 steps 1–4 done; Phase 3 library part 1 done
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **In progress.** Steps 1–4 done (ETF data, composition, sensitivities + clusters, active bets); 118 tests pass. Next: step 5. |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 15 sourced articles done; 145 tests pass. Next: case-file batch 2, then Phase 4. Glossary and pop-up rules engine still to do. |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary and pop-up rules engine still to do. |
 | 4 | Due diligence, unit trusts and unlisted holdings | Not started |
 | 5 | Fact sheet and polish | Not started |
 
@@ -98,52 +98,20 @@ explorer and side-by-side comparison. In order:
   Two drafts had unsupported sentences; they were cut or re-sourced. Many news sites (Reuters, BBC, FT, CNBC,
   etfsa, IOL) block fetching; Fin24 links redirect to the News24 home page, so avoid citing them.
 
-### Research gathered for case-file batch 2 (not yet written; all accessed 2026-10-09)
+### Phase 3: library part 2 (case-file batch 2, 2026-10-11)
 
-- **Situational Awareness (Leverage, 2026):** Quartz via Yahoo, 31 Jul 2026
-  https://finance.yahoo.com/markets/stocks/articles/leopold-aschenbrenners-ai-hedge-fund-174426079.html : peaked $45bn
-  start of July, ~$10bn after; up to 400% leverage; margin calls, prime brokers BofA, Goldman, JPMorgan; Citadel bought
-  public positions below market; long AI infrastructure / short software (Adobe); Nebius, SanDisk, Micron, CoreWeave
-  each −35%+ in July; >1,000% since July 2024 inception (WSJ). Crypto Briefing 3 Aug 2026 (via Fortune)
-  https://cryptobriefing.com/situational-awareness-67-percent-loss-citadel-sale/ : −67% in July, ~$16bn book sold at
-  ~10% discount. Yahoo/CNBC 30 Jul 2026
-  https://finance.yahoo.com/markets/stocks/articles/situational-awareness-sells-public-equities-140824582.html :
-  "roughly $20 billion to $24 billion vehicle"; 439% net through 30 Jun (FT). Present size as a range (decision).
-  Chart idea: kind prices [MU, CRWV, NVDA] May–Sep 2026 (in rand).
-- **Steinhoff (Fraud):** https://en.wikipedia.org/wiki/Steinhoff_International : Jooste resigned 5 Dec 2017; shares lost
-  almost 90% within two weeks; −96% by Mar 2019 (~$15bn market value); PwC: fictitious/irregular transactions over
-  €6.5bn 2009–2017; 90+ lawsuits; ~R25bn retail settlement pot; delisted Oct 2023. No Yahoo prices (delisted): use a
-  points chart indexed to 100 from those reported falls, clearly labelled.
-- **MTI (Fraud):** CFTC release 8696-23 https://www.cftc.gov/PressRoom/PressReleases/8696-23 (order 24 Apr 2023):
-  ≥29,421 BTC worth >$1.73bn (end Mar 2021) from ≥23,000 US individuals and more worldwide; all misappropriated;
-  the "bot" was false; $1.73bn restitution + same penalty, largest CFTC penalty; Steynberg detained in Brazil since
-  Dec 2021. Finance Magnates 1 Jan 2021
-  https://www.financemagnates.com/cryptocurrency/news/south-african-bitcoin-trader-mti-enters-liquidation-ceo-on-run/ :
-  promised "at least 10 percent monthly return"; FSCA: "illegal operation, misleading clients"; ~R9.45bn from ~28,000
-  investors (estimate). Chart idea: points of what 10%/month compounding would imply (a calculation, labelled).
-- **Woodford (Liquidity):** FCA press release 5 Aug 2025
-  https://www.fca.org.uk/news/press-releases/fca-fines-over-woodford-equity-income-fund/printable/print :
-  £10.1bn (May 2017) → £3.6bn before the June 2019 suspension; only 8% sellable within 7 days; sold liquid, bought less
-  liquid; fines £40m WIM, £5,888,800 Woodford (referred to Upper Tribunal); £230m redress from Link. Trigger: £237m Kent
-  County Council redemption (ii.co.uk / Trustnet; fetch one before citing). Chart: points (fund size).
-- **SA listed property 2018 (Sector collapses):** Morningstar via FAnews, 17 Jan 2019
-  https://www.fanews.co.za/article/investments/8/general/1133/sa-property-sector-what-happened-and-where-to-from-here/26034 :
-  the Resilient group was >40% of SAPY before the collapse; asset class −25.2% in 2018. Yahoo: ^J253.JO 694.7
-  (29 Dec 2017) → 478.2 (31 Dec 2018), price only; RES.JO 12638.6c → 5312.9c (−58%). Regenerate monthly points
-  2017–2020 with yfinance. FSCA probe from Mar 2018 (BusinessLive 14 Dec 2018; verify before citing).
-- **March 2020 (Shocks):** WHO 11 Mar 2020
-  https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing-on-covid-19---11-march-2020
-  ("can be characterized as a pandemic"). App data (weekly): ^J200 −30.3% 14 Feb → 20 Mar; USD/ZAR 14.90 → 19.10
-  peak (24 Apr); SPY in rand −21% at worst; TLT in rand +28.5% by 20 Mar; gold ETF in rand +11% by 20 Mar. Chart:
-  kind prices [^J200.JO, SPY, TLT, GLD.JO, ZAR=X] 2020-02-14 to 2020-06-26.
-- **2022 stock-and-bond sell-off (Inflation and rates):** BLS https://www.bls.gov/news.release/archives/cpi_07132022.htm
-  (CPI +9.1% y/y June 2022, largest since Nov 1981); Fed
-  https://www.federalreserve.gov/newsevents/pressreleases/monetary20220316a.htm (16 Mar 2022: 1/4–1/2%) and
-  https://www.federalreserve.gov/newsevents/pressreleases/monetary20221214a.htm (14 Dec 2022: 4-1/4–4-1/2%).
-  Yahoo USD total returns 2022: SPY −18.2%, TLT −31.2%, AGG −13.0%. In rand (app data): SPY −12.9%, TLT −26.8%,
-  STX40 ~0%, STXGOV −2.8%.
-- Code TODO for these: let `kind: points` charts take several named lines (`lines: {name: [[date, value], ...]}`)
-  for the property chart; allow 2-point series (Woodford) in `test_charts_have_data`.
+- Written (7): situational-awareness, steinhoff, mti, woodford, sa-property-2018, march-2020, stocks-bonds-2022.
+  Every source was re-read on 2026-10-11; figures from the app's data are labelled as such.
+- `kind: points` charts take several named `lines:` (property: J253, Resilient, Growthpoint, Yahoo month ends rebased;
+  MTI: 10%/month calculation vs Satrix 40); 2-point series allowed (Woodford fund size).
+- Parser fix: the header split now only matches `---` on its own line (the WHO URL contains `---`).
+- `scripts/browser_check.py` now covers the library index and three articles (each must show a chart).
+- Left out because they couldn't be verified on a page read: Kent's £263m figure (one local report; the FT via
+  interactive investor says about £250m, which is used); Woodford's wind-up details (only seen in search summaries);
+  Steinhoff's pension-fund victims (not on the cited page); MTI recruitment-reward mechanics; a reason for the
+  $20–24bn vs $45bn gap in Situational Awareness's reported size.
+- **Resilient:** the FSCA closed both probes without findings of false statements (Nov 2019) or market abuse
+  (Nov 2020); the article says so explicitly.
 
 ## Architecture (as it exists)
 
@@ -332,8 +300,7 @@ Made in Phase 2 (2026-10-09):
 
 ## Next step
 
-1. Phase 3 case-file batch 2 from the research above (Situational Awareness, Steinhoff, MTI, Woodford, SA property
-   2018, March 2020, 2022), so every lesson group has at least one file. Commit.
+1. ~~Phase 3 case-file batch 2~~ Done (2026-10-11).
 2. **Phase 4** (the user asked for it next): due-diligence checklists by holding type; unit trusts (price history,
    upload, or allocation model; look-through and overlap); unlisted holdings (stated assumptions, illiquid sleeve,
    included in Monte Carlo/scenarios, illiquid share). See spec sections 8 and 9.

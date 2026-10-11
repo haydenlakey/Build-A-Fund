@@ -1,5 +1,6 @@
 """Drive the running app in headless Chromium: screenshots at desktop, phone and dark-mode sizes,
-plus a check that the risk-return marker really animates, and the composition page in each view.
+plus a check that the risk-return marker really animates, the composition page in each view,
+the active-bets page, and the library (index and a few articles, each must show its chart).
 
 Usage (with the app running on localhost:8501):
     python scripts/browser_check.py [out_dir] [url]
@@ -25,6 +26,7 @@ EXAMPLE = Fund("Example fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_0
 
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "browser_check")
 URL = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:8501"
+LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford"]  # prices, multi-line and 2-point charts
 VIEWPORTS = [  # tall viewports, because Streamlit scrolls inside its own container
     ("desktop", {"width": 1366, "height": 2600}, "light"),
     ("phone", {"width": 390, "height": 4200}, "light"),
@@ -101,6 +103,17 @@ def main() -> int:
             page.goto(f"{URL}/active_bets?fund={EXAMPLE.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-6-active.png")
+            page.goto(f"{URL}/library")
+            settle(page)
+            page.get_by_text("Case files", exact=True).click()
+            settle(page)
+            page.screenshot(path=OUT / f"{label}-7-library.png")
+            for slug in LIBRARY_ARTICLES:
+                page.goto(f"{URL}/library?article={slug}")
+                settle(page)
+                if page.locator(".js-plotly-plot").count() == 0:
+                    problems.append(f"{label}: library article {slug} has no chart")
+                page.screenshot(path=OUT / f"{label}-8-library-{slug}.png")
             print(f"{label}: console errors {errors[:5]}")
             problems += [f"{label}: {e}" for e in errors]
             ctx.close()

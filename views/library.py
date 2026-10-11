@@ -23,15 +23,20 @@ def close_article() -> None:
     st.query_params.pop("article", None)
 
 
+def points_frame(c: dict, default_name: str) -> pd.DataFrame:
+    """Sourced values from the file: one `points` series, or several named `lines`, one column each."""
+    lines = c.get("lines") or {c.get("series", default_name): c["points"]}
+    cols = [pd.DataFrame(pts, columns=["date", name]).assign(date=lambda d: pd.to_datetime(d["date"])).set_index("date")
+            for name, pts in lines.items()]
+    return pd.concat(cols, axis=1).sort_index()
+
+
 def chart(a: Article) -> None:
     c = a.chart
     if not c:
         return
     if c.get("kind") == "points":
-        df = pd.DataFrame(c["points"], columns=["date", "value"])
-        df["date"] = pd.to_datetime(df["date"])
-        s = df.set_index("date")[["value"]].rename(columns={"value": c.get("series", a.title)})
-        fig = charts.history_lines(s, {}, c.get("unit", ""), log=bool(c.get("log")))
+        fig = charts.history_lines(points_frame(c, a.title), {}, c.get("unit", ""), log=bool(c.get("log")))
         source = c.get("source", "")
     else:
         tickers = list(c["tickers"])

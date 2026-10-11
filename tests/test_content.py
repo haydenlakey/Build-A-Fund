@@ -39,12 +39,22 @@ def test_case_files_have_group_lesson_and_chart(slug):
 def test_charts_have_data(slug):
     c = LIB[slug].chart
     if c["kind"] == "points":
-        assert len(c["points"]) >= 3 and c.get("source")
-        dates = [str(d) for d, _ in c["points"]]
-        assert dates == sorted(dates)
+        assert c.get("source")
+        lines = c.get("lines") or {"points": c["points"]}
+        for name, pts in lines.items():
+            assert len(pts) >= 2, name
+            dates = [str(d) for d, _ in pts]
+            assert dates == sorted(dates), name
     else:
         store = data.PriceStore(allow_live=False)
         for t in c["tickers"]:
             assert store.has(t), f"{t} is not in the bundled prices"
             s = store.native[t].loc[str(c["start"]):str(c["end"])].dropna()
             assert len(s) >= 3, t
+
+
+def test_header_may_contain_triple_dashes():
+    from fundlab.content import parse
+    a = parse("---\ntitle: T\nsection: theory\nsources:\n  - {title: x, url: \"https://a.org/b---c\", accessed: 2026-10-11}\n"
+              "---\nBody with --- inside.\n", "t")
+    assert a.sources[0]["url"].endswith("b---c") and a.body == "Body with --- inside."

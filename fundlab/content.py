@@ -17,7 +17,8 @@ Each file looks like
       end: 2009-12-31
       title: ...
       unit: ...              # points charts: y-axis label
-      points: [[1929-09-03, 381.17], ...]
+      points: [[1929-09-03, 381.17], ...]   # one series (named by `series`), or
+      lines: {Name A: [[date, value], ...], Name B: [...]}   # several named series
       source: ...            # points charts: where the values come from
     sources:
       - {title: ..., url: https://..., accessed: 2026-10-09}
@@ -28,6 +29,7 @@ Nothing here imports Streamlit, so the files can be validated in tests.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -69,7 +71,7 @@ class Article:
 def parse(text: str, slug: str, path: Path | None = None) -> Article:
     if not text.startswith("---"):
         raise ValueError(f"{slug}: missing YAML header")
-    _, header, body = text.split("---", 2)
+    _, header, body = re.split(r"^---\s*?$", text, maxsplit=2, flags=re.M)
     meta = yaml.safe_load(header) or {}
     for k in ("title", "section"):
         if not meta.get(k):
