@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–4 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–5 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
-| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–4 done (ETF data, composition, sensitivities + clusters, active bets); 118 tests pass. Next: step 5. |
+| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–5 done (ETF data, composition, sensitivities + clusters, active bets, risk detail); 304 tests pass. Next: step 6 (reality check). |
 | 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary and pop-up rules engine still to do. |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
@@ -67,6 +67,27 @@ _Last updated: 2026-10-11 (Phase 4 done; Phase 2 steps 1–4 done; Phase 3 libra
 - Tests: `tests/test_factors.py` (10, incl. simulated CI coverage with AR(1) errors), 3 spike tests in `test_data.py`.
 - Tests: `tests/test_lookthrough.py` (25, incl. a fires/stays-quiet fund per tilt), 2 new AppTests.
   `scripts/browser_check.py` now also screenshots the composition page (3 views) via a share link.
+- **Step 5 (2026-10-11): Risk in detail** (`views/risk.py`, between "Against a benchmark" and "Library").
+  - *How sure can we be?*: expected return with its rough 95% range (±1.96 SE) as a warning callout; fund
+    volatility under all three covariance estimates side by side (the one in use marked).
+  - *VaR and ES three ways*: table of historical, parametric normal/t, Monte Carlo normal/t (+ a "whole fund, with
+    unlisted" row from `unlisted.simulate_paths`) in % and rand; simulated rand-outcome histogram with the tail
+    beyond VaR in orange, VaR/ES lines. Page-level "Shocks in the simulations" (normal / Student-t) and t degrees
+    of freedom (default 5) drive the charts.
+  - *Fan chart*: 5 000 paths over 1/3/5/10 years, 5–25–50–75–95 bands; whole fund (unlisted, buy and hold) when the
+    fund has unlisted holdings.
+  - *Stress tests* (`fundlab/stress.py`, episodes in editable `content/stress_tests.yaml`): buy-and-hold replay of
+    the measured weights vs Top 40 index and S&P 500 in rand; bars + table (return, lowest point, measured share,
+    weak estimates, whole fund with unlisted) + week-by-week chart per episode + holding table + library link.
+  - *Falls from the top* (drawdown) and *Risk changes over time* (rolling vol, 13/26/52 weeks).
+  - *Borrowing to invest* (`fundlab/leverage.py`): 1×/1.5×/2×/3×/4×, borrowing rate (default rf + 3 pp, labelled
+    an assumption), margin-call level (default half the starting equity share). History replay chart with forced
+    sales marked + 4 tiles; next-year table from 20 000 simulated years (wipe-out, margin call, median, 5th
+    percentile, typical worst fall), no borrowing vs chosen multiple. Leverage is page-local (not saved in the fund).
+  - `var.simulate_weekly` (paths kept; `simulate_paths` now compounds it, same draws as before), `var.fan`,
+    `unlisted.simulate_paths` (`simulate` = its last column), cached wrappers in `ui/cached.py`, 7 charts in `ui/charts.py`.
+  - Tests: `tests/test_risk_detail.py` (20), 3 AppTests (example fund incl. t shocks + 2× + episode switch, empty fund,
+    unlisted fund rows). Browser check screenshots the page with 2× selected.
 
 ## Phase 2 plan
 
@@ -76,8 +97,7 @@ explorer and side-by-side comparison. In order:
 2. ~~`fundlab/lookthrough.py` + composition page~~ Done.
 3. ~~`fundlab/factors.py` + clustered correlation heatmap~~ Done.
 4. ~~Active bets view~~ Done.
-5. Risk detail: VaR/ES 3 ways side by side, simulated rand distribution, fan chart, stress tests
-   (2008, Dec 2015, Mar 2020, 2022, Jul 2026), drawdown and rolling vol, leverage toggle.
+5. ~~Risk detail~~ Done (2026-10-11).
 6. Reality check: costs drag (TER + editable brokerage, R lost over 10/20 years), backtest vs Top 40,
    S&P 500 in rand, balanced proxy, equal-weight, with rebalancing; optimiser comparison with caveats.
 7. Explore diversifiers; side-by-side fund comparison.
@@ -214,6 +234,7 @@ Build A Fund/
 │   ├── build.py           # Build your fund (centrepiece)
 │   ├── composition.py     # What kind of fund is it? (look-through, tilts, concentration, risk vs money, betas, clusters)
 │   ├── active_bets.py     # Against a benchmark (active weights, TE, TE budget, rules of thumb)
+│   ├── risk.py            # Risk in detail (estimate uncertainty, VaR/ES 3 ways, fan, stress tests, drawdown, leverage)
 │   ├── library.py         # Library (articles from content/library)
 │   └── about.py           # About and data
 ├── ui/                    # Streamlit-only helpers
@@ -226,7 +247,9 @@ Build A Fund/
 │   ├── __init__.py        # PERIODS_PER_YEAR = 52
 │   ├── estimators.py      # returns, mean (+ target shrinkage, equal_sharpe_target, SE), sample/LW/EWMA cov
 │   ├── risk.py            # vol, Euler RCs, risk shares, Sharpe, div ratio, eff. holdings, drawdown, avg corr
-│   ├── var.py             # parametric (normal/t), historical, Monte Carlo VaR/ES
+│   ├── var.py             # parametric (normal/t), historical, Monte Carlo VaR/ES, weekly sims, fan bands
+│   ├── stress.py          # stress-test episodes, buy-and-hold replay, two-factor proxies for missing history
+│   ├── leverage.py        # borrowing to invest: margin calls, forced sales, wipe-outs
 │   ├── frontier.py        # long-only frontier (warm-started SLSQP), efficiency_gap
 │   ├── active.py          # active weights, TE, TE budget, pairwise bet, rule of thumb
 │   ├── model.py           # Holding, FundSettings, Fund, JSON + share codes
@@ -282,6 +305,18 @@ Accepted with the plan:
 - Unlisted correlation with listed equity user-set, default 0.5.
 - Bundled data is primary on Streamlit Cloud; live fetching is a bonus.
 - Fact-sheet PDF: fpdf2 + matplotlib. Glossary tooltips must open on tap.
+
+Made during Phase 2 step 5 (2026-10-11):
+- **Stress windows** come from the app's own weekly data (Top 40 index peak 16 May 2008 → trough 21 Nov 2008, −47%)
+  or the matching library case file's dates (Nenegate 4–11 Dec 2015, Covid 14 Feb–20 Mar 2020, 2022 calendar year);
+  July 2026 = 26 Jun–31 Jul 2026 (Micron −27% in rand). Episode text only states what the data or article supports.
+- **Stress replays are buy and hold** from the episode start. A holding without prices in the episode is
+  **estimated** by OLS on the Top 40 *price index* (^J200.JO, the only Top 40 series back to 2008) and SPY in rand,
+  intercept dropped; R² < 0.3 is flagged *weak*. Unlisted holdings follow the listed part at β = ρσᵤ/σ_S.
+- **Leverage model:** fixed debt (not rebalanced), interest accrues weekly, weekly margin check; a call sells back to
+  the starting equity share 1/L; E ≤ 0 = wiped out. With normal shocks, wipe-outs are near impossible (calls
+  de-lever first); Student-t shows them. The page says so.
+- **Simulated weekly fund returns are floored at −100%** (fat-tailed t draws with low df could go below).
 
 Made during build (2026-10-09):
 - **Data pipeline:** daily closes resampled to Friday week-ends (Yahoo's weekly bars use inconsistent anchors);
@@ -394,14 +429,17 @@ Made in Phase 2 (2026-10-09):
 
 1. ~~Phase 3 case-file batch 2~~ Done (2026-10-11).
 2. ~~Phase 4~~ Done (2026-10-11).
-3. Phase 4 follow-ups: Phase 2 step 5's risk page should reuse `unlisted.simulate` so stress tests and fan charts
-   include the illiquid sleeve; a "can't sell in a hurry" pop-up rule (Phase 3 rules engine) using
+3. ~~Phase 2 step 5 (Risk in detail)~~ Done (2026-10-11); it reuses `unlisted.simulate_paths` for the
+   whole-fund VaR row and fan chart, and moves unlisted holdings with the listed part in stress tests.
+4. **Next: Phase 2 step 6 (Reality check)**, then step 7 (diversifier explorer, side-by-side comparison).
+5. Phase 4 follow-ups: a "can't sell in a hurry" pop-up rule (Phase 3 rules engine) using
    `unlisted.illiquid_share`; refresh the older unit-trust sheets (Sanlam 2025, Ninety One Managed 2025, Steyn 2025)
    from managers' sites; consider a short-duration SA bond proxy for income funds.
-4. Later: remaining case files (44 approved), glossary tooltips and the pop-up rules engine (Phase 3), then Phase 2
-   steps 5–7.
+6. Later: remaining case files (44 approved; a 2008 case file would give the 2008 stress test a library link),
+   glossary tooltips and the pop-up rules engine (Phase 3, incl. "leverage switched on" once leverage is saved
+   in the fund, if wanted).
 
-Phase 2, step 5 (when resumed): Risk detail page: VaR/ES three ways side by side (historical, parametric, Monte Carlo
-normal/t; maths in `fundlab/var.py`), simulated rand distribution, fan chart, stress tests (2008, Dec 2015, Mar 2020,
-2022, Jul 2026; use ^J200.JO for long history), drawdown and rolling vol, leverage toggle (2x/4x: drawdowns,
-chance of wipe-out, forced selling).
+Phase 2, step 6 (next): Reality check page: costs drag (weighted TER/TC from `lookthrough`, plus an editable
+brokerage fee) as return lost a year and rands lost over 10 and 20 years; backtest against the Top 40, S&P 500 in rand,
+the balanced proxy and an equal-weight version of the fund, with periodic rebalancing; "the optimiser would hold these
+same assets in these weights instead" with the difference and a note on why optimisers are unreliable.

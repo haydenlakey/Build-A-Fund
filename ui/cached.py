@@ -1,10 +1,12 @@
 """Cached access to the universe, prices and comparisons."""
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fundlab import active, analysis, content, data, factors, lookthrough, synthetic, unit_trusts
+from fundlab import (active, analysis, content, data, estimators, factors, lookthrough, risk,
+                     stress, synthetic, unit_trusts, unlisted, var)
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -135,3 +137,74 @@ def library() -> dict:
     """All library articles; re-read whenever a file in content/library changes."""
     files = sorted(content.LIBRARY_PATH.glob("*.md"))
     return _library(tuple((f.name, f.stat().st_mtime_ns) for f in files))
+
+
+# ---- risk detail ------------------------------------------------------------------
+
+@st.cache_resource
+def episodes() -> list[stress.Episode]:
+    return stress.load_episodes()
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _stress(fund_json: str) -> list[stress.Replay]:
+    fund = Fund.from_json(fund_json)
+    stats = compare(fund, fund).after
+    if stats is None:
+        return []
+    px = fund_prices(fund)
+    fac = prices(list(stress.FACTORS))
+    out = []
+    for ep in episodes():
+        r = stress.replay(stats.weights, px, fac, ep)
+        if r is not None:
+            r.whole_return = stress.whole_fund_return(fund, r.fund_return, stats.vol)
+            out.append(r)
+    return out
+
+
+def stress_tests(fund: Fund) -> list[stress.Replay]:
+    """Replays of the fund's measured (listed) weights through each episode the factor data covers."""
+    return _stress(fund.to_json())
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _cov_vols(fund_json: str) -> dict[str, float]:
+    fund = Fund.from_json(fund_json)
+    cmp = compare(fund, fund)
+    a = cmp.after
+    if a is None:
+        return {}
+    rets = cmp.est.returns[a.weights.index]
+    return {m: risk.portfolio_vol(a.weights, estimators.covariance(rets, m)) for m in estimators.COV_METHODS}
+
+
+def cov_vols(fund: Fund) -> dict[str, float]:
+    """Fund volatility under each covariance estimate, on the same window."""
+    return _cov_vols(fund.to_json())
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _weekly_sims(fund_json: str, h_weeks: int, n_sims: int, dist: str, df: float) -> np.ndarray:
+    fund = Fund.from_json(fund_json)
+    cmp = compare(fund, fund)
+    a = cmp.after
+    return var.simulate_weekly(cmp.est.mu, cmp.est.cov, a.weights, h_weeks, n_sims, dist, df, fund.settings.seed)
+
+
+def weekly_sims(fund: Fund, h_weeks: int, n_sims: int, dist: str, df: float) -> np.ndarray:
+    """Simulated weekly returns of the listed part, (n_sims, h_weeks), seeded from the fund's settings."""
+    return _weekly_sims(fund.to_json(), h_weeks, n_sims, dist, float(df))
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _whole_paths(fund_json: str, h_weeks: int, n_sims: int) -> np.ndarray:
+    fund = Fund.from_json(fund_json)
+    a = compare(fund, fund).after
+    mu, vol = (a.exp_return, a.vol) if a is not None else (0.0, 0.0)
+    return unlisted.simulate_paths(fund, mu, vol, h_weeks, n_sims, fund.settings.seed)
+
+
+def whole_paths(fund: Fund, h_weeks: int, n_sims: int) -> np.ndarray:
+    """Whole-fund value paths including unlisted holdings (buy and hold), (n_sims, h_weeks + 1)."""
+    return _whole_paths(fund.to_json(), h_weeks, n_sims)

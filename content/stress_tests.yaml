@@ -1,0 +1,38 @@
+# Stress-test episodes for the Risk page. Dates are Friday week-ends in the app's weekly price data.
+# Windows were read from that data (Yahoo Finance closes, in rand) on 2026-10-11:
+#   2008: the FTSE/JSE Top 40 index's weekly peak (16 May 2008) to its trough (21 Nov 2008), -47% (price only).
+#   Dec 2015, Mar 2020 and 2022: the windows used in the matching library case files.
+#   2026: end of June to end of July 2026; Micron fell about 27% in rand over it, Nvidia rose (mixed episode).
+# `article` links to a library case file (slug); leave it out if there is none.
+# `what` must only state facts the app's own data or the linked article supports.
+
+episodes:
+  - key: gfc_2008
+    name: 2008 global financial crisis
+    start: 2008-05-16
+    end: 2008-11-21
+    what: "From the Top 40's weekly high in May 2008 to its low in November 2008, when the collapse of US banks spread to every market."
+  - key: nenegate_2015
+    name: "December 2015: Nenegate"
+    start: 2015-12-04
+    end: 2015-12-11
+    what: "The week Finance Minister Nhlanhla Nene was fired. The rand fell sharply and SA bank shares dropped about a fifth."
+    article: nenegate
+  - key: covid_2020
+    name: "March 2020: Covid crash"
+    start: 2020-02-14
+    end: 2020-03-20
+    what: "Mid-February to 20 March 2020, as Covid-19 was declared a pandemic and almost every share fell at once."
+    article: march-2020
+  - key: rates_2022
+    name: "2022: shares and bonds fell together"
+    start: 2021-12-31
+    end: 2022-12-30
+    what: "The year inflation and rising interest rates hit shares and bonds at the same time, and tech shares fell hardest."
+    article: stocks-bonds-2022
+  - key: ai_2026
+    name: "July 2026: AI sell-off"
+    start: 2026-06-26
+    end: 2026-07-31
+    what: "AI-infrastructure shares such as Micron and CoreWeave sold off hard, while the wider market barely moved."
+    article: situational-awareness

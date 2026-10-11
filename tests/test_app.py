@@ -216,7 +216,7 @@ def test_unlisted_and_unit_trust_fund_from_link_renders_everywhere():
     at = fresh({"fund": f.to_share_code()})
     no_errors(at)
     assert any("Illiquid sleeve" in s.value for s in at.subheader)
-    for page in ("views/composition.py", "views/active_bets.py"):
+    for page in ("views/composition.py", "views/active_bets.py", "views/risk.py"):
         at.switch_page(page).run()
         no_errors(at)
 
@@ -235,3 +235,42 @@ def test_due_diligence_checklist_for_each_holding_type():
     at.text_input(key="ul_name_0___new__").set_value("Syndication").run()
     no_errors(at)
     assert any(e.label.startswith("Before you add it") for e in at.expander)
+
+
+def test_risk_page_with_example_fund():
+    at = fresh()
+    next(b for b in at.button if b.label == "Open the example fund").click().run()
+    at.switch_page("views/risk.py").run()
+    no_errors(at)
+    assert any("Risk in detail" in t.value for t in at.title)
+    subs = {s.value for s in at.subheader}
+    assert any("VaR and ES three ways" in s for s in subs)
+    assert any("past crises" in s for s in subs)
+    assert len(at.get("plotly_chart")) >= 5  # outcomes, fan, stress bars, stress path, drawdown, rolling vol
+    methods = at.dataframe[0].value["Method"].tolist()
+    assert methods[:3] == ["Historical", "Parametric, normal", "Parametric, Student-t"]
+    at.segmented_control(key="sim_dist").set_value("t").run()
+    no_errors(at)
+    at.segmented_control(key="lev").set_value(2.0).run()
+    no_errors(at)
+    assert any(m.label == "Forced sales" for m in at.metric)
+    at.selectbox(key="stress_pick").select_index(0).run()
+    no_errors(at)
+
+
+def test_risk_page_empty_fund():
+    at = fresh()
+    at.switch_page("views/risk.py").run()
+    no_errors(at)
+    assert any("This fund is empty" in i.value for i in at.info)
+
+
+def test_risk_page_with_unlisted_has_whole_fund_rows():
+    f = Fund("Mixed", [Holding("STX40.JO", "Satrix 40", "jse_etf", 5000),
+                       Holding("UL:farm", "Farm", "unlisted", 1000, method="assumptions", params={"lockin_years": 7})])
+    at = fresh({"fund": f.to_share_code()})
+    at.switch_page("views/risk.py").run()
+    no_errors(at)
+    assert "Whole fund, with unlisted" in at.dataframe[0].value["Method"].tolist()
+    stress = next(d.value for d in at.dataframe if "Episode" in d.value.columns)
+    assert "Whole fund, with unlisted" in stress.columns

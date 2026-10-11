@@ -177,7 +177,14 @@ def whole_fund(fund: Fund, listed_mu: float, listed_vol: float) -> WholeFund | N
 
 def simulate(fund: Fund, listed_mu: float, listed_vol: float, h_weeks: int, n_sims: int = 20_000,
              seed: int = 42) -> np.ndarray:
-    """Simulated whole-fund returns over h weeks, buy and hold (unlisted holdings can't be rebalanced).
+    """Simulated whole-fund returns over h weeks: the last column of `simulate_paths` minus 1."""
+    return simulate_paths(fund, listed_mu, listed_vol, h_weeks, n_sims, seed)[:, -1] - 1.0
+
+
+def simulate_paths(fund: Fund, listed_mu: float, listed_vol: float, h_weeks: int, n_sims: int = 20_000,
+                   seed: int = 42) -> np.ndarray:
+    """Simulated whole-fund value paths (start = 1), shape (n_sims, h_weeks + 1), buy and hold
+    (unlisted holdings can't be rebalanced).
 
     Listed sleeve: weekly normal returns, mean mu_S/52, sd sigma_S/sqrt(52) (as var.simulate_paths).
     Unlisted i, while it survives: weekly mean m_i = (1 + r_i)^(1/52) - 1 and weekly sd s_i chosen so a
@@ -199,7 +206,9 @@ def simulate(fund: Fund, listed_mu: float, listed_vol: float, h_weeks: int, n_si
     rho = np.array([x.corr for x in a])
     q = np.array([1 - (1 - x.p_loss) ** (1 / PERIODS_PER_YEAR) for x in a])
     mu_s, sd_s = listed_mu / PERIODS_PER_YEAR, (listed_vol if np.isfinite(listed_vol) else 0.0) / np.sqrt(PERIODS_PER_YEAR)
-    for _ in range(h_weeks):
+    out = np.empty((n_sims, h_weeks + 1))
+    out[:, 0] = 1.0
+    for t in range(h_weeks):
         z = rng.standard_normal(n_sims)
         listed *= 1 + mu_s + sd_s * z
         if len(a):
@@ -208,4 +217,5 @@ def simulate(fund: Fund, listed_mu: float, listed_vol: float, h_weeks: int, n_si
             vals *= 1 + m + s * shock
             alive &= rng.random(vals.shape) >= q
             vals = np.where(alive, vals, 0.0)
-    return listed + vals.sum(axis=1) - 1.0
+        out[:, t + 1] = listed + vals.sum(axis=1)
+    return out

@@ -112,6 +112,15 @@ def main() -> int:
             page.goto(f"{URL}/active_bets?fund={EXAMPLE.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-6-active.png")
+            page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 7000})
+            page.goto(f"{URL}/risk?fund={EXAMPLE.to_share_code()}")
+            settle(page)
+            page.get_by_text("2×", exact=True).click()
+            settle(page)
+            if page.locator(".js-plotly-plot").count() < 7:
+                problems.append(f"{label}: risk page shows fewer than 7 charts")
+            page.screenshot(path=OUT / f"{label}-10-risk.png")
+            page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 3400})
             page.goto(f"{URL}/?fund={MIXED.to_share_code()}")
             settle(page)
             if page.get_by_text("Illiquid sleeve and the whole fund").count() == 0:

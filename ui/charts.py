@@ -290,3 +290,174 @@ def history_lines(df, names: dict[str, str], y_title: str, log: bool = False) ->
     layout["xaxis"] = dict(layout["xaxis"], showgrid=False)
     fig.update_layout(**layout)
     return fig
+
+
+# ---- risk detail -------------------------------------------------------------------
+
+def _rgba(hex_colour: str, alpha: float) -> str:
+    h = hex_colour.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    return f"rgba({r},{g},{b},{alpha})"
+
+
+def _axes(layout: dict, x: dict | None = None, y: dict | None = None) -> dict:
+    layout["xaxis"] = dict(layout["xaxis"], **(x or {}))
+    layout["yaxis"] = dict(layout["yaxis"], **(y or {}))
+    return layout
+
+
+def _legend_line(fig: go.Figure, name: str, colour: str, dash: str = "solid", width: float = 1.5) -> None:
+    """A legend entry for a reference line drawn as a shape (shapes have no legend of their own)."""
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines", name=name, hoverinfo="skip",
+                             line=dict(color=colour, width=width, dash=dash)))
+
+
+def _signed_pct(v: float) -> str:
+    return "0%" if abs(v) < 0.005 else f"{v:+.0%}"
+
+
+def outcome_hist(gains, var_zar: float, es_zar: float, alpha: float) -> go.Figure:
+    """Simulated rand gains and losses; the tail beyond VaR in orange, VaR and ES marked."""
+    p = palette()
+    gains = np.asarray(gains)
+    lo, hi = np.percentile(gains, [0.2, 99.8])
+    size = (hi - lo) / 60 if hi > lo else 1.0
+    bins = dict(start=lo - size, end=hi + size, size=size)
+    fig = go.Figure()
+    for mask, name, colour in [(gains > -var_zar, "Other outcomes", p["series"][0]),
+                               (gains <= -var_zar, f"Worst {1 - alpha:.1%}".replace(".0%", "%"), p["series"][1])]:
+        fig.add_trace(go.Histogram(
+            x=gains[mask], xbins=bins, name=name, marker=dict(color=colour, line=dict(width=1, color=p["surface"])),
+            hovertemplate="Gain or loss about R%{x:,.0f}<br>%{y} of the simulations<extra></extra>"))
+    for x, text, dash in [(-var_zar, "VaR", "solid"), (-es_zar, "ES (average of the worst)", "dash")]:
+        fig.add_vline(x=x, line=dict(color=p["ink2"], width=1.5, dash=dash))
+        _legend_line(fig, f"{text}: R{-x:,.0f}".replace(",", " "), p["ink2"], dash)
+    layout = base_layout(p, height=380, barmode="overlay", bargap=0, margin=dict(l=8, r=8, t=64, b=8))
+    fig.update_layout(**_axes(layout, dict(title="Gain or loss in rand over the horizon", tickprefix="R",
+                                           tickformat=",.0f"), dict(title="Simulations", showgrid=True)))
+    return fig
+
+
+def fan_chart(bands, start_amount: float, invested: float) -> go.Figure:
+    """Percentile bands (5-95, 25-75) and median of simulated rand values, by years from now."""
+    p = palette()
+    blue = p["series"][0]
+    yrs = bands.index / 52
+    fig = go.Figure()
+    for lo, hi, a, name in [(5, 95, 0.14, "5th to 95th percentile"), (25, 75, 0.30, "25th to 75th percentile")]:
+        fig.add_trace(go.Scatter(x=yrs, y=bands[hi] * start_amount, mode="lines", line=dict(width=0),
+                                 showlegend=False, hoverinfo="skip"))
+        fig.add_trace(go.Scatter(x=yrs, y=bands[lo] * start_amount, mode="lines", line=dict(width=0),
+                                 fill="tonexty", fillcolor=_rgba(blue, a), name=name, hoverinfo="skip"))
+    fig.add_trace(go.Scatter(
+        x=yrs, y=bands[50] * start_amount, mode="lines", name="Middle outcome (median)", line=dict(color=blue, width=2),
+        customdata=np.column_stack([bands[q] * start_amount for q in (5, 25, 75, 95)]),
+        hovertemplate="<b>After %{x:.1f} years</b><br>95th percentile R%{customdata[3]:,.0f}"
+                      "<br>75th R%{customdata[2]:,.0f}<br>Median R%{y:,.0f}<br>25th R%{customdata[1]:,.0f}"
+                      "<br>5th R%{customdata[0]:,.0f}<extra></extra>"))
+    fig.add_hline(y=invested, line=dict(color=p["muted"], width=1, dash="dot"))
+    _legend_line(fig, "What you put in", p["muted"], "dot", 1)
+    layout = base_layout(p, height=420, hovermode="x", margin=dict(l=8, r=8, t=64, b=8))
+    fig.update_layout(**_axes(layout, dict(title="Years from now", rangemode="tozero"),
+                              dict(title="Fund value in rand", tickprefix="R", tickformat=",.0f")))
+    return fig
+
+
+STRESS_SERIES = [("fund", "Your fund"), ("bench_j200", "Top 40 index"), ("bench_spy", "S&P 500 in rand")]
+
+
+def stress_bars(rows) -> go.Figure:
+    """Grouped bars per episode: your fund, the Top 40 index and the S&P 500 in rand (episode returns)."""
+    p = palette()
+    fig = go.Figure()
+    labels = [r["episode"] for r in rows][::-1]
+    for i, (key, name) in reversed(list(enumerate(STRESS_SERIES))):
+        vals = [r[key] for r in rows][::-1]
+        fig.add_trace(go.Bar(
+            x=vals, y=labels, orientation="h", name=name, marker=dict(color=p["series"][i], cornerradius=4),
+            text=[_signed_pct(v) for v in vals], textposition="outside", cliponaxis=False,
+            textfont=dict(color=p["ink2"], size=11),
+            hovertemplate=f"<b>%{{y}}</b><br>{name}: %{{x:+.1%}}<extra></extra>"))
+    layout = base_layout(p, height=max(260, 70 + 78 * len(rows)), barmode="group", bargap=0.25, bargroupgap=0.06,
+                         margin=dict(l=8, r=56, t=40, b=8))
+    layout["legend"] = dict(layout["legend"], traceorder="reversed")
+    fig.update_layout(**_axes(layout, dict(tickformat="+.0%", zeroline=True, zerolinecolor=p["axis"]),
+                              dict(showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))))
+    return fig
+
+
+def stress_path(rep) -> go.Figure:
+    """One episode week by week, everything rebased to 100 at the start."""
+    p = palette()
+    fig = go.Figure()
+    series = [(rep.path, "Your fund"), (rep.benchmarks["^J200.JO"], "Top 40 index"),
+              (rep.benchmarks["SPY"], "S&P 500 in rand")]
+    for i, (s, name) in enumerate(series):
+        colour = p["series"][i]
+        fig.add_trace(go.Scatter(
+            x=s.index, y=s.values * 100, mode="lines+markers" if len(s) < 30 else "lines", name=name,
+            line=dict(color=colour, width=2), marker=dict(size=8, color=colour, line=dict(width=2, color=p["surface"])),
+            hovertemplate=f"<b>{name}</b><br>%{{x|%d %b %Y}}<br>%{{y:.1f}}<extra></extra>"))
+    fig.add_hline(y=100, line=dict(color=p["axis"], width=1))
+    layout = base_layout(p, height=360)
+    fig.update_layout(**_axes(layout, dict(showgrid=False), dict(title="Value (start = 100)")))
+    return fig
+
+
+def drawdown_chart(dd) -> go.Figure:
+    """Fall from the previous high, week by week (0 = at a new high)."""
+    p = palette()
+    fig = go.Figure(go.Scatter(
+        x=dd.index, y=dd.values, mode="lines", fill="tozeroy", line=dict(color=p["series"][0], width=1.5),
+        fillcolor=_rgba(p["series"][0], 0.2), name="Fall from the previous high",
+        hovertemplate="%{x|%d %b %Y}<br>%{y:.1%} below the previous high<extra></extra>"))
+    worst = dd.idxmin()
+    fig.add_annotation(x=worst, y=dd.min(), text=f"Worst: {dd.min():.0%}", showarrow=True, arrowhead=0, ax=36,
+                       ay=0, xanchor="left", font=dict(color=p["ink"], size=12), arrowcolor=p["ink2"],
+                       bgcolor=p["surface"])
+    layout = base_layout(p, height=320, showlegend=False, margin=dict(l=8, r=8, t=16, b=8))
+    fig.update_layout(**_axes(layout, dict(showgrid=False), dict(tickformat=".0%", title="Below the previous high")))
+    return fig
+
+
+def rolling_vol_chart(rv, full_vol: float, window: int) -> go.Figure:
+    """Rolling annualised volatility with the whole-window figure as a reference line."""
+    p = palette()
+    rv = rv.dropna()
+    fig = go.Figure(go.Scatter(
+        x=rv.index, y=rv.values, mode="lines", line=dict(color=p["series"][0], width=2),
+        name=f"Volatility over the previous {window} weeks",
+        hovertemplate="%{x|%d %b %Y}<br>%{y:.1%} a year<extra></extra>"))
+    fig.add_hline(y=full_vol, line=dict(color=p["muted"], width=1, dash="dot"))
+    _legend_line(fig, f"Whole window: {full_vol:.0%}", p["muted"], "dot", 1)
+    layout = base_layout(p, height=320)
+    fig.update_layout(**_axes(layout, dict(showgrid=False),
+                              dict(tickformat=".0%", rangemode="tozero", title="Volatility, % a year")))
+    return fig
+
+
+def leverage_chart(hist, lev: float, amount: float) -> go.Figure:
+    """Your own money with and without borrowing, forced sales marked."""
+    p = palette()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=hist.index, y=hist["unlevered"] * amount, mode="lines", name="Without borrowing",
+        line=dict(color=p["series"][0], width=2),
+        hovertemplate="%{x|%d %b %Y}<br>Without borrowing R%{y:,.0f}<extra></extra>"))
+    fig.add_trace(go.Scatter(
+        x=hist.index, y=hist["equity"] * amount, mode="lines", name=f"Your money, borrowing to hold {lev:g}×",
+        line=dict(color=p["series"][1], width=2),
+        hovertemplate="%{x|%d %b %Y}<br>Your money R%{y:,.0f}<extra></extra>"))
+    calls = hist[hist["sold"] > 0]
+    if len(calls):
+        fig.add_trace(go.Scatter(
+            x=calls.index, y=calls["equity"] * amount, mode="markers", name="Forced sale (margin call)",
+            marker=dict(symbol="x-thin", size=11, color=p["ink"], line=dict(width=2, color=p["ink"])),
+            customdata=calls["sold"] * amount,
+            hovertemplate="%{x|%d %b %Y}<br>Lender sold R%{customdata:,.0f} of the investments<extra></extra>"))
+    fig.add_hline(y=amount, line=dict(color=p["muted"], width=1, dash="dot"))
+    _legend_line(fig, "What you put in", p["muted"], "dot", 1)
+    layout = base_layout(p, height=400)
+    fig.update_layout(**_axes(layout, dict(showgrid=False),
+                              dict(title="Your money in rand", tickprefix="R", tickformat=",.0f", rangemode="tozero")))
+    return fig

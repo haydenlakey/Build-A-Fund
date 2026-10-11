@@ -51,37 +51,47 @@ def historical_var_es(port_weekly: pd.Series, h_weeks: int, alpha: float = 0.95)
     return float(-q), float(-tail.mean())
 
 
-def simulate_paths(mu_annual: pd.Series, cov_annual: pd.DataFrame, weights: pd.Series,
-                   h_weeks: int, n_sims: int = 20_000, dist: str = "normal", df: float = 5.0,
-                   seed: int = 42) -> np.ndarray:
-    """Simulate compounded h-week fund returns, rebalancing weekly.
+def simulate_weekly(mu_annual: pd.Series, cov_annual: pd.DataFrame, weights: pd.Series,
+                    h_weeks: int, n_sims: int = 20_000, dist: str = "normal", df: float = 5.0,
+                    seed: int = 42) -> np.ndarray:
+    """Simulated weekly fund returns, shape (n_sims, h_weeks), rebalancing weekly.
 
     Weekly asset returns are drawn as mu/52 + L z, where z is standard normal or
     standardised multivariate t (the same draw of the chi-square mixing variable
-    is shared across assets, so crashes hit everything together).
-    Returns an array of n_sims compounded fund returns.
+    is shared across assets, so crashes hit everything together). Only the fund's
+    return w'mu/52 + (w'L) z is kept.
     """
+    if dist == "t" and df <= 2:
+        raise ValueError("df must exceed 2")
     rng = np.random.default_rng(seed)
     idx = weights.index
     w = weights.to_numpy(dtype=float)
     mu_w = mu_annual.loc[idx].to_numpy(dtype=float) / PERIODS_PER_YEAR
     cov_w = cov_annual.loc[idx, idx].to_numpy(dtype=float) / PERIODS_PER_YEAR
     chol = np.linalg.cholesky(cov_w + 1e-14 * np.eye(len(w)))
-
-    # portfolio weekly return = w'mu + w'L z; we only need the fund-level series,
-    # which keeps memory at n_sims * h_weeks.
     port_mu = w @ mu_w
     load = w @ chol  # (k,)
-    wealth = np.ones(n_sims)
-    for _ in range(h_weeks):
+    out = np.empty((n_sims, h_weeks))
+    for t in range(h_weeks):
         z = rng.standard_normal((n_sims, len(w)))
         if dist == "t":
-            if df <= 2:
-                raise ValueError("df must exceed 2")
             chi = rng.chisquare(df, size=n_sims)
             z = z * np.sqrt((df - 2) / chi)[:, None]
-        wealth *= 1.0 + port_mu + z @ load
-    return wealth - 1.0
+        out[:, t] = np.maximum(port_mu + z @ load, -1.0)
+    return out
+
+
+def simulate_paths(mu_annual: pd.Series, cov_annual: pd.DataFrame, weights: pd.Series,
+                   h_weeks: int, n_sims: int = 20_000, dist: str = "normal", df: float = 5.0,
+                   seed: int = 42) -> np.ndarray:
+    """Compounded h-week fund returns prod(1 + r_t) - 1 from `simulate_weekly` (n_sims values)."""
+    weekly = simulate_weekly(mu_annual, cov_annual, weights, h_weeks, n_sims, dist, df, seed)
+    return np.prod(1.0 + weekly, axis=1) - 1.0
+
+
+def fan(wealth: np.ndarray, percentiles=(5, 25, 50, 75, 95)) -> pd.DataFrame:
+    """Percentiles of simulated wealth paths, shape (n_sims, T+1) -> rows = week 0..T, columns = percentiles."""
+    return pd.DataFrame(np.percentile(wealth, percentiles, axis=0).T, columns=list(percentiles))
 
 
 def mc_var_es(sim_returns: np.ndarray, alpha: float = 0.95) -> tuple[float, float]:
