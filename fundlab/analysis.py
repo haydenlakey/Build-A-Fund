@@ -22,6 +22,8 @@ from . import estimators, frontier, risk, var
 from .model import Fund, FundSettings
 
 MIN_WEEKS = 52
+UNLISTED_REASON = ("It is unlisted, so it has no price history. Numbers based on history cover the listed part of "
+                   "the fund; the whole-fund view uses your stated assumptions for it.")
 WARN_WEEKS = 156
 
 
@@ -137,7 +139,8 @@ def fund_stats(fund: Fund, est: Estimates, settings: FundSettings | None = None,
     if w_all.empty:
         return None
     inc = [t for t in w_all.index if t in est.mu.index]
-    excluded = {t: est.report.excluded.get(t, "Not in the estimation window.") for t in w_all.index if t not in inc}
+    excluded = {t: UNLISTED_REASON if (h := fund.holding(t)) and h.kind == "unlisted"
+                else est.report.excluded.get(t, "Not in the estimation window.") for t in w_all.index if t not in inc}
     if not inc:
         return None
     coverage = float(w_all[inc].sum())

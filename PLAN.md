@@ -113,7 +113,19 @@ explorer and side-by-side comparison. In order:
 - **Resilient:** the FSCA closed both probes without findings of false statements (Nov 2019) or market abuse
   (Nov 2020); the article says so explicitly.
 
-## Phase 4 plan (proposed 2026-10-11, waiting for the user's go-ahead)
+## Phase 4 plan (approved 2026-10-11)
+
+User decisions (2026-10-11): an unlisted holding's return is **"the return if it goes to plan"**, and the app shows
+the expected return after the chance of total loss; curate **6–8 unit trusts per risk level (24+ in total)**; the
+bundled, dated company-fundamentals snapshot is fine for now.
+
+**Step 1 done (2026-10-11):** `Holding.params` + schema v2 (`METHODS`; unlisted ⇔ `assumptions`), `fundlab/synthetic.py`
+(upload parser: ISO/day-first dates, `;` files with decimal commas, rejects monthly/short/non-positive; allocation
+model with proxies STX40, CSPROP (2011), STXGOV (May 2020), STXILB, cash at rf, VT/BND/VNQ in rand, GLD; `price_frame`
+puts modelled series beside store prices), `fundlab/unlisted.py` (Assumptions, warnings, liquidity ladder, one-factor
+whole-fund view, buy-and-hold simulation whose weekly sd compounds to exactly the stated annual sd, weekly failure
+hazard). `ui/cached.compare`/active use `fund_prices`. 30 new tests (197 total).
+
 
 Finding: Yahoo's search returns no SA unit trusts (tried Allan Gray, Coronation, Ninety One, PSG; `0P…` Morningstar
 codes 404). So "price history" for a unit trust is best-effort (a Yahoo code the user types in); upload and the

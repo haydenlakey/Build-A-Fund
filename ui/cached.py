@@ -4,7 +4,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from fundlab import active, analysis, content, data, factors, lookthrough
+from fundlab import active, analysis, content, data, factors, lookthrough, synthetic
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -20,6 +20,12 @@ def store() -> data.PriceStore:
 
 def prices(tickers: list[str]) -> pd.DataFrame:
     return store().prices_zar(list(tickers))
+
+
+def fund_prices(*funds: Fund) -> pd.DataFrame:
+    """Rand prices for every holding of the funds: listed from the store, unit trusts uploaded or modelled."""
+    rf = funds[-1].settings.risk_free if funds else 0.0
+    return synthetic.price_frame(list(funds), prices, rf)
 
 
 def label(ticker: str) -> str:
@@ -41,8 +47,7 @@ def name_of(ticker: str, fund: Fund | None = None) -> str:
 @st.cache_data(max_entries=128, show_spinner=False)
 def _compare(before_json: str, after_json: str) -> analysis.Comparison:
     before, after = Fund.from_json(before_json), Fund.from_json(after_json)
-    tickers = list(dict.fromkeys(list(before.weights().index) + list(after.weights().index)))
-    return analysis.compare(before, after, prices(tickers), after.settings)
+    return analysis.compare(before, after, fund_prices(before, after), after.settings)
 
 
 def compare(before: Fund, after: Fund) -> analysis.Comparison:
@@ -96,7 +101,8 @@ def _active(fund_json: str, key: str):
     bench = bench / bench.sum()
     w = fund.weights()
     tickers = list(dict.fromkeys(list(w.index) + list(bench.index)))
-    est = analysis.estimate(prices(tickers), tickers, fund.settings)
+    px = fund_prices(fund).combine_first(prices(list(bench.index)))
+    est = analysis.estimate(px, tickers, fund.settings)
     missing = [t for t in bench.index if t not in est.mu.index]
     if missing or est.mu.empty:
         return None, est.report, missing
