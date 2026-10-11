@@ -113,6 +113,40 @@ explorer and side-by-side comparison. In order:
 - **Resilient:** the FSCA closed both probes without findings of false statements (Nov 2019) or market abuse
   (Nov 2020); the article says so explicitly.
 
+## Phase 4 plan (proposed 2026-10-11, waiting for the user's go-ahead)
+
+Finding: Yahoo's search returns no SA unit trusts (tried Allan Gray, Coronation, Ninety One, PSG; `0P…` Morningstar
+codes 404). So "price history" for a unit trust is best-effort (a Yahoo code the user types in); upload and the
+allocation model will be the usual routes.
+
+1. **Model and maths (pure Python).** `Holding.params` (optional dict), schema v2 (v1 files still load).
+   `fundlab/synthetic.py`: weekly rand series for (a) an uploaded CSV (date, price; daily or weekly; cents check;
+   ≥ 52 weeks) and (b) an allocation model = Σ weight × proxy return (SA equity STX40/^J200, SA property STXPRO,
+   SA bonds STXGOV, cash at risk-free, global equity STXWDM, global bonds via an ETF proxy, gold) − TER/52. Series
+   enter the price frame under `UT:<id>`, so every existing page works unchanged; the method is labelled everywhere.
+   `fundlab/unlisted.py`: assumptions (return if it goes to plan, low/high range → vol, lock-in years, chance of total
+   loss, correlation with the listed sleeve, default 0.5); implied expected return after the loss chance; one-factor
+   covariance with the listed sleeve (always PSD); Monte Carlo with a total-loss jump; illiquid share (unlisted +
+   anything locked longer than the horizon). Unlisted holdings never get a fake history: history-based numbers cover
+   the listed part (coverage shown), the "whole fund" numbers come from the stated assumptions.
+2. **Unit trusts.** `data/unit_trusts.yaml`: a few popular SA unit trusts sold on EasyEquities, each with ASISA
+   category, benchmark, TER/TIC, asset allocation, top holdings, manager/inception/size, fact-sheet URL and date
+   (researched; only what the sheets say). Build page gains a "Unit trust" tab: pick a curated fund or describe
+   your own, choose the method. Look-through and overlap reuse `lookthrough.py` (allocation → asset/sector/country,
+   top holdings → overlap).
+3. **Unlisted.** "Unlisted investment" tab with the assumption inputs and explanations; an **illiquid sleeve** panel
+   (amounts, lock-ins, share of the fund that can't be sold in a hurry); whole-fund expected return, volatility and
+   Monte Carlo VaR (seeded) including it; a warning when the promised return is far above what listed markets pay,
+   linking to MTI and Woodford.
+4. **Due diligence.** `content/due_diligence.yaml` (items per type: company, fund/ETF, unlisted; each with why it
+   matters and an optional auto-fill key) + `fundlab/diligence.py`. Auto-fill: funds/ETFs from universe/lookthrough/
+   unit-trust data (TER, benchmark, top holdings, overlap with your fund); companies from a dated fundamentals
+   snapshot bundled by `build_sample.py` (yfinance: margins, debt, P/E vs own history and sector peers, dividends),
+   live for ad-hoc tickers; unlisted from the stated assumptions (scam flags). Items that need judgement (auditor
+   changes, licence check on the FSCA register) are explained, not auto-filled. Shown as an expander before Add.
+5. Tests for each step (model round trip, upload parsing, allocation maths, unlisted maths incl. MC convergence and
+   loss frequency, checklist auto-fill, AppTests for adding each type); browser check; commit after each step.
+
 ## Architecture (as it exists)
 
 ```
