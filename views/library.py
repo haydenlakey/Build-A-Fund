@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab.content import GROUPS, SECTIONS, Article, by_section
-from ui import cached, charts
+from ui import cached, charts, glossary
 from ui import components as C
 
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
@@ -64,7 +64,7 @@ def article_view(a: Article, articles: dict[str, Article]) -> None:
     st.caption(meta)
     if a.lesson:
         st.info(f"**The lesson for a fund builder:** {a.lesson}", icon=":material/school:")
-    st.markdown(a.body)
+    glossary.markdown(a.body)
     chart(a)
     rel = [articles[r] for r in a.related if r in articles]
     if rel:
@@ -96,19 +96,43 @@ def grid(items: list[Article], per_row: int = 3) -> None:
                 card(a)
 
 
+GLOSSARY = "glossary"
+
+
+def glossary_list(terms) -> None:
+    lib = cached.library()
+    for t in terms:
+        with st.container(border=True):
+            st.markdown(f"**{t.term}**" + (f" · *also: {', '.join(t.aliases)}*" if t.aliases else ""))
+            st.markdown(t.definition)
+            if t.article in lib:
+                st.button(f"Read more: {lib[t.article].title}", key=f"gl_{t.key}", on_click=open_article,
+                          args=(t.article,), icon=":material/menu_book:", type="tertiary")
+
+
 def index_view(articles: dict[str, Article]) -> None:
     st.title("Library")
     C.disclaimer()
     st.markdown(INTRO)
     q = st.text_input("Search the library", placeholder="e.g. leverage, rand, Steinhoff", key="lib_q").strip().lower()
     if q:
+        terms = [t for t in glossary.terms() if q in (t.term + " " + " ".join(t.aliases)).lower()]
+        if terms:
+            st.subheader("In the glossary")
+            glossary_list(terms)
         hits = [a for a in articles.values() if q in (a.title + " " + a.summary + " " + a.body + " " + a.group).lower()]
         st.caption(f"{len(hits)} article{'s' if len(hits) != 1 else ''} mention “{q}”.")
         grid(sorted(hits, key=lambda a: a.title))
         return
-    present = [s for s in SECTIONS if by_section(articles, s)]
-    section = st.segmented_control("Section", present, format_func=SECTIONS.get, default=present[0] if present else None,
-                                   key="lib_section") or (present[0] if present else None)
+    present = [s for s in SECTIONS if by_section(articles, s)] + [GLOSSARY]
+    labels = {**SECTIONS, GLOSSARY: "Glossary"}
+    section = st.segmented_control("Section", present, format_func=labels.get, default=present[0],
+                                   key="lib_section") or present[0]
+    if section == GLOSSARY:
+        st.caption("Plain-words definitions of the terms the app uses. Elsewhere in the app, a term with a dotted "
+                   "underline shows its definition when you hover over it or tap it.")
+        glossary_list(glossary.terms())
+        return
     if section is None:
         st.info("No articles yet.")
         return

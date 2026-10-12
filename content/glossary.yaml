@@ -1,0 +1,162 @@
+# Glossary: one- or two-sentence definitions shown when a term is hovered or tapped, and in the
+# Library's Glossary section. Edit freely: the app reads this file at start-up.
+#
+# Each entry
+#   term        The term as shown in the Glossary list.
+#   aliases     Other spellings to mark in text (plurals ending in "s" are matched automatically).
+#   def         The definition. Plain words; no figures or history (those belong in sourced articles).
+#   article     Optional library slug for "read more".
+#   case        true = match the exact capitalisation only (for acronyms like VaR that are also words).
+#
+# The first mention of each term in a page's explanatory text is marked; later mentions aren't.
+
+terms:
+  # ---- return and risk
+  - term: expected return
+    def: "The average yearly return a holding or fund is expected to earn. Here it comes from history, pulled part of the way toward a simple prior, so it is a rough guess, not a promise."
+    article: estimation-error
+  - term: volatility
+    def: "How much a value typically swings around its average in a year: the annualised standard deviation of its returns. Higher volatility means a bumpier ride, up and down."
+  - term: standard deviation
+    def: "A measure of spread: roughly how far a typical result lands from the average."
+  - term: standard error
+    def: "How uncertain an estimate is. An average worked out from only a few years of returns has a large standard error, so the true average could be quite different."
+    article: estimation-error
+  - term: Sharpe ratio
+    def: "Return above the risk-free rate for each unit of volatility. A higher figure means more reward for the swings endured."
+  - term: risk-free rate
+    def: "The return available with almost no risk, such as a short-term government Treasury bill. Other returns are judged by how much they beat it."
+  - term: drawdown
+    aliases: [worst fall]
+    def: "A fall from a previous high to a later low, as a share of the high. The worst drawdown is the deepest such fall over a period."
+  - term: value at risk
+    aliases: [VaR]
+    def: "A loss the fund would exceed only rarely over a set period, for example in one month out of twenty for 95% VaR. It says nothing about how bad those rare months could be."
+    case: true
+  - term: expected shortfall
+    aliases: [ES]
+    def: "The average loss in the bad cases beyond the value at risk: how bad the rare bad months are on average."
+    case: true
+  - term: Monte Carlo
+    def: "Simulating thousands of possible futures with random numbers drawn to match the fund's estimated behaviour, then reading risks off the spread of outcomes."
+  - term: fat tails
+    aliases: [Student-t]
+    def: "Extreme moves happen more often than a bell curve predicts. A Student-t distribution is a bell-like curve with fatter tails, used to allow for that."
+  - term: correlation
+    def: "How closely two returns move together, from -1 (always opposite) through 0 (unrelated) to +1 (always together)."
+    article: diversification
+  - term: covariance
+    def: "How two returns move together, in the units of their returns. Correlation is covariance rescaled to lie between -1 and +1."
+  - term: Ledoit-Wolf
+    def: "A way of estimating how holdings move together that pulls the raw estimate toward a simpler structure, which makes it less noisy when history is short."
+  - term: beta
+    def: "How much a holding tends to move when something else moves by 1%. A beta of 1.2 to the Top 40 means it has tended to rise or fall about 1.2% when the Top 40 moved 1%."
+  - term: annualised
+    def: "Converted to a yearly figure so that numbers measured over different periods can be compared."
+
+  # ---- portfolio ideas
+  - term: diversification
+    aliases: [diversify, diversified]
+    def: "Spreading money across holdings that don't all move together, so that one going badly hurts the whole fund less."
+    article: diversification
+  - term: diversification ratio
+    def: "The average volatility of the holdings divided by the fund's volatility. Above 1 means mixing them has smoothed the ride."
+  - term: effective holdings
+    def: "How many equal-sized holdings the fund behaves like. Ten holdings with one at 90% behave like barely more than one."
+  - term: efficient frontier
+    def: "For each level of expected return, the lowest risk any mix of the available holdings could have had. Mixes on the line can't lower risk without giving up return."
+    article: efficient-frontier
+  - term: risk contribution
+    aliases: [share of risk]
+    def: "How much of the fund's ups and downs comes from one holding. It depends on the holding's size, its swings and how it moves with everything else."
+    article: risk-contribution
+  - term: rebalancing
+    aliases: [rebalance, rebalanced]
+    def: "Trading back to target weights after prices have moved, selling some of what rose and adding to what fell."
+  - term: benchmark
+    def: "The yardstick a fund is compared with, usually a market index such as the Top 40."
+    article: tracking-error
+  - term: active weight
+    def: "How much more or less of a holding a fund has than its benchmark. Positive means overweight, negative means underweight."
+    article: tracking-error
+  - term: tracking error
+    def: "How much a fund's return strays from its benchmark's in a typical year: the volatility of the difference between them."
+    article: tracking-error
+  - term: information ratio
+    def: "Expected return above the benchmark divided by tracking error: how much extra return each unit of difference from the benchmark is expected to earn."
+    article: information-ratio
+  - term: leverage
+    aliases: [gearing, borrowing to invest]
+    def: "Investing borrowed money as well as your own. Gains and losses on your own money are multiplied, and lenders can force a sale."
+    article: leverage
+  - term: margin call
+    def: "A lender's demand for more money, or for investments to be sold, when a borrowed-against portfolio has fallen too far."
+    article: leverage
+  - term: hindsight bias
+    def: "Judging past choices with knowledge that wasn't available at the time. A fund built today from yesterday's winners looks better in a replay than it would have in real time."
+  - term: look-through
+    aliases: [looked through, looking through]
+    def: "Counting what is inside a fund (its shares, sectors and countries) rather than just the fund's name."
+  - term: rand hedge
+    def: "A holding that tends to gain in rand when the rand weakens, usually because it earns its money offshore or in dollars."
+  - term: home bias
+    def: "Holding mostly investments from your own country, which ties the whole fund to one economy and one currency."
+
+  # ---- products and costs
+  - term: ETF
+    aliases: [exchange-traded fund]
+    def: "Exchange-traded fund: a fund that holds a basket of investments, often tracking an index, and trades on a stock exchange like a share."
+    case: true
+  - term: unit trust
+    def: "A pooled fund run by a manager that you buy and sell directly with the manager at the day's price, not on an exchange."
+  - term: index
+    def: "A list of investments with rules for weighting them, used to measure a market, such as the JSE Top 40."
+  - term: index fund
+    aliases: [tracker]
+    def: "A fund that aims to match an index by holding what it holds, rather than picking investments."
+  - term: TER
+    aliases: [total expense ratio]
+    def: "Total expense ratio: a fund's yearly running costs as a share of its value, taken out inside the fund's price."
+    article: fees
+    case: true
+  - term: transaction costs
+    def: "What a fund pays when it buys and sells its investments. Like the TER, they come out inside the fund's price."
+    article: fees
+  - term: fact sheet
+    aliases: [minimum disclosure document, MDD]
+    def: "A fund's regular summary of its mandate, holdings, costs and past performance."
+  - term: ASISA category
+    def: "The group a South African fund is placed in by the industry body ASISA, based on what it may invest in, so similar funds can be compared."
+  - term: unlisted
+    def: "Not traded on a stock exchange, so there's no daily price and selling depends on finding a buyer or waiting for a lock-in to end."
+  - term: lock-in
+    def: "A period during which money in an investment can't be withdrawn."
+  - term: liquidity
+    aliases: [illiquid]
+    def: "How quickly something can be sold for cash without pushing its price down. Illiquid means hard to sell quickly."
+    article: woodford
+  - term: dividend
+    def: "A share of a company's profits paid out to its shareholders."
+  - term: P/E ratio
+    aliases: [price-to-earnings]
+    def: "A share's price divided by the company's profit per share: how many years of today's profits the price pays for."
+  - term: compounding
+    aliases: [compounds]
+    def: "Earning returns on past returns. Small yearly differences, in returns or in costs, grow large over decades."
+    article: fees
+
+  # ---- bonds and cash
+  - term: bond
+    def: "A loan to a government or company that pays interest and repays the amount borrowed on a set date. Its price falls when interest rates rise."
+  - term: duration
+    def: "How sensitive a bond's price is to interest rates: roughly the percentage its price changes for a one-percentage-point move in rates."
+  - term: inflation-linked bond
+    def: "A bond whose payments rise with inflation, so its real value is protected if it's held to the end."
+  - term: money market
+    def: "Very short-term loans and deposits. Money market funds aim to keep their value steady while earning short-term interest rates."
+  - term: STeFI
+    def: "The Short-Term Fixed Interest index, a common measure of South African money market returns."
+    case: true
+  - term: real return
+    def: "Return after inflation: how much more the money can actually buy."
+    article: why-we-invest

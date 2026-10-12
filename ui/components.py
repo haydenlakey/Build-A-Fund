@@ -6,6 +6,7 @@ import math
 import streamlit as st
 
 from fundlab.analysis import Comparison, FundStats
+from ui import glossary
 
 DISCLAIMER = ("**Education, not financial advice.** This tool explains what a fund's characteristics mean "
               "and what history says about them. It never tells you to buy or sell anything. Past returns "
@@ -19,7 +20,7 @@ def disclaimer() -> None:
 def chart_notes(what: str, maths: str, key: str) -> None:
     """The 'what am I looking at' note and 'show me the maths' toggle every chart carries."""
     with st.expander("What am I looking at?"):
-        st.markdown(what)
+        glossary.markdown(what)
     if st.toggle("Show me the maths", key=f"maths_{key}"):
         st.markdown(maths)
 

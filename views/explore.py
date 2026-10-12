@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab.model import HOLDING_KINDS
-from ui import cached, charts, state
+from ui import cached, charts, glossary, state
 from ui import components as C
 
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
@@ -80,7 +80,7 @@ def add_copy(fund, ticker: str, amount: float) -> None:
 
 st.title("Explore diversifiers")
 C.disclaimer()
-st.markdown(INTRO)
+glossary.markdown(INTRO)
 
 fund = state.active()
 if not fund.holdings:

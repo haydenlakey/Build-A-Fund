@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab import unlisted
-from ui import cached, charts, state
+from ui import cached, charts, glossary, state
 from ui import components as C
 
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
@@ -80,7 +80,7 @@ def metric_rows(funds, mc, settings) -> pd.DataFrame:
 
 st.title("Compare funds")
 C.disclaimer()
-st.markdown(INTRO)
+glossary.markdown(INTRO)
 
 ss = st.session_state
 funds_all = {i: f for i, f in ss.funds.items() if f.holdings}

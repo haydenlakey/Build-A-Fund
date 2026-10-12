@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab import backtest, costs, frontier, risk
-from ui import cached, charts, state
+from ui import cached, charts, glossary, state
 from ui import components as C
 
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
@@ -259,7 +259,7 @@ def optimiser_section(fund, stats) -> None:
 fund = state.active()
 st.title("Reality check")
 C.disclaimer()
-st.markdown(INTRO)
+glossary.markdown(INTRO)
 
 if not fund.holdings:
     st.info("This fund is empty. Add holdings on the **Build your fund** page, or open the example fund there.",

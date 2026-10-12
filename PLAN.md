@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 3 rules done, 354 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 3 rules + glossary done, 378 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-12 (Phase 3 rules done, 354 tests; Phase 2 done; Phase 4 
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** Still to do: glossary tooltips, remaining case files (32 of 44), resources-heavy rule (needs the commodity case file). |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** Still to do: remaining case files (32 of 44), resources-heavy rule (needs the commodity case file). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -190,6 +190,26 @@ explorer and side-by-side comparison. In order:
   AppTests: loaded fund lists without popping, a change pops 2 + "1 more", dismissal, leverage on the Risk page).
   Browser check: insights listed for the mixed fund, leverage pop-up at 2×.
 
+### Phase 3: glossary (2026-10-12)
+
+- `content/glossary.yaml`: 52 terms (term, aliases, def, optional article, `case: true` for acronyms like VaR/ES/TER/ETF
+  that are also ordinary words). Definitions are plain concepts: no figures or history.
+- `fundlab/glossary.py`: `load_glossary`, `annotate(text, terms, used=None)` wraps the **first mention** of each term
+  (plurals matched, longest term first, acronyms case-sensitive) in `<span class="gl" tabindex="0" data-def="…">`;
+  LaTeX, code, Markdown links, HTML tags and URLs are never touched. `lookup()`.
+- `ui/glossary.py`: tooltip CSS from `ui/theme.py` (ink on surface, swapped), injected once per run in `app.py`;
+  definition shows on `:hover` and on `:focus` (**tap** focuses the span on phones). **On screens ≤ 640 px the
+  definition is pinned to the bottom of the screen** (16 px gutters) so it never runs off the edge; tapping elsewhere
+  closes it. `glossary.markdown()` is used for page intros (Against a benchmark, Risk, Reality check, Explore,
+  Compare), every chart's "What am I looking at?" (via `components.chart_notes`) and library article bodies.
+- Library: a **Glossary** section (cards with read-more links) and search that also matches glossary terms.
+- Tests: `tests/test_glossary.py` (24: terms neutral and unambiguous, the app's core terms defined, first mention only,
+  plurals, longest match, acronym case, protected maths/links/HTML, escaping, shared `used`, AppTest for the Library
+  section and a marked article). Browser check: every checked library article must have marked terms. Checked by hand:
+  hover (light, dark), phone tap (bottom sheet, no sideways scroll), inside expanders.
+- Seen twice in Playwright right after a server restart: a Streamlit `stDialog` overlay briefly intercepting clicks
+  during the ~20 s cold start; not reproducible on a warm server. Watch for it on Streamlit Cloud.
+
 ## Phase 4 plan (approved 2026-10-11)
 
 User decisions (2026-10-11): an unlisted holding's return is **"the return if it goes to plan"**, and the app shows
@@ -332,7 +352,7 @@ Build A Fund/
 └── requirements.txt (pinned), requirements-dev.txt (+ playwright)
 ```
 
-Not yet created: `content/` (library Markdown, glossary.yaml, rules.yaml), further views.
+`content/`: library/*.md, rules.yaml, glossary.yaml, due_diligence.yaml, stress_tests.yaml.
 
 ## Data model
 
@@ -549,7 +569,6 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
-**Next (Phase 3, in progress):** ~~pop-up rules~~ done 2026-10-12. Then (a) glossary tooltips (`content/glossary.yaml`,
-terms that open on tap, used in metric help and page text) and (b) the remaining case files in batches of ~6, each
+**Next (Phase 3, in progress):** ~~pop-up rules~~ and ~~glossary tooltips~~ done 2026-10-12. Then the remaining case files in batches of ~6, each
 fully re-sourced; write the commodity slump 2014–16 case file early so the resources-heavy rule can be added. After
 Phase 3: Phase 5 (fact sheet and polish).

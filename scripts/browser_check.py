@@ -162,6 +162,8 @@ def main() -> int:
                 settle(page)
                 if page.locator(".js-plotly-plot").count() == 0:
                     problems.append(f"{label}: library article {slug} has no chart")
+                if page.locator("span.gl[data-def]").count() == 0:
+                    problems.append(f"{label}: library article {slug} has no glossary terms marked")
                 page.screenshot(path=OUT / f"{label}-8-library-{slug}.png")
             print(f"{label}: console errors {errors[:5]}")
             problems += [f"{label}: {e}" for e in errors]
