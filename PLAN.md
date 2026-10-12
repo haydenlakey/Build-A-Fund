@@ -3,14 +3,14 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 4 follow-ups (a)-(c) done, 327 tests; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 2 done, 332 tests; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
 | # | Phase (from the spec) | Status |
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
-| 2 | Composition, risk and reality-check views | **In progress.** Steps 1–6 done (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check); 320 tests pass. Next: step 7 (diversifier explorer, side-by-side comparison). |
+| 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
 | 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary still to do; pop-up rules engine built 2026-10-12 with its first rule (more rules to add). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
@@ -32,8 +32,8 @@ _Last updated: 2026-10-12 (Phase 4 follow-ups (a)-(c) done, 327 tests; Phase 4 d
 
 ### Moved from phase 1 to phase 2 (as in the original plan table)
 
-- Compare funds side by side (funds can already be duplicated, saved and loaded)
-- "Explore diversifiers" from the preset universe
+- Compare funds side by side: done in Phase 2 step 7
+- "Explore diversifiers" from the preset universe: done in Phase 2 step 7
 
 ### Phase 2: delivered so far
 
@@ -102,6 +102,26 @@ _Last updated: 2026-10-12 (Phase 4 follow-ups (a)-(c) done, 327 tests; Phase 4 d
     each mean drawn from N(mu, SE²); Michaud (FAJ 1989, "estimation-error maximizers") cited.
   - Tests: `tests/test_reality.py` (14), 2 AppTests + reality page in the mixed-fund loop; browser check screenshot.
 
+- **Step 7 (2026-10-12): Explore diversifiers and Compare funds** (two pages after "Reality check").
+  - `fundlab/diversifiers.py` `explore()`: every universe holding not in the fund, x rands added as new money
+    (s = x/(T+x) of the measured fund), exact σ' from one covariance estimated on the fund's window for the fund and
+    all candidates together (so "now" can differ from the Build page in the 2nd decimal under Ledoit-Wolf); also
+    correlation and beta to the fund (dσ/ds = σ(β−1) at the margin); candidates without prices for the whole window
+    are skipped and listed. ~0.25 s for 117 candidates.
+  - `views/explore.py`: amount (default ~10% of the fund), type filter, top N; tiles; bars of the change in volatility
+    (pp, blue falls / red rises); table; scatter of correlation vs change for all candidates; "Make a copy with it"
+    (adds a copy beside the fund, active fund unchanged, link to Compare); skipped list; links to diversification and
+    2022 case file. Framed as exploration; text avoids unsourced history (only the 2022 case file is cited).
+  - `analysis.compare_many()` (union window, shared frontier, gaps) + `views/compare.py`: pick 2–4 session funds;
+    assumptions from the active fund; metrics table (incl. ± range, extra risk vs frontier, look-through shares,
+    largest holding, fund charges, illiquid share); risk-return chart with each fund + holdings + dotted frontier;
+    R1 000 growth over the shared window (weekly rebalanced); holdings matrix. Duplicate fund names get an id suffix.
+  - `components.table_height()` so long tables show without an inner scroll bar. Charts: `diversifier_bars`,
+    `diversifier_scatter`, `funds_risk_return`.
+  - Tests: `tests/test_explore_compare.py` (5: exact formula vs rebuilt fund, marginal beta rule, compare_many window,
+    2 AppTests incl. copy → compare); explore added to the mixed-fund AppTest loop; browser check screenshots both
+    pages (makes a copy on Explore and follows the link to Compare).
+
 ## Phase 2 plan
 
 Pages: **What kind of fund is it?** (composition), **Risk detail**, **Reality check**, plus the diversifier
@@ -112,7 +132,7 @@ explorer and side-by-side comparison. In order:
 4. ~~Active bets view~~ Done.
 5. ~~Risk detail~~ Done (2026-10-11).
 6. ~~Reality check~~ Done (2026-10-11).
-7. Explore diversifiers; side-by-side fund comparison.
+7. ~~Explore diversifiers; side-by-side fund comparison~~ Done (2026-10-12).
 
 ### Phase 3: delivered so far (library part 1, commit a29b29e)
 
@@ -248,6 +268,8 @@ Build A Fund/
 │   ├── active_bets.py     # Against a benchmark (active weights, TE, TE budget, rules of thumb)
 │   ├── risk.py            # Risk in detail (estimate uncertainty, VaR/ES 3 ways, fan, stress tests, drawdown, leverage)
 │   ├── reality.py         # Reality check (costs, backtest with rebalancing, optimiser + resampling)
+│   ├── explore.py         # Explore diversifiers (each universe holding added in turn)
+│   ├── compare.py         # Compare funds side by side (shared window)
 │   ├── library.py         # Library (articles from content/library)
 │   └── about.py           # About and data
 ├── ui/                    # Streamlit-only helpers
@@ -269,7 +291,9 @@ Build A Fund/
 │   ├── active.py          # active weights, TE, TE budget, pairwise bet, rule of thumb
 │   ├── model.py           # Holding, FundSettings, Fund, JSON + share codes
 │   ├── data.py            # Universe, quote units, cleaning, weekly resample, FX, download, PriceStore
-│   ├── analysis.py        # history_window, estimate, FundStats, compare (shared window + frontier)
+│   ├── analysis.py        # history_window, estimate, FundStats, compare / compare_many (shared window + frontier)
+│   ├── diversifiers.py    # explore(): volatility change from adding each candidate
+│   ├── rules.py           # insight rules (content/rules.yaml) evaluation
 │   ├── lookthrough.py     # ETF look-through profiles, breakdowns, overlap, tilts, concentration
 │   ├── factors.py         # OLS + Newey-West betas, correlation clustering
 │   ├── content.py         # library article loader (YAML header + Markdown)
@@ -429,6 +453,8 @@ Made in Phase 2 (2026-10-09):
 - **Fund marker can hide a holding's label** on the risk-return chart when they coincide (e.g. "STX500" on a phone).
   Phase 5 polish.
 - **The arrow is invisible for very small moves** (markers overlap); Replay still shows the motion.
+- **Compare funds:** if two funds hold the same modelled unit trust with different inputs, the last fund's version
+  is used for both (`synthetic.price_frame`).
 - **Holdings table on phones:** Ticker/Type scroll off to the right (by design: key columns first).
 - `Fund.with_amount` defaults `kind="jse_share"`; the Build page passes the universe kind, but other callers must too.
 - **Data limits:** USD/ZAR from Dec 2003 only; JSE shares from 2000 at the earliest; STX40.JO from 2009; STXGOV.JO
@@ -456,8 +482,7 @@ Made in Phase 2 (2026-10-09):
 2. ~~Phase 4~~ Done (2026-10-11).
 3. ~~Phase 2 step 5 (Risk in detail)~~ Done (2026-10-11); it reuses `unlisted.simulate_paths` for the
    whole-fund VaR row and fan chart, and moves unlisted holdings with the listed part in stress tests.
-4. ~~Phase 2 step 6 (Reality check)~~ Done (2026-10-11). Next in Phase 2: step 7 (diversifier explorer,
-   side-by-side comparison).
+4. ~~Phase 2 step 6 (Reality check)~~ Done (2026-10-11). ~~Step 7~~ Done (2026-10-12): **Phase 2 complete.**
 5. ~~Phase 4 follow-ups~~ Done 2026-10-12 (user asked for these after step 6, 2026-10-11). Order: (a) sheet refresh,
    (b) short-duration bond proxy, (c) "can't sell in a hurry" pop-up. Commit after each.
 
@@ -499,5 +524,5 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
-Phase 2, step 7 (next in Phase 2): "Explore diversifiers" (from the preset universe, which holdings would historically
-have lowered the fund's risk most per rand added, framed as exploration) and side-by-side comparison of saved funds.
+**Next:** Phase 3 remainder (more pop-up rules on the new engine, glossary tooltips, remaining case files) or Phase 5
+(fact sheet and polish). Ask the user which.

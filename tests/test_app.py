@@ -216,7 +216,7 @@ def test_unlisted_and_unit_trust_fund_from_link_renders_everywhere():
     at = fresh({"fund": f.to_share_code()})
     no_errors(at)
     assert any("Illiquid sleeve" in s.value for s in at.subheader)
-    for page in ("views/composition.py", "views/active_bets.py", "views/risk.py", "views/reality.py"):
+    for page in ("views/composition.py", "views/active_bets.py", "views/risk.py", "views/reality.py", "views/explore.py"):
         at.switch_page(page).run()
         no_errors(at)
 

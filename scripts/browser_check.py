@@ -126,6 +126,18 @@ def main() -> int:
             if page.locator(".js-plotly-plot").count() < 3:
                 problems.append(f"{label}: reality check page shows fewer than 3 charts")
             page.screenshot(path=OUT / f"{label}-11-reality.png")
+            page.goto(f"{URL}/explore?fund={EXAMPLE.to_share_code()}")
+            settle(page)
+            if page.locator(".js-plotly-plot").count() < 2:
+                problems.append(f"{label}: explore page shows fewer than 2 charts")
+            page.screenshot(path=OUT / f"{label}-12-explore.png")
+            page.get_by_role("button", name="Make a copy with it").click()
+            settle(page)
+            page.get_by_text("Compare them side by side").click()  # a link keeps the session (and the copy)
+            settle(page)
+            if page.locator(".js-plotly-plot").count() < 2:
+                problems.append(f"{label}: compare page shows fewer than 2 charts")
+            page.screenshot(path=OUT / f"{label}-13-compare.png")
             page.set_viewport_size({"width": vp["width"], "height": vp["height"] + 3400})
             page.goto(f"{URL}/?fund={MIXED.to_share_code()}")
             settle(page)

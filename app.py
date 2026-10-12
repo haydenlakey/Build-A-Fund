@@ -96,6 +96,8 @@ pages = [
     st.Page("views/active_bets.py", title="Against a benchmark", icon=":material/compare_arrows:"),
     st.Page("views/risk.py", title="Risk in detail", icon=":material/monitoring:"),
     st.Page("views/reality.py", title="Reality check", icon=":material/fact_check:"),
+    st.Page("views/explore.py", title="Explore diversifiers", icon=":material/travel_explore:"),
+    st.Page("views/compare.py", title="Compare funds", icon=":material/compare:"),
     st.Page("views/library.py", title="Library", icon=":material/menu_book:"),
     st.Page("views/about.py", title="About and data", icon=":material/info:"),
 ]

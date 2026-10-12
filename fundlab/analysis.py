@@ -205,6 +205,27 @@ def compare(before: Fund, after: Fund, prices: pd.DataFrame, settings: FundSetti
     return Comparison(b, a, est, fr, gb, ga)
 
 
+@dataclass
+class MultiComparison:
+    """Several funds measured on one window (the union of their holdings) against one frontier."""
+    stats: list[FundStats | None]
+    est: Estimates
+    frontier: frontier.Frontier
+    gaps: list[float]
+
+
+def compare_many(funds: list[Fund], prices: pd.DataFrame, settings: FundSettings,
+                 frontier_points: int = 25) -> MultiComparison:
+    tickers = list(dict.fromkeys(t for f in funds for t in f.weights().index))
+    est = estimate(prices, tickers, settings)
+    stats = [fund_stats(f, est, settings, frontier_points=0) for f in funds]
+    if est.mu.empty:
+        return MultiComparison(stats, est, frontier.Frontier(np.array([]), np.array([]), []), [float("nan")] * len(funds))
+    fr = frontier.efficient_frontier(est.mu, est.cov, frontier_points)
+    gaps = [frontier.efficiency_gap(s.exp_return, s.vol, fr) if s else float("nan") for s in stats]
+    return MultiComparison(stats, est, fr, gaps)
+
+
 def correlation_with_rest(ticker: str, weights: pd.Series, returns: pd.DataFrame) -> float:
     """Correlation of one holding's weekly returns with the rest of the fund (excluding it)."""
     if ticker not in returns.columns:

@@ -31,6 +31,11 @@ def rand(x: float, decimals: int = 0) -> str:
     return f"{'-' if x < 0 else ''}R{s}"
 
 
+def table_height(n_rows: int) -> int:
+    """Pixel height that shows a dataframe's header and n_rows rows without an inner scroll bar."""
+    return 35 * (n_rows + 1) + 3
+
+
 def pct(x: float, decimals: int = 1) -> str:
     return "–" if x is None or math.isnan(x) else f"{x * 100:.{decimals}f}%"
 

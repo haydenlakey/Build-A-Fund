@@ -525,3 +525,83 @@ def weights_compare(current, optimised, lo, hi, names: dict[str, str]) -> go.Fig
     fig.update_layout(**_axes(layout, dict(tickformat=".0%", range=[0, 1.05]),
                               dict(showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))))
     return fig
+
+
+# ---- explore diversifiers and compare funds ----------------------------------------
+
+def diversifier_bars(table, names: dict[str, str]) -> go.Figure:
+    """Change in fund volatility from adding each candidate: falls in blue, rises in red, biggest fall on top."""
+    p = palette()
+    t = table.iloc[::-1]
+    labels = [f"{names.get(i, i)} ({_short(i)})" for i in t.index]
+    fig = go.Figure(go.Bar(
+        y=labels, x=t["d_vol"] * 100, orientation="h",
+        marker=dict(color=[p["div_neg"] if v < 0 else p["div_pos"] for v in t["d_vol"]], cornerradius=4),
+        text=[f"{v * 100:+.2f} pp" for v in t["d_vol"]], textposition="outside", cliponaxis=False,
+        textfont=dict(color=p["ink2"], size=11),
+        customdata=t[["vol", "corr", "vol_after", "d_ret"]].to_numpy(),
+        hovertemplate="<b>%{y}</b><br>Fund volatility %{customdata[2]:.1%} (%{x:+.2f} pp)<br>Its own volatility "
+                      "%{customdata[0]:.1%}<br>Correlation with your fund %{customdata[1]:.2f}<br>Expected return "
+                      "change %{customdata[3]:+.2%}<extra></extra>"))
+    lo = min(0.0, float(t["d_vol"].min()) * 100)
+    hi = max(0.0, float(t["d_vol"].max()) * 100)
+    pad = 0.25 * (hi - lo or 1.0)
+    layout = base_layout(p, height=max(240, 70 + 30 * len(t)), margin=dict(l=8, r=8, t=16, b=8), showlegend=False)
+    fig.update_layout(**_axes(layout, dict(tickformat="+.1f", range=[lo - pad, hi + pad], zeroline=True,
+                                           zerolinecolor=p["axis"], title="Change in fund volatility, % points"),
+                              dict(showgrid=False, automargin=True, tickfont=dict(color=p["ink2"]))))
+    return fig
+
+
+def diversifier_scatter(table, names: dict[str, str], highlight: list[str]) -> go.Figure:
+    """Every candidate: correlation with the fund against the change in fund volatility."""
+    p = palette()
+    fig = go.Figure()
+    rest = table.drop(index=highlight, errors="ignore")
+    top = table.loc[[t for t in highlight if t in table.index]]
+    for df, name, colour, size, text in ((rest, "Other holdings", p["muted"], 7, False),
+                                         (top, "Listed in the table", p["series"][0], 10, True)):
+        fig.add_trace(go.Scatter(
+            x=df["corr"], y=df["d_vol"], mode="markers+text" if text else "markers", name=name,
+            text=[_short(t) for t in df.index] if text else None, textposition="top center",
+            textfont=dict(size=10, color=p["ink2"]),
+            marker=dict(size=size, color=colour, line=dict(width=1, color=p["surface"])),
+            customdata=[[names.get(t, t), v] for t, v in zip(df.index, df["vol"])],
+            hovertemplate="<b>%{customdata[0]}</b><br>Correlation %{x:.2f}<br>Fund volatility %{y:+.2%}<br>"
+                          "Its own volatility %{customdata[1]:.1%}<extra></extra>"))
+    fig.add_hline(y=0, line=dict(color=p["axis"], width=1))
+    layout = base_layout(p, height=420)
+    fig.update_layout(**_axes(layout, dict(title="Correlation with your fund (weekly returns)", range=[-0.5, 1.0]),
+                              dict(title="Change in fund volatility", tickformat="+.1%")))
+    return fig
+
+
+def funds_risk_return(mc, fund_names: list[str], names: dict[str, str]) -> go.Figure:
+    """Each fund as a coloured dot against the frontier of all their holdings, holdings in grey."""
+    p = palette()
+    est = mc.est
+    fig = go.Figure()
+    tick = list(est.mu.index)
+    if tick:
+        fig.add_trace(go.Scatter(
+            x=np.sqrt(np.diag(est.cov.loc[tick, tick])), y=est.mu.values, mode="markers+text", name="Holdings",
+            text=[_short(t, names) for t in tick], textposition="top center", textfont=dict(size=10, color=p["muted"]),
+            marker=dict(size=7, color=p["muted"], line=dict(width=1, color=p["surface"])),
+            customdata=[names.get(t, t) for t in tick],
+            hovertemplate="<b>%{customdata}</b><br>Expected return %{y:.1%}<br>Volatility %{x:.1%}<extra></extra>"))
+    fr = mc.frontier
+    if len(fr.vols) > 1:
+        fig.add_trace(go.Scatter(x=fr.vols, y=fr.rets, mode="lines", name="Efficient frontier",
+                                 line=dict(color=p["muted"], width=1.5, dash="dot"), hoverinfo="skip"))
+    for i, (s, name) in enumerate(zip(mc.stats, fund_names)):
+        if s is None:
+            continue
+        colour = p["series"][i % len(p["series"])]
+        fig.add_trace(go.Scatter(
+            x=[s.vol], y=[s.exp_return], mode="markers", name=name,
+            marker=dict(size=16, color=colour, line=dict(width=2, color=p["surface"])),
+            hovertemplate=f"<b>{name}</b><br>Expected return %{{y:.1%}}<br>Volatility %{{x:.1%}}<extra></extra>"))
+    layout = base_layout(p, height=460)
+    fig.update_layout(**_axes(layout, dict(title="Volatility (risk), % a year", tickformat=".0%", rangemode="tozero"),
+                              dict(title="Expected return, % a year", tickformat=".0%")))
+    return fig

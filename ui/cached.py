@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fundlab import (active, analysis, backtest, content, costs, data, estimators, factors, frontier, lookthrough, risk,
+from fundlab import (active, analysis, backtest, content, costs, data, diversifiers, estimators, factors, frontier,
+                     lookthrough, risk,
                      rules, stress, synthetic, unit_trusts, unlisted, var)
 from fundlab.model import HOLDING_KINDS, Fund
 
@@ -278,3 +279,35 @@ def _optimised(fund_json: str, goal: str):
 def optimised(fund: Fund, goal: str):
     """(optimiser weights, resampled weights (draws x holdings), per-holding standard errors) or None."""
     return _optimised(fund.to_json(), goal)
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _diversifiers(fund_json: str, add_zar: float):
+    fund = Fund.from_json(fund_json)
+    s = fund.settings
+    held = list(fund.weights().index)
+    px = fund_prices(fund)
+    est = analysis.estimate(px, held, s)
+    stats = analysis.fund_stats(fund, est, s, frontier_points=0)
+    if stats is None:
+        return None
+    cands = [t for t in universe().entries if t not in held]
+    both = pd.concat([px, prices(cands).drop(columns=list(px.columns), errors="ignore")], axis=1).sort_index()
+    return diversifiers.explore(both, stats.weights, cands, est.report.start, est.report.end, s, add_zar,
+                                stats.total_zar * stats.coverage)
+
+
+def diversifier_scan(fund: Fund, add_zar: float) -> diversifiers.Exploration | None:
+    return _diversifiers(fund.to_json(), float(add_zar))
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _compare_many(funds_json: tuple, settings_json: str) -> analysis.MultiComparison:
+    funds = [Fund.from_json(j) for j in funds_json]
+    settings = Fund.from_json(settings_json).settings
+    return analysis.compare_many(funds, fund_prices(*funds), settings)
+
+
+def compare_many(funds: list[Fund], settings_from: Fund) -> analysis.MultiComparison:
+    """Funds measured together on one window, with the settings of `settings_from`."""
+    return _compare_many(tuple(f.to_json() for f in funds), settings_from.to_json())
