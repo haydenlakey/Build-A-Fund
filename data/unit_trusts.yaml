@@ -28,6 +28,8 @@
 #                   resets with short-term rates, so their prices barely move)
 #                 - preference shares, credit-linked notes, fixed-rate and corporate bonds -> SA bonds
 #                 - "domestic income" -> SA cash; "offshore/foreign" with no split -> global bonds
+#                 - bonds in a "0-3 years" term bucket -> SA short-term bonds (sa_short_bonds), when the
+#                   sheet splits the bond holdings themselves by term
 #               Negative weights (derivative overlays) are kept as published.
 #   holdings    Top holdings as [ticker or null, name, percent], ticker only where the same company is
 #               in universe.yaml (for overlap). Omitted where the sheet gives no weights.
@@ -119,7 +121,7 @@ funds:
     tc: 0.0002
     fees_src: easyequities
     allocation: {sa_cash: 64.5, sa_bonds: 29.8, sa_property: 3.4, sa_equity: 0.6, global_bonds: 1.7}
-    allocation_note: "From the sheet's security-type table: floating-rate notes 46.4 and cash/money market/FX 32.7 (cash), less 'other' -14.6; government 10.6, corporate 11.9, parastatal 6.6 and SPV 0.7 bonds; property 3.4; equity 0.6; emerging-market hard-currency debt 1.4 and developed-market sovereign 0.3 (global bonds). The asset table on the same sheet shows local 82.6% (bonds 93.5, property 4.0, cash -14.9) / foreign 17.4% (cash 22.2, bonds -4.8); its bonds include the floating-rate notes. Bond maturity profile: 0-1 year 9.8, 1-3 years 14.6, 3-7 years 42.5, 7-12 years 11.9, 12+ years 21.2; modified duration 2.0 years."
+    allocation_note: "From the sheet's security-type table: floating-rate notes 46.4 and cash/money market/FX 32.7 (cash), less 'other' -14.6; government 10.6, corporate 11.9, parastatal 6.6 and SPV 0.7 bonds; property 3.4; equity 0.6; emerging-market hard-currency debt 1.4 and developed-market sovereign 0.3 (global bonds). The asset table on the same sheet shows local 82.6% (bonds 93.5, property 4.0, cash -14.9) / foreign 17.4% (cash 22.2, bonds -4.8); its bonds include the floating-rate notes. Bond maturity profile: 0-1 year 9.8, 1-3 years 14.6, 3-7 years 42.5, 7-12 years 11.9, 12+ years 21.2; modified duration 2.0 years. The maturity profile isn't split by instrument type (it may include the floating-rate notes), so no bonds are moved to SA short-term bonds."
     method: allocation_model
     sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/ninety-one-diversified-income-fund-(h).pdf", as_of: 2026-08-31, host: momentum, accessed: 2026-10-12}
 
@@ -136,8 +138,8 @@ funds:
     ter: 0.0071
     tc: 0.0001
     fees_src: easyequities
-    allocation: {sa_cash: 20.58, sa_bonds: 72.51, sa_ilb: 4.78, sa_property: 2.13}
-    allocation_note: "Bonds by term: 0-3 years 34.65, 3-7 years 24.97, 7-12 years 11.97, 12+ years 0.92. The sheet's fee table is for the A1 class (TER 0.94%, TC 0.01%, Apr 2023 to Mar 2026), so the B4 fees come from EasyEquities. The sheet says Ninety One acquired Sanlam Investment Management in February 2026 and the FSP name is expected to change in October 2026."
+    allocation: {sa_cash: 20.58, sa_short_bonds: 34.65, sa_bonds: 37.86, sa_ilb: 4.78, sa_property: 2.13}
+    allocation_note: "Bonds by term: 0-3 years 34.65 (SA short-term bonds), 3-7 years 24.97, 7-12 years 11.97, 12+ years 0.92. The sheet's fee table is for the A1 class (TER 0.94%, TC 0.01%, Apr 2023 to Mar 2026), so the B4 fees come from EasyEquities. The sheet says Ninety One acquired Sanlam Investment Management in February 2026 and the FSP name is expected to change in October 2026."
     method: allocation_model
     sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-sci-sa-active-income-fund-(b4).pdf", as_of: 2026-07-31, host: momentum}
 
@@ -154,8 +156,8 @@ funds:
     ter: 0.0050
     tc: 0.0001
     fees_src: fact sheet, A1 class (Apr 2023 to Mar 2026)
-    allocation: {sa_cash: 9.57, sa_bonds: 85.74, sa_ilb: 4.69}
-    allocation_note: "Bonds by term: 0-3 years 38.40, 3-7 years 31.56, 7-12 years 15.75, 12+ years 0.03. The sheet gives fees for the A1 class only; B1 fees may differ."
+    allocation: {sa_cash: 9.57, sa_short_bonds: 38.40, sa_bonds: 47.34, sa_ilb: 4.69}
+    allocation_note: "Bonds by term: 0-3 years 38.40 (SA short-term bonds), 3-7 years 31.56, 7-12 years 15.75, 12+ years 0.03. The sheet gives fees for the A1 class only; B1 fees may differ."
     method: allocation_model
     sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-enhanced-yield-fund-(b1).pdf", as_of: 2026-07-31, host: momentum}
 

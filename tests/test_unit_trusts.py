@@ -39,6 +39,23 @@ def test_income_funds_default_to_the_allocation_model():
         assert f.method == "allocation_model", f.code
 
 
+def test_short_dated_bonds_use_the_short_bond_class():
+    for code, short in (("SIAB4", 34.65), ("SEYB1", 38.40)):
+        f = next(f for f in UTS.funds.values() if f.code == code)
+        assert f.allocation["sa_short_bonds"] == pytest.approx(short), code
+        p = lookthrough.allocation_profile(f.ticker, f.allocation)
+        assert p.sectors.set_index("sector").loc["Short-term bonds", "frac"] == pytest.approx(short / 100, abs=1e-3)
+
+
+def test_short_bond_class_lowers_a_bond_funds_modelled_volatility():
+    f = next(f for f in UTS.funds.values() if f.code == "SEYB1")
+    px = data.PriceStore(allow_live=False).prices_zar(synthetic.proxy_tickers(f.allocation))
+    old = {**f.allocation, "sa_bonds": f.allocation["sa_bonds"] + f.allocation["sa_short_bonds"], "sa_short_bonds": 0}
+    vol = {k: synthetic.allocation_prices(a, f.ter, px, 0.07).pct_change().std()
+           for k, a in (("new", f.allocation), ("old", old))}
+    assert vol["new"] < 0.8 * vol["old"]
+
+
 def test_every_proxy_is_in_the_bundled_prices():
     store = data.PriceStore(allow_live=False)
     for f in UTS.funds.values():

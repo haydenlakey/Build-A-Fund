@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 4 follow-up (a) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 4 follow-ups (a) and (b) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -473,11 +473,15 @@ Made in Phase 2 (2026-10-09):
    misaligns these tables; `pdftotext -raw` reads them cleanly. New: "momentum" host; optional per-sheet `accessed`
    (overrides the file-wide date, shown in the picker).
 
-   **(b) Short-duration SA bond proxy: not started.** Both Sanlam funds hold 35-38% in 0-3 year bonds, which the
-   current mapping sends to `sa_bonds` (STXGOV.JO, long duration), so they model as too volatile. Idea: a new asset
-   class (e.g. `sa_short_bonds`) in `fundlab/synthetic.py` ASSET_CLASSES, modelled from a free series if one exists
-   on Yahoo (check), else a documented blend (e.g. cash + a fraction of STXGOV's excess return, labelled as an
-   assumption); map 0-3 yr buckets to it; update the field guide and tests (`test_unit_trusts.py`, `test_synthetic.py`).
+   **(b) Short-duration SA bond proxy: DONE (2026-10-12).** Yahoo has no short-dated SA bond series (checked
+   2026-10-12: the SA nominal bond ETFs it carries all track all-maturity indices: STXGOV from 2020, ETFBND 2019,
+   CSGOVI 2022, ETFSAB 2024; no JSE ETF tracks the ALBI 1-3 Year index; NFGOVI and others return nothing).
+   **Decision (user, 2026-10-12):** new class `sa_short_bonds` "SA short-term bonds (0-3 years)" =
+   cash + 0.25 × STXGOV's return above cash (`synthetic.PROXY_SCALE`), labelled in the app as an app-made assumption
+   (0.25 ≈ a 0-3 year bucket's ~1.5-year duration as a fraction of the all-maturities index's; S&P's index page
+   couldn't be opened to source the index's current duration, so no number is quoted). SIAB4 and SEYB1 0-3 yr buckets
+   now map to it (modelled vol 7.0% → 4.6% and 8.1% → 5.4% a year). IDICH not remapped: its maturity profile isn't
+   split by instrument (FRNs may be in it). Look-through sector "Short-term bonds". 3 new tests.
 
    **(c) "Can't sell in a hurry" pop-up: not started.** Needs the Phase 3 rules engine, which doesn't exist yet: build
    a minimal one (`content/rules.yaml`: id, trigger key, threshold, severity, message, library slug;

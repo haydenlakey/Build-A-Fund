@@ -237,6 +237,7 @@ _CLASS_MAP = {
     "sa_equity": ("equity", NOT_DISCLOSED, "ZA", "ZAR", UNCLASSIFIED),
     "sa_property": ("property", "Real Estate", "ZA", "ZAR", "sa"),
     "sa_bonds": ("bonds", "Bonds", "ZA", "ZAR", "sa"),
+    "sa_short_bonds": ("bonds", "Short-term bonds", "ZA", "ZAR", "sa"),
     "sa_ilb": ("bonds", "Inflation-linked bonds", "ZA", "ZAR", "sa"),
     "sa_cash": ("cash", "Cash", "ZA", "ZAR", "sa"),
     "global_equity": ("equity", NOT_DISCLOSED, "Other", "Foreign", "global"),

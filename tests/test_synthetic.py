@@ -46,6 +46,19 @@ def test_cash_only_fund_grows_at_the_risk_free_rate_less_fees():
     assert s.pct_change().dropna().iloc[0] == pytest.approx((0.07 - 0.005) / 52)
 
 
+def test_short_bonds_earn_cash_plus_a_quarter_of_the_bond_excess_return():
+    px = proxies()
+    s = synthetic.allocation_prices({"sa_short_bonds": 1.0}, 0.0, px, 0.07)
+    r = s.pct_change().dropna()
+    rf = 0.07 / PERIODS_PER_YEAR
+    expect = rf + 0.25 * (px["STXGOV.JO"].pct_change().dropna() - rf)
+    pd.testing.assert_series_equal(r, expect, check_names=False, check_freq=False, atol=1e-12)
+    assert r.std() == pytest.approx(0.25 * px["STXGOV.JO"].pct_change().std())
+    both = {"sa_short_bonds": 50, "sa_bonds": 50}
+    assert synthetic.proxy_tickers(both) == ["STXGOV.JO"]
+    assert synthetic.allocation_prices(both, 0.0, px, 0.07).index[0] == FRIDAYS[0]
+
+
 @pytest.mark.parametrize("text", ids=["iso-daily", "dayfirst-semicolon-decimal-comma", "weekly-rand-thousands"], argvalues=[
     "Date,Price\n" + "\n".join(f"{d:%Y-%m-%d},{100 + i}" for i, d in enumerate(pd.date_range("2022-01-03", periods=400))),
     "\n".join(f"{d:%d/%m/%Y};{1000 + i},5" for i, d in enumerate(pd.date_range("2022-01-03", periods=400))),

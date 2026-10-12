@@ -11,7 +11,13 @@ rebalanced mix of proxy series, less its annual fee:
 
     r_t = sum_k a_k r_{k,t} - TER / 52
 
-Cash earns the user's risk-free rate, rf / 52 a week, with no volatility. The model ignores
+Cash earns the user's risk-free rate, rf / 52 a week, with no volatility. Classes in PROXY_SCALE
+(short-term bonds) have no free series of their own, so they move by a fraction b of their
+proxy's return above cash:
+
+    r_{k,t} = rf / 52 + b (r_{proxy,t} - rf / 52)
+
+This is an app-made assumption, not a measured relationship. The model ignores
 everything the manager does within each asset class (stock picking, timing), so it captures the
 fund's broad risk, not its manager's skill.
 """
@@ -32,6 +38,8 @@ ASSET_CLASSES: dict[str, tuple[str, str, str]] = {
     "sa_equity": ("SA shares", "STX40.JO", "Satrix 40 ETF (JSE Top 40, total return)"),
     "sa_property": ("SA listed property", "CSPROP.JO", "10X SA Property Income ETF (history from 2011)"),
     "sa_bonds": ("SA bonds", "STXGOV.JO", "Satrix SA Bond ETF (history only from May 2020)"),
+    "sa_short_bonds": ("SA short-term bonds (0-3 years)", "STXGOV.JO",
+                       "75% cash + 25% Satrix SA Bond ETF (an app-made assumption; history from May 2020)"),
     "sa_ilb": ("SA inflation-linked bonds", "STXILB.JO", "Satrix ILBI ETF (history from 2017)"),
     "sa_cash": ("SA cash and money market", CASH, "the risk-free rate in your settings, with no volatility"),
     "global_equity": ("Global shares", "VT", "Vanguard Total World Stock ETF in rand"),
@@ -40,12 +48,16 @@ ASSET_CLASSES: dict[str, tuple[str, str, str]] = {
     "global_cash": ("Offshore cash", "ZAR=X", "the US dollar in rand (currency moves only, no interest)"),
     "commodities": ("Gold and commodities", "GLD.JO", "NewGold gold ETF"),
 }
+# key -> b: the class earns cash plus b times its proxy's return above cash. Bonds due within 3 years
+# have a duration of roughly 1.5 years, a fraction of the all-maturities index's, so they move
+# about a quarter as much (rough judgement: Yahoo has no free short-dated SA bond series).
+PROXY_SCALE: dict[str, float] = {"sa_short_bonds": 0.25}
 MIN_UPLOAD_WEEKS = 53  # 52 weekly returns, the same minimum the statistics use
 
 
 def proxy_tickers(allocation: dict[str, float]) -> list[str]:
-    return [ASSET_CLASSES[k][1] for k, a in allocation.items()
-            if a != 0 and k in ASSET_CLASSES and ASSET_CLASSES[k][1] != CASH]
+    return list(dict.fromkeys(ASSET_CLASSES[k][1] for k, a in allocation.items()
+                              if a != 0 and k in ASSET_CLASSES and ASSET_CLASSES[k][1] != CASH))
 
 
 def normalise_allocation(allocation: dict[str, float]) -> dict[str, float]:
@@ -74,6 +86,9 @@ def allocation_prices(allocation: dict[str, float], ter: float, proxies: pd.Data
             rets[k] = risk_free / PERIODS_PER_YEAR
         elif t in proxies.columns:
             rets[k] = proxies[t].pct_change(fill_method=None)
+            if k in PROXY_SCALE:
+                rf = risk_free / PERIODS_PER_YEAR
+                rets[k] = rf + PROXY_SCALE[k] * (rets[k] - rf)
         else:
             raise KeyError(f"no prices for the {ASSET_CLASSES[k][0]} proxy {t}")
     first = max((proxies[ASSET_CLASSES[k][1]].first_valid_index() for k in a if ASSET_CLASSES[k][1] != CASH),
