@@ -72,7 +72,7 @@ def load_unit_trusts(path: Path | str = UNIT_TRUSTS_PATH) -> UnitTrustList:
     for d in raw["funds"]:
         d = {k: v for k, v in d.items() if k in known}
         d["inception"] = str(d.get("inception", ""))
-        d["sheet"] = {**d["sheet"], "as_of": str(d["sheet"].get("as_of", ""))}
+        d["sheet"] = {**d["sheet"], **{k: str(d["sheet"][k]) for k in ("as_of", "accessed") if k in d["sheet"]}}
         d["allocation"] = {k: float(v) for k, v in d["allocation"].items()}
         f = UnitTrust(**d)
         if f.risk not in RISK_ORDER:

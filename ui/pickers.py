@@ -93,9 +93,10 @@ def unit_trust_picker(fund: Fund, gen: int):
                 st.caption(ut.allocation_note)
             sh = ut.sheet
             host = {"manager": "the manager's site", "discovery": "Discovery's fund library",
+                    "momentum": "Momentum's fund library",
                     "easyequities": "EasyEquities' resource site"}.get(sh["host"], sh["host"])
             st.markdown(f"Fact sheet: [{ut.name}, data as at {sh['as_of']}]({sh['url']}) (from {host}, accessed "
-                        f"{uts.meta.get('accessed')}). Fees and size: EasyEquities fund page unless noted.")
+                        f"{sh.get('accessed') or uts.meta.get('accessed')}). Fees and size: EasyEquities fund page unless noted.")
     current = next((h for h in held if h.ticker == sel), None)
     methods = ["price_history", "allocation_model", "uploaded"]
     default = current.method if current else ut.method

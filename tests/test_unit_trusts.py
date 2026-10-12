@@ -24,8 +24,9 @@ def test_fund_entry_is_complete_and_sourced(ticker):
     assert f.name and f.manager and f.asisa and f.risk_label and f.benchmark
     assert 0 < f.ter < 0.03 and (f.tc is None or 0 <= f.tc < 0.02)
     assert f.method in ("price_history", "allocation_model")
-    assert f.sheet["url"].startswith("https://") and f.sheet["host"] in ("manager", "discovery", "easyequities")
+    assert f.sheet["url"].startswith("https://") and f.sheet["host"] in ("manager", "discovery", "momentum", "easyequities")
     assert re.fullmatch(r"20\d\d-\d\d-\d\d", f.sheet["as_of"])
+    assert re.fullmatch(r"20\d\d-\d\d-\d\d", f.sheet.get("accessed", "2026-01-01"))
     assert set(f.allocation) <= set(synthetic.ASSET_CLASSES)
     assert sum(f.allocation.values()) == pytest.approx(100, abs=1.0)
     for t, name, pct in f.holdings:

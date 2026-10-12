@@ -36,8 +36,10 @@
 #               otherwise. The user can switch.
 #   sheet       The fact sheet / minimum disclosure document (MDD) used: url, as_of (date of the data),
 #               host (manager = the manager's own site; discovery = Discovery's investment platform
-#               library, used when the manager's site has no newer copy; easyequities = EasyEquities'
-#               resource site, used when neither is reachable or newer).
+#               library, used when the manager's site has no newer copy; momentum = Momentum's
+#               wealth platform fact sheet library, same use; easyequities = EasyEquities'
+#               resource site, used when none of these is reachable or newer). Optional accessed
+#               (the date the sheet was read) overrides the file-wide accessed date below.
 
 accessed: 2026-10-11
 ee_list: https://wealth.easyequities.co.za/sitemap.xml
@@ -116,15 +118,15 @@ funds:
     ter: 0.0052
     tc: 0.0002
     fees_src: easyequities
-    allocation: {sa_cash: 62.9, sa_bonds: 33.1, sa_ilb: 0.2, sa_property: 2.8, sa_equity: 0.6, global_bonds: 0.4}
-    allocation_note: "From the sheet's instrument table: floating-rate notes 49.4 and cash/money market/FX 15.1 (cash), less 'other' -1.6; government 18.2, corporate 8.1, parastatal 6.0 and SPV 0.8 bonds; property 2.8; equity 0.6; inflation-linked 0.2; developed-market sovereign 0.4. The asset table on the same sheet shows local 88.4% / foreign 11.6%; its 'bonds 90.5' includes the floating-rate notes."
+    allocation: {sa_cash: 64.5, sa_bonds: 29.8, sa_property: 3.4, sa_equity: 0.6, global_bonds: 1.7}
+    allocation_note: "From the sheet's security-type table: floating-rate notes 46.4 and cash/money market/FX 32.7 (cash), less 'other' -14.6; government 10.6, corporate 11.9, parastatal 6.6 and SPV 0.7 bonds; property 3.4; equity 0.6; emerging-market hard-currency debt 1.4 and developed-market sovereign 0.3 (global bonds). The asset table on the same sheet shows local 82.6% (bonds 93.5, property 4.0, cash -14.9) / foreign 17.4% (cash 22.2, bonds -4.8); its bonds include the floating-rate notes. Bond maturity profile: 0-1 year 9.8, 1-3 years 14.6, 3-7 years 42.5, 7-12 years 11.9, 12+ years 21.2; modified duration 2.0 years."
     method: allocation_model
-    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/IDICH.pdf", as_of: 2025-10-31, host: easyequities}
+    sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/ninety-one-diversified-income-fund-(h).pdf", as_of: 2026-08-31, host: momentum, accessed: 2026-10-12}
 
   - ticker: UT:ZAE000099867
     code: SIAB4
-    name: Sanlam Investment Management Active Income Fund (B4)
-    manager: Sanlam Investment Management
+    name: Sanlam Investment Management SCI SA Active Income Fund (B4)
+    manager: Sanlam Investment Management (acquired by Ninety One, Feb 2026)
     risk: low
     risk_label: Conservative (fact sheet)
     asisa: SA - Multi Asset - Income
@@ -134,28 +136,28 @@ funds:
     ter: 0.0071
     tc: 0.0001
     fees_src: easyequities
-    allocation: {sa_cash: 71.66, sa_bonds: 21.74, sa_ilb: 4.71, sa_property: 1.89}
-    allocation_note: "Bonds by term: 0-3 years 2.38, 3-7 years 11.71, 7-12 years 7.53, 12+ years 0.12."
+    allocation: {sa_cash: 20.58, sa_bonds: 72.51, sa_ilb: 4.78, sa_property: 2.13}
+    allocation_note: "Bonds by term: 0-3 years 34.65, 3-7 years 24.97, 7-12 years 11.97, 12+ years 0.92. The sheet's fee table is for the A1 class (TER 0.94%, TC 0.01%, Apr 2023 to Mar 2026), so the B4 fees come from EasyEquities. The sheet says Ninety One acquired Sanlam Investment Management in February 2026 and the FSP name is expected to change in October 2026."
     method: allocation_model
-    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SIAB4.pdf", as_of: 2025-03-31, host: easyequities}
+    sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-sci-sa-active-income-fund-(b4).pdf", as_of: 2026-07-31, host: momentum}
 
   - ticker: UT:ZAE000156097
     code: SEYB1
-    name: SIM Enhanced Yield Fund (B1)
-    manager: Sanlam Investment Management
+    name: Sanlam Investment Management SCI Enhanced Yield Fund (B1)
+    manager: Sanlam Investment Management (acquired by Ninety One, Feb 2026)
     risk: low
     risk_label: Conservative (fact sheet)
     asisa: SA - Interest Bearing - Short Term
     benchmark: STeFI + 0.5% a year
     inception: 2011-05-03
-    size: R8.8 billion (fact sheet, March 2025)
+    size: R9.5 billion (fact sheet, July 2026)
     ter: 0.0050
-    tc: null
-    fees_src: fact sheet (April 2022 to March 2025)
-    allocation: {sa_cash: 71.63, sa_bonds: 24.81, sa_ilb: 3.56}
-    allocation_note: "Bonds by term: 0-3 years 5.69, 3-7 years 12.79, 7-12 years 6.22, 12+ years 0.11."
+    tc: 0.0001
+    fees_src: fact sheet, A1 class (Apr 2023 to Mar 2026)
+    allocation: {sa_cash: 9.57, sa_bonds: 85.74, sa_ilb: 4.69}
+    allocation_note: "Bonds by term: 0-3 years 38.40, 3-7 years 31.56, 7-12 years 15.75, 12+ years 0.03. The sheet gives fees for the A1 class only; B1 fees may differ."
     method: allocation_model
-    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SEYB1.pdf", as_of: 2025-03-31, host: easyequities}
+    sheet: {url: "https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-enhanced-yield-fund-(b1).pdf", as_of: 2026-07-31, host: momentum}
 
   - ticker: UT:ZAE000087540
     code: PIPFB5
@@ -494,15 +496,27 @@ funds:
     risk: medium_high
     risk_label: "Not readable on the sheet (a 1-7 scale graphic); ASISA multi-asset high equity"
     asisa: ASISA SA Multi-Asset High Equity
-    benchmark: Peer group median
+    benchmark: ASISA SA Multi-Asset High Equity sector (peer group)
     inception: 1994-02-09
     size: R27 609.5 million
     ter: 0.0117
     tc: 0.0076
     fees_src: easyequities
-    allocation: {sa_equity: 29.8, sa_bonds: 11.3, commodities: 4.2, sa_cash: 3.1, global_equity: 37.4, global_cash: 9.9, global_bonds: 4.4}
+    allocation: {sa_equity: 27.8, sa_bonds: 8.3, commodities: 4.1, sa_cash: 8.4, global_equity: 32.5, global_cash: 15.1, global_bonds: 3.8}
+    allocation_note: "From the H-class sheet (Discovery code MANH; the E class holds the same portfolio). Local 51.6%: equities 27.8, cash 8.4, bonds 8.3, FX 3.8, commodities 3.3; foreign 48.4%: equities 32.5, cash 15.0, bonds 3.8, commodities 0.8, FX -3.7. The two FX lines (currency positions) are netted into global cash: 15.0 + 3.8 - 3.7 = 15.1. Fund size on the sheet: ZAR 29bn."
+    holdings:
+      - [PRX.JO, Prosus, 2.9]
+      - [null, L'Oreal, 2.3]
+      - [VAL.JO, Valterra Platinum, 2.2]
+      - [NPN.JO, Naspers, 2.2]
+      - [null, Barclays, 2.2]
+      - [null, Next, 2.1]
+      - [PPH.JO, Pepkor Holdings, 2.0]
+      - [REM.JO, Remgro, 2.0]
+      - [SBK.JO, Standard Bank Group, 2.0]
+      - [ANH.JO, AB InBev, 1.8]
     method: price_history
-    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/MTBTE.pdf", as_of: 2025-05-31, host: easyequities}
+    sheet: {url: "https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/MANH", as_of: 2026-07-31, host: discovery}
 
   - ticker: UT:ZAE000175691
     code: AMWFB
@@ -690,12 +704,13 @@ funds:
     risk: high
     risk_label: High (fact sheet)
     asisa: South African - Equity - SA General
-    benchmark: FTSE/JSE Capped SWIX (J433PR)
+    benchmark: FTSE/JSE Capped All Share Total Return (J303T)
     inception: 2016-07-31
     size: R1 094.1 million
     ter: 0.0095
     tc: 0.0042
     fees_src: easyequities
-    allocation: {sa_equity: 97.07, sa_cash: 2.93}
+    allocation: {sa_equity: 94.51, sa_cash: 5.49}
+    allocation_note: "SA equity by sector: financials 24.77, resources 20.87, industrials 48.87. The benchmark was the Capped SWIX (J433PR) on the October 2025 sheet. The sheet names contributors but gives no top-holding weights."
     method: price_history
-    sheet: {url: "https://resources.easyequities.co.za/Unit%20Trusts/SEPB1.pdf", as_of: 2025-10-31, host: easyequities}
+    sheet: {url: "https://www.prescient.co.za/media/gcwhjzla/steyn-capital-equity-prescient-fund-class-b1-quarterly-mdd-june-2026.pdf", as_of: 2026-06-30, host: manager}
