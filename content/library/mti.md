@@ -36,10 +36,10 @@ about **R9.45 billion** for **almost 28,000 investors**.
 The US Commodity Futures Trading Commission (CFTC) took MTI and Steynberg to court. In **April 2023** a federal
 court found that:
 
-- Between about May 2018 and March 2021, MTI took **at least 29,421 bitcoin**, worth **over $1.73 billion** at
+- Between about May 2018 and March 2021, MTI took **at least 29,421 bitcoin**, worth **over \$1.73 billion** at
   the end of March 2021, from at least **23,000 people in the US** and many more worldwide.
 - The trading bot claim was **false**, and **all** of the bitcoin was misappropriated.
-- Steynberg was ordered to pay **$1.73 billion in restitution** to victims and a civil penalty of the same size,
+- Steynberg was ordered to pay **\$1.73 billion in restitution** to victims and a civil penalty of the same size,
   the **largest penalty in any CFTC case**. He had been **detained in Brazil since December 2021** on an
   INTERPOL warrant.
 

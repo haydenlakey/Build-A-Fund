@@ -52,11 +52,11 @@ market prices.
 
 Reports of the fund's size differ, so here is the range:
 
-- **Peak size:** Quartz and Crypto Briefing put assets at about **$45 billion** at the start of July; CNBC,
-  reporting the sale, called it a **"roughly $20 billion to $24 billion vehicle"**. The sources don't explain
+- **Peak size:** Quartz and Crypto Briefing put assets at about **\$45 billion** at the start of July; CNBC,
+  reporting the sale, called it a **"roughly \$20 billion to \$24 billion vehicle"**. The sources don't explain
   the difference.
-- **The sale:** a public book of about **$16 billion**, bought at a discount of **around 10%** (Crypto Briefing).
-- **The loss:** about **67% in July** (Crypto Briefing); about **$10 billion** left afterwards, mostly private
+- **The sale:** a public book of about **\$16 billion**, bought at a discount of **around 10%** (Crypto Briefing).
+- **The loss:** about **67% in July** (Crypto Briefing); about **\$10 billion** left afterwards, mostly private
   holdings including a stake in Anthropic (Quartz, Crypto Briefing).
 
 ## Who was hurt

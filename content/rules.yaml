@@ -17,8 +17,7 @@
 # Lesson groups covered: Bubbles and manias (tech_heavy, sharp_rise); Leverage and forced selling
 # (leverage_on, one_theme); Inflation and rates (bonds_only_cushion); Currency and country (all_sa);
 # Fraud and governance (one_company, unlisted_promise); Banks and credit (bank_heavy); Sector collapses
-# (property_heavy); Shocks (deep_fall); Liquidity and locked money (cant_sell_in_a_hurry).
-# Not yet: resources-heavy (waits for the commodity-slump case file).
+# (property_heavy, resources_heavy); Shocks (deep_fall); Liquidity and locked money (cant_sell_in_a_hurry).
 
 rules:
   - id: cant_sell_in_a_hurry
@@ -121,6 +120,15 @@ rules:
     noticed: "{property_share} of your fund is in listed property."
     history: "SA listed property lost 25.2% in 2018, its worst calendar year since the index began in 1993. A single group of related companies, over 40% of the property index, led the fall."
     article: sa-property-2018
+
+  - id: resources_heavy
+    title: A resources-heavy fund
+    when: {resources_share: {above: 0.25}}
+    threshold_note: "The 25% line is the app's own tilt threshold (the Resources-heavy label on What kind of fund is it?). Resources = mining, chemicals and energy companies, counted through your ETFs and unit trusts."
+    severity: info
+    noticed: "{resources_share} of your fund is in mining, chemicals and energy companies, whose profits follow commodity prices."
+    history: "Commodity prices move in long, deep cycles. Oil fell 47% and metals 21% in 2015 alone, and on the app's data Anglo American lost 81% and Glencore 73% in rand from mid-2014 to January 2016, before both more than doubled in 2016."
+    article: commodity-slump-2014-16
 
   - id: deep_fall
     title: This fund has fallen a long way before

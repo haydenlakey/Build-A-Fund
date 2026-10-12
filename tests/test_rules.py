@@ -158,8 +158,7 @@ def test_a_loaded_fund_lists_insights_without_popping_up():
 @app_only
 def test_a_change_pops_up_until_dismissed():
     at = run_app(fund_with_unlisted(9_000, 1_000))
-    before = insight_count(at)  # a Top 40 tracker alone is bank-heavy, so not necessarily 0
-    assert dismiss_buttons(at) == []
+    assert dismiss_buttons(at) == []  # a Top 40 tracker alone trips some rules, but loading isn't a change
     at.segmented_control(key="add_kind").set_value("unlisted").run()
     at.text_input(key="ul_name_0___new__").set_value("Coffee shop").run()
     at.number_input(key="ul_r_0___new__").set_value(60.0).run()
@@ -172,7 +171,9 @@ def test_a_change_pops_up_until_dismissed():
     assert any("1 more in" in c.value for c in at.caption)
     next(b for b in at.button if b.key == "dismiss_unlisted_promise").click().run()
     assert dismiss_buttons(at) == ["dismiss_cant_sell_in_a_hurry", "dismiss_one_company"]
-    assert insight_count(at) == before + 3
+    listed = " ".join(m.value for m in at.markdown)
+    for title in ("can't be sold in a hurry", "unusually high return", "One company is a big part"):
+        assert title in listed
 
 
 @app_only

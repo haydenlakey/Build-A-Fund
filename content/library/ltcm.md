@@ -26,9 +26,9 @@ in economics in 1997. It returned around 21%, 43% and 41% (after fees) in its fi
 
 Its strategy was **convergence trading**: finding pairs of closely related bonds whose prices had drifted
 slightly apart and betting they would come back together. Each trade earned very little, so LTCM
-borrowed enormously to make the profits worthwhile. At the start of 1998 it had about **$4.7 billion**
-of its own capital and had borrowed over **$124.5 billion**, more than **25 to 1**, with derivative
-positions on a notional value of about **$1.25 trillion**.
+borrowed enormously to make the profits worthwhile. At the start of 1998 it had about **\$4.7 billion**
+of its own capital and had borrowed over **\$124.5 billion**, more than **25 to 1**, with derivative
+positions on a notional value of about **\$1.25 trillion**.
 
 In **August 1998 Russia defaulted** on its domestic bonds. Investors everywhere rushed into the safest,
 most easily traded assets and away from everything else, so the price gaps LTCM had bet would narrow
@@ -40,7 +40,7 @@ LTCM **lost over 90% of its capital between January and September 1998**.
 LTCM's lenders and trading partners faced the prospect of all its positions being dumped on the market
 at once. The Federal Reserve Bank of New York, which had no authority over LTCM, brought them together.
 On **23 September 1998, 14 banks and securities firms** agreed to recapitalise the fund, and on
-28 September they put in about **$3.6 billion**, taking 90% of it. The GAO notes the New York Fed was
+28 September they put in about **\$3.6 billion**, taking 90% of it. The GAO notes the New York Fed was
 concerned about the "potential systemic implications" of a disorderly liquidation, and that its
 involvement raised concerns about moral hazard. The fund was wound down and dissolved in early 2000.
 

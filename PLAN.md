@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 3 rules + glossary done, 378 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 3 rules + glossary + commodity case file done, 405 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-12 (Phase 3 rules + glossary done, 378 tests; Phase 2 don
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** Still to do: remaining case files (32 of 44), resources-heavy rule (needs the commodity case file). |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** Still to do: remaining case files (31 of 44). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -209,6 +209,23 @@ explorer and side-by-side comparison. In order:
   hover (light, dark), phone tap (bottom sheet, no sideways scroll), inside expanders.
 - Seen twice in Playwright right after a server restart: a Streamlit `stDialog` overlay briefly intercepting clicks
   during the ~20 s cold start; not reproducible on a warm server. Watch for it on Streamlit Cloud.
+
+### Phase 3: case-file batch 3, part 1 (2026-10-12)
+
+- **Commodity slump 2014–16** (`commodity-slump-2014-16.md`, Sector collapses). Sources fetched 2026-10-12: World Bank
+  press releases of 26 Jan 2016 (oil −47%, metals −21% in 2015) and 26 Apr 2016 (oil and metals 50–70% below early-2011
+  peaks); Glencore RNS 7 Sep 2015 via Investegate (measures "up to US$10.2 billion", equity up to US$2.5bn, dividend
+  suspended, net debt to "the low US$20s billion" by end-2016); The Citizen/Moneyweb 9 Dec 2015 (Anglo: dividend
+  suspended H2 2015 and 2016, ~60% fewer assets, workforce 135,000 → 50,000). App-data figures labelled as such:
+  Anglo −81% and Glencore −73% in rand (Jul 2014 → Jan 2016), then +253% / +160% to end-2016; Top 40 index −14%;
+  DBC in rand −34%; USD/ZAR 10.63 → 16.52. Chart: `kind: prices` from the bundled sample.
+- Left out (not verified on a page read): "largest job cuts in the industry's history"; a general claim that heavy
+  borrowers fell most (rewritten as the mechanism, tied to the sourced Glencore/Anglo actions).
+- **resources_heavy** rule added (25%, links to the new case file); all 17 rules' figures pass the article check.
+- **Bug fixed: two "$<digit>" in one Markdown paragraph render as LaTeX in Streamlit** (seen on the new article's
+  Glencore line). Currency in prose is now written `US\$10`; LTCM, MTI and Situational Awareness escaped too; a content
+  test fails on any paragraph with two unescaped `$<digit>` (table rows exempt).
+- fees.md: "Reality check page (coming)" → it exists now.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -569,6 +586,7 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
-**Next (Phase 3, in progress):** ~~pop-up rules~~ and ~~glossary tooltips~~ done 2026-10-12. Then the remaining case files in batches of ~6, each
-fully re-sourced; write the commodity slump 2014–16 case file early so the resources-heavy rule can be added. After
-Phase 3: Phase 5 (fact sheet and polish).
+**Next (Phase 3, in progress):** ~~pop-up rules~~, ~~glossary tooltips~~ and ~~commodity slump case file + resources rule~~
+done 2026-10-12. Then the remaining 31 case files in batches of ~6, each fully re-sourced (a 2008 case file first: it gives
+the 2008 stress test a library link). Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
+Phase 5 (fact sheet and polish).

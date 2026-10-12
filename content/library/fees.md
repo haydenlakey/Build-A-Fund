@@ -41,8 +41,8 @@ whether or not the funds did well. See the *Buffett's bet* case file.
 
 ## In this app
 
-*What kind of fund is it?* shows your fund's weighted ETF costs. The *Reality check* page (coming)
-will show what fees cost in rands over 10 and 20 years.
+*What kind of fund is it?* shows your fund's weighted ETF costs. The *Reality check* page shows what fees
+cost in rands over 10 and 20 years.
 
 ## Show me the maths
 

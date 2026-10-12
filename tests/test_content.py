@@ -58,3 +58,12 @@ def test_header_may_contain_triple_dashes():
     a = parse("---\ntitle: T\nsection: theory\nsources:\n  - {title: x, url: \"https://a.org/b---c\", accessed: 2026-10-11}\n"
               "---\nBody with --- inside.\n", "t")
     assert a.sources[0]["url"].endswith("b---c") and a.body == "Body with --- inside."
+
+
+@pytest.mark.parametrize("slug", sorted(LIB))
+def test_dollar_amounts_do_not_turn_into_maths(slug):
+    r"""Two unescaped "$<digit>" in one paragraph make Streamlit render the text between them as LaTeX.
+    Write currency as US\$10 in prose (table rows are parsed cell by cell and are fine)."""
+    for para in re.split(r"\n\s*\n", LIB[slug].body):
+        prose = "\n".join(line for line in para.splitlines() if not line.lstrip().startswith("|"))
+        assert len(re.findall(r"(?<!\\)\$\d", prose)) < 2, f"{slug}: {prose[:80]!r}"
