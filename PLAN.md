@@ -458,9 +458,54 @@ Made in Phase 2 (2026-10-09):
    whole-fund VaR row and fan chart, and moves unlisted holdings with the listed part in stress tests.
 4. ~~Phase 2 step 6 (Reality check)~~ Done (2026-10-11). Next in Phase 2: step 7 (diversifier explorer,
    side-by-side comparison).
-5. Phase 4 follow-ups: a "can't sell in a hurry" pop-up rule (Phase 3 rules engine) using
-   `unlisted.illiquid_share`; refresh the older unit-trust sheets (Sanlam 2025, Ninety One Managed 2025, Steyn 2025)
-   from managers' sites; consider a short-duration SA bond proxy for income funds.
+5. **IN PROGRESS: Phase 4 follow-ups** (user asked for these after step 6, 2026-10-11). Order: (a) sheet refresh,
+   (b) short-duration bond proxy, (c) "can't sell in a hurry" pop-up. Commit after each.
+
+   **(a) Refresh stale unit-trust sheets: research DONE, `data/unit_trusts.yaml` NOT yet edited.** Findings
+   (all accessed 2026-10-11; keep EasyEquities-page fees where `fees_src: easyequities`):
+   - **SIAB4** Sanlam Active Income: sheet now "Sanlam Investment Management SCI SA Active Income Fund", July 2026
+     MDD (top issuers as at 30 Jun 2026), Momentum platform copy (Sanlam's own site returned 503):
+     https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-sci-sa-active-income-fund-(b4).pdf
+     (filename says B4 but the fee table is the **A1 class**: TER 0.94%, TC 0.01%, 1 Apr 2023 to 31 Mar 2026; keep B4
+     fees from EasyEquities). Conservative; SA - Multi Asset - Income; STeFI + 1%; launch 03 Nov 2006; R3.6 billion.
+     Allocation (sums to 100): property 2.13, SA cash & money market 20.58, inflation-linked 4.78, bonds 12+ yrs 0.92,
+     7-12 yrs 11.97, 3-7 yrs 24.97, **0-3 yrs 34.65**. Sheet says SIM was acquired by Ninety One in Feb 2026 (FSP name
+     expected to change Oct 2026). host: momentum (add "momentum" to the host list in the file header).
+   - **SEYB1** SIM Enhanced Yield: "Sanlam Investment Management SCI Enhanced Yield Fund", July 2026 MDD, issue
+     date 20 Aug 2026: https://wealth.momentum.co.za/investments/factsheets/sanlam-(sim)-enhanced-yield-fund-(b1).pdf
+     Again an **A1-class** fee table (TER 0.50%, TC 0.01%, Apr 2023 to Mar 2026), as was the old EasyEquities copy:
+     the current entry's TER is A1's, so label fees_src "fact sheet, A1 class (Apr 2023 to Mar 2026)". Conservative;
+     SA - Interest Bearing - Short Term; STeFI + 0.5%; launch 03 May 2011; R9.5 billion (pdftotext shifts this
+     column by one row). Allocation (sums to 100): SA cash & MM 9.57, inflation-linked 4.69, bonds 12+ 0.03,
+     7-12 15.75, 3-7 31.56, **0-3 38.40**.
+   - **MTBTE** Ninety One Managed (E): Discovery code **MANH** (H class), "As at end July 2026":
+     https://www.discovery.co.za/invest-public/ws/documvest-factsheet/download/MANH (ninetyone.com returns 403).
+     Fund size ZAR 29bn; inception 09.02.94; ASISA SA Multi-Asset High Equity; benchmark = that sector; risk on a
+     1-7 graphic ("Higher risk" end, not readable as a number). Allocation: local 51.6 = equities 27.8, cash 8.4,
+     bonds 8.3, FX 3.8, commodities 3.3; foreign 48.4 = equities 32.5, cash 15.0, bonds 3.8, commodities 0.8,
+     FX -3.7. Proposed mapping: sa_equity 27.8, sa_cash 8.4, sa_bonds 8.3, commodities 4.1, global_equity 32.5,
+     global_cash 15.1 (15.0 + local FX 3.8 + foreign FX -3.7), global_bonds 3.8 (sums to 100.0; note the FX netting in
+     allocation_note). Top equity holdings (H sheet): Prosus 2.9, L'Oreal 2.3, Valterra Platinum 2.2, Naspers 2.2,
+     Barclays 2.2, Next 2.1, Pepkor 2.0, Remgro 2.0, Standard Bank 2.0, AB InBev 1.8 (use universe tickers where present).
+   - **SEPB1** Steyn Capital Equity Prescient (B1): manager's own June 2026 quarterly MDD:
+     https://www.prescient.co.za/media/gcwhjzla/steyn-capital-equity-prescient-fund-class-b1-quarterly-mdd-june-2026.pdf
+     TER 0.95%, TC 0.43% (EasyEquities shows 0.42; keep EE). **Benchmark changed** to FTSE/JSE Capped All Share Total
+     Return (J303T). Risk High; SA - Equity - SA General; launch 31 Jul 2016. Allocation: SA equity 94.51
+     (financials 24.77, resources 20.87, industrials 48.87), cash 5.49. Only "Strategy: R8 444 million" given (not
+     the fund's size; keep the EE size). No top-holdings weights (only contributors).
+   - Not yet checked: IDICH (sheet as_of 2025-10-31 on EasyEquities' site) is also older than the rest.
+
+   **(b) Short-duration SA bond proxy: not started.** Both Sanlam funds hold 35-38% in 0-3 year bonds, which the
+   current mapping sends to `sa_bonds` (STXGOV.JO, long duration), so they model as too volatile. Idea: a new asset
+   class (e.g. `sa_short_bonds`) in `fundlab/synthetic.py` ASSET_CLASSES, modelled from a free series if one exists
+   on Yahoo (check), else a documented blend (e.g. cash + a fraction of STXGOV's excess return, labelled as an
+   assumption); map 0-3 yr buckets to it; update the field guide and tests (`test_unit_trusts.py`, `test_synthetic.py`).
+
+   **(c) "Can't sell in a hurry" pop-up: not started.** Needs the Phase 3 rules engine, which doesn't exist yet: build
+   a minimal one (`content/rules.yaml`: id, trigger key, threshold, severity, message, library slug;
+   `fundlab/rules.py` pure evaluation; a small UI panel that shows newly tripped rules once, dismissible, collected
+   in an "Insights" list) with this first rule using `unlisted.illiquid_share` (link: woodford). Spec section 7 in
+   docs/ORIGINAL_PROMPT.md. Tests: a fund that trips it and one that doesn't.
 6. Later: remaining case files (44 approved; a 2008 case file would give the 2008 stress test a library link),
    glossary tooltips and the pop-up rules engine (Phase 3, incl. "leverage switched on" once leverage is saved
    in the fund, if wanted).
