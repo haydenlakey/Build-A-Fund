@@ -410,15 +410,15 @@ def _companies(w: pd.Series, profs: dict[str, Profile]) -> pd.DataFrame:
     return out.sort_values("total", ascending=False, ignore_index=True)
 
 
-def tilts(c: Composition) -> list[Tilt]:
-    """Plain-language tilt labels. Each fires when its share of the fund passes TILTS[key].
+def tilt_values(c: Composition) -> dict[str, float]:
+    """Share of the fund behind each tilt (keys of TILTS).
 
     tech = Technology sector; resources = Basic Materials + Energy; banks = bank industry;
     property = Real Estate sector; precious = Precious metals; rand_hedge = earnings 'global'
     + 'sa_dollar'; sa_focus = earnings 'sa' (incl. SA bonds and property).
     """
     s, e = c.by_sector, c.by_earnings
-    vals = {
+    return {
         "tech": s.get("Technology", 0.0),
         "resources": s.get("Basic Materials", 0.0) + s.get("Energy", 0.0),
         "banks": c.bank_share,
@@ -427,6 +427,11 @@ def tilts(c: Composition) -> list[Tilt]:
         "rand_hedge": e.get("global", 0.0) + e.get("sa_dollar", 0.0),
         "sa_focus": e.get("sa", 0.0),
     }
+
+
+def tilts(c: Composition) -> list[Tilt]:
+    """Plain-language tilt labels. Each fires when its share of the fund passes TILTS[key]."""
+    vals = tilt_values(c)
     text = {
         "tech": ("Tech-heavy", "{v} of the fund is in technology companies."),
         "resources": ("Resources-heavy", "{v} is in mining, chemicals and energy, whose profits follow commodity prices."),

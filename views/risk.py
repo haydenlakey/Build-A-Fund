@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab import estimators, leverage, risk, var
-from ui import cached, charts, state
+from ui import cached, charts, insights, state
 from ui import components as C
 
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
@@ -343,6 +343,7 @@ def leverage_section(fund, stats, dist: str, df: float) -> None:
     L = st.segmented_control("Hold this many rands of investments for every rand of your own", [1.0, 1.5, 2.0, 3.0, 4.0],
                              default=1.0, format_func=lambda x: "No borrowing" if x == 1 else f"{x:g}×",
                              key="lev") or 1.0
+    insights.popups(fund, extra={"leverage": L}, only={"leverage_on"})
     if L == 1:
         st.caption("Pick a multiple to see how borrowing changes the falls, the chance of a margin call and the chance "
                    "of being wiped out.")

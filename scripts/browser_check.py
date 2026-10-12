@@ -26,7 +26,7 @@ EXAMPLE = Fund("Example fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_0
 
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "browser_check")
 URL = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:8501"
-# the coffee shop is 25% of the rands, enough to trip the "can't be sold in a hurry" insight
+# the coffee shop is 25% of the rands, enough to trip the "can't be sold in a hurry" insight (listed in the sidebar)
 MIXED = Fund("Mixed fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_000),
                             Holding("UT:ZAE000177358", "Allan Gray Balanced Fund (C)", "unit_trust", 8_000,
                                     method="price_history", params={"allocation": {"sa_equity": 60, "global_equity": 40},
@@ -118,6 +118,8 @@ def main() -> int:
             settle(page)
             page.get_by_text("2×", exact=True).click()
             settle(page)
+            if page.get_by_role("button", name="Got it").count() == 0:
+                problems.append(f"{label}: no leverage pop-up at 2×")
             if page.locator(".js-plotly-plot").count() < 7:
                 problems.append(f"{label}: risk page shows fewer than 7 charts")
             page.screenshot(path=OUT / f"{label}-10-risk.png")
@@ -144,13 +146,9 @@ def main() -> int:
             if page.get_by_text("Illiquid sleeve and the whole fund").count() == 0:
                 problems.append(f"{label}: mixed fund has no illiquid sleeve panel")
             page.screenshot(path=OUT / f"{label}-9-mixed-build.png")
-            if page.get_by_text("A large part of this fund can't be sold in a hurry").count() == 0:
-                problems.append(f"{label}: mixed fund shows no illiquid insight pop-up")
-            else:
-                page.get_by_role("button", name="Got it").click()
-                settle(page)
-                if page.get_by_role("button", name="Got it").count():
-                    problems.append(f"{label}: insight pop-up did not dismiss")
+            # a fund opened from a link lists its insights in the sidebar; only a change pops up (AppTests cover that)
+            if label != "phone" and page.get_by_text("Insights (0)").count():
+                problems.append(f"{label}: mixed fund lists no insights")
             page.goto(f"{URL}/composition?fund={MIXED.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-9-mixed-composition.png")

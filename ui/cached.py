@@ -311,3 +311,22 @@ def _compare_many(funds_json: tuple, settings_json: str) -> analysis.MultiCompar
 def compare_many(funds: list[Fund], settings_from: Fund) -> analysis.MultiComparison:
     """Funds measured together on one window, with the settings of `settings_from`."""
     return _compare_many(tuple(f.to_json() for f in funds), settings_from.to_json())
+
+
+@st.cache_data(max_entries=64, show_spinner=False)
+def _rule_measures(fund_json: str) -> dict:
+    fund = Fund.from_json(fund_json)
+    if not fund.holdings:
+        return {}
+    listed = [h for h in fund.holdings if h.kind != "unlisted" and h.amount_zar > 0]
+    stats = _compare(fund_json, fund_json).after if listed else None
+    comp = _compose(fund_json)
+    rep = _active(fund_json, benchmark_key(fund))[0] if stats is not None else None
+    px = fund_prices(fund) if listed else None
+    names = {t: name_of(t, fund) for t in fund.weights().index}
+    return rules.measures(fund, stats, comp, rep, px, names)
+
+
+def rule_measures(fund: Fund) -> dict:
+    """The measures the insight rules look at (fundlab.rules.measures), from the app's cached results."""
+    return _rule_measures(fund.to_json())

@@ -3,22 +3,27 @@
 # Each rule
 #   id          Unique key (also used to remember which pop-ups a visitor has dismissed).
 #   title       Short heading for the pop-up.
-#   trigger     A measure computed from the fund, by name (fundlab/rules.py TRIGGERS).
-#   above       The rule trips when the measure is strictly above this value.
-#   threshold_note  Where the threshold comes from (an app choice unless a source is given).
+#   when        Conditions on measures of the fund (fundlab/rules.py MEASURES), all of which must hold:
+#               {measure: {above: x}} and/or {below: y}. Shares of the fund are fractions (0.25 = 25%).
+#   threshold_note  Where the thresholds come from (the app's own choice unless a source is given).
 #   severity    info | warning
-#   noticed     What the app noticed in the fund. {value} is the measure, {threshold} the threshold,
-#               both shown as percentages.
-#   history     What history or theory says. Every figure here must also be in the linked article or
-#               in sources below.
+#   noticed     What the app noticed in the fund. {value} is the first condition's measure, {threshold}
+#               its bound; any measure can be named too, e.g. {tech_share}, {largest_company_name}.
+#   history     What history or theory says. Every figure must be in the linked library article (a test
+#               checks) or in this rule's own sources.
 #   article     Slug of the library article to read more (content/library/<slug>.md).
-#   sources     [{title, url, accessed}] for any figure in history.
+#   sources     Optional [{title, url, accessed}] for figures that aren't in the article.
+#
+# Lesson groups covered: Bubbles and manias (tech_heavy, sharp_rise); Leverage and forced selling
+# (leverage_on, one_theme); Inflation and rates (bonds_only_cushion); Currency and country (all_sa);
+# Fraud and governance (one_company, unlisted_promise); Banks and credit (bank_heavy); Sector collapses
+# (property_heavy); Shocks (deep_fall); Liquidity and locked money (cant_sell_in_a_hurry).
+# Not yet: resources-heavy (waits for the commodity-slump case file).
 
 rules:
   - id: cant_sell_in_a_hurry
     title: A large part of this fund can't be sold in a hurry
-    trigger: illiquid_share
-    above: 0.20
+    when: {illiquid_share: {above: 0.20}}
     threshold_note: "The 20% line is this app's own choice, not a legal or industry limit."
     severity: warning
     noticed: "{value} of your fund's rands sit in unlisted holdings (more than {threshold}). They can't be sold on an exchange, so getting that money back depends on their lock-ins and on finding a buyer."
@@ -26,3 +31,138 @@ rules:
     article: woodford
     sources:
       - {title: "Financial Conduct Authority (5 August 2025): FCA fines over Woodford Equity Income Fund", url: "https://www.fca.org.uk/news/press-releases/fca-fines-over-woodford-equity-income-fund/printable/print", accessed: 2026-10-11}
+
+  - id: unlisted_promise
+    title: An unlisted holding promises an unusually high return
+    when: {max_promised: {above: 0.20}}
+    threshold_note: "The 20% a year line is this app's own rule of thumb (the same one its due-diligence checklist uses)."
+    severity: warning
+    noticed: "You've said {max_promised_name} would return {max_promised} a year if it goes to plan. That is far above what listed shares have paid over long periods."
+    history: "Mirror Trading International promised at least 10% a month from a \"bitcoin trading bot\". US regulators later found the bot was a fiction and that all of the roughly $1.7 billion of bitcoin taken from investors was misappropriated. A promised return far above what markets pay is the warning sign, not the attraction."
+    article: mti
+
+  - id: one_company
+    title: One company is a big part of the fund
+    when: {largest_company: {above: 0.15}}
+    threshold_note: "The 15% line is this app's own rule of thumb. It counts the company directly and through your ETFs and unit trusts' top holdings."
+    severity: warning
+    noticed: "{largest_company_name} makes up {largest_company} of your fund, directly and through your funds."
+    history: "Steinhoff was a big, well-known, widely held company. When its chief executive resigned over accounting irregularities in December 2017, the shares lost almost 90% in two weeks. Any single company can fail in ways no one outside it can see coming."
+    article: steinhoff
+
+  - id: tech_heavy
+    title: A tech-heavy fund
+    when: {tech_share: {above: 0.25}}
+    threshold_note: "The 25% line is the app's own tilt threshold (the same one behind the Tech-heavy label on What kind of fund is it?)."
+    severity: info
+    noticed: "{tech_share} of your fund is in technology companies, counting what's inside your ETFs and unit trusts."
+    history: "In the dot-com bubble the Nasdaq rose about fivefold on internet excitement, then fell 78% and took 15 years to recover its peak. The internet did change the world: the prices paid for it were the problem."
+    article: dot-com
+
+  - id: one_theme
+    title: A fund built around one theme
+    when: {theme_share: {above: 0.30}}
+    threshold_note: "The 30% line is this app's own rule of thumb. Themes are the app's labels for each holding (for example AI, gold, banks); broad market labels don't count."
+    severity: info
+    noticed: "{theme_share} of your fund is in holdings tied to one theme: {theme_name}."
+    history: "Situational Awareness, a young hedge fund built on one big idea (AI needs chips, memory and power), borrowed heavily and lost about two-thirds of its value in July 2026. A fund can be right about a theme and still be ruined by the timing."
+    article: situational-awareness
+
+  - id: sharp_rise
+    title: A holding that rose very sharply in the past year
+    when: {max_rise: {above: 1.0}}
+    threshold_note: "Counts holdings that are at least 5% of the fund and have more than doubled (in rand) over the last 52 weeks of prices. The line is this app's own choice."
+    severity: info
+    noticed: "{max_rise_name} has risen {max_rise} in rand over the past year."
+    history: "A sharp rise on its own isn't a bubble. But historians of financial crises keep finding the same pattern in the ones that were: displacement, euphoria, mania, distress and revulsion. The article describes what each phase looks like."
+    article: five-phases
+
+  - id: leverage_on
+    title: Borrowed money is switched on
+    when: {leverage: {above: 1.0}}
+    threshold_note: "Shown whenever the borrowing multiple on the Risk in detail page is above 1."
+    severity: warning
+    noticed: "You're looking at the fund bought with borrowed money: {leverage} your own rands."
+    history: "Long-Term Capital Management, run by star traders and two future Nobel laureates, borrowed about 25 times its capital and lost over 90% of it in 1998. Borrowing turns small losses into large ones, and lenders can force a sale at the worst moment."
+    article: ltcm
+
+  - id: bonds_only_cushion
+    title: Bonds are the only cushion
+    when: {equity_share: {above: 0.40}, bond_share: {above: 0.20}, cushion_share: {below: 0.05}}
+    threshold_note: "Fires when shares are over 40% and bonds over 20% of the fund, with under 5% in gold, other commodities or cash. The lines are this app's own choice."
+    severity: info
+    noticed: "Shares are {equity_share} of your fund and bonds {bond_share}, with little in gold or cash ({cushion_share}) to soften a fall."
+    history: "In 2022, as US inflation reached 9.1% and interest rates rose from near zero to over 4%, US shares and bonds both lost heavily in the same year. Bonds usually cushion shares when growth is the worry, but not when inflation and rising rates are."
+    article: stocks-bonds-2022
+
+  - id: all_sa
+    title: Almost everything earns its money in South Africa
+    when: {sa_share: {above: 0.80}}
+    threshold_note: "The 80% line is the app's own tilt threshold (the Mostly South African label on What kind of fund is it?)."
+    severity: info
+    noticed: "{sa_share} of your fund earns its money mainly in South Africa, looking through your ETFs and unit trusts."
+    history: "In December 2015 the surprise firing of Finance Minister Nhlanhla Nene sent the rand to a record low and knocked about a fifth off big bank shares in a week. A fund that is entirely South African carries that political risk in every holding at once."
+    article: nenegate
+
+  - id: bank_heavy
+    title: A bank-heavy fund
+    when: {bank_share: {above: 0.15}}
+    threshold_note: "The 15% line is the app's own tilt threshold (the Bank-heavy label on What kind of fund is it?)."
+    severity: info
+    noticed: "{bank_share} of your fund is in banks, counting what's inside your ETFs and unit trusts."
+    history: "African Bank, a major South African lender, was placed under curatorship in August 2014, and its senior bondholders and wholesale depositors took a 10% haircut. \"Bank\" doesn't mean \"safe\" for the people who own its shares or bonds."
+    article: african-bank
+
+  - id: property_heavy
+    title: A property-heavy fund
+    when: {property_share: {above: 0.20}}
+    threshold_note: "The 20% line is the app's own tilt threshold (the Property-heavy label on What kind of fund is it?)."
+    severity: info
+    noticed: "{property_share} of your fund is in listed property."
+    history: "SA listed property lost 25.2% in 2018, its worst calendar year since the index began in 1993. A single group of related companies, over 40% of the property index, led the fall."
+    article: sa-property-2018
+
+  - id: deep_fall
+    title: This fund has fallen a long way before
+    when: {worst_fall: {above: 0.30}}
+    threshold_note: "Measured over the history window in your settings, with today's weights rebalanced weekly. The 30% line is this app's own choice."
+    severity: info
+    noticed: "Over the measured window, your fund's worst fall from a peak was {worst_fall}."
+    history: "Shocks arrive without warning and hit almost every share at once. As Covid-19 was declared a pandemic in March 2020, the JSE Top 40 fell about 30% in five weeks; what helped a South African investor was owning things that behave differently in a panic."
+    article: march-2020
+
+  - id: one_bet
+    title: Many holdings, one bet
+    when: {avg_corr: {above: 0.60}, n_measured: {above: 2.5}}
+    threshold_note: "Fires when the average correlation between your holdings (weighted by rands) is above 0.60 and at least three holdings are measured. The line is this app's own choice."
+    severity: info
+    noticed: "Your holdings have an average correlation of {avg_corr}: they have tended to rise and fall together."
+    history: "Diversification lowers risk only when holdings don't move together. Several holdings that all respond to the same thing behave much like one big holding."
+    article: diversification
+
+  - id: risk_gap
+    title: One holding carries far more risk than money
+    when: {risk_gap: {above: 0.10}}
+    threshold_note: "Fires when a holding's share of the fund's risk is at least 1.5 times, and more than 10 percentage points above, its share of the money. The lines are this app's own choice."
+    severity: info
+    noticed: "{risk_gap_name} is {risk_gap_money} of your money but {risk_gap_risk} of your fund's risk."
+    history: "A holding's share of the risk depends on how much it swings and how it moves with everything else, not only on how much money is in it. A small, volatile holding can drive a large part of a fund's ups and downs."
+    article: risk-contribution
+
+  - id: te_one_bet
+    title: One bet drives the difference from your benchmark
+    when: {te_top_share: {above: 0.50}}
+    threshold_note: "Uses the benchmark chosen on Against a benchmark. Fires when one holding's bet supplies more than half of the tracking error. The line is this app's own choice."
+    severity: info
+    noticed: "Against your benchmark, one bet, {te_top_bet}, supplies {te_top_share} of how differently your fund behaves (tracking error {te} a year)."
+    history: "Tracking error measures how far a fund's returns stray from its benchmark's. When one bet supplies most of it, the fund's result relative to the market comes down mostly to that one call."
+    article: tracking-error
+
+  - id: high_fees
+    title: High fund charges
+    when: {fee: {above: 0.01}}
+    threshold_note: "The 1% a year line is this app's own choice. The 20-year figure assumes the charge is taken from the fund's value each year: after n years the fund is worth (1 - charge)^n of what it would be without it, whatever the growth."
+    severity: info
+    noticed: "Your fund's charges (TER plus transaction costs, weighted by rands) are {fee} a year. Over 20 years that takes about {fee_cost} of what the fund would otherwise be worth."
+    history: "A fee that looks small each year is taken from a growing amount, every year, so it compounds just as returns do."
+    article: fees

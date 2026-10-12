@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 2 done, 332 tests; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 3 rules done, 354 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-12 (Phase 2 done, 332 tests; Phase 4 follow-ups (a)-(c) d
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary still to do; pop-up rules engine built 2026-10-12 with its first rule (more rules to add). |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** Still to do: glossary tooltips, remaining case files (32 of 44), resources-heavy rule (needs the commodity case file). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -164,6 +164,31 @@ explorer and side-by-side comparison. In order:
   $20–24bn vs $45bn gap in Situational Awareness's reported size.
 - **Resilient:** the FSCA closed both probes without findings of false statements (Nov 2019) or market abuse
   (Nov 2020); the article says so explicitly.
+
+### Phase 3: pop-up rules (2026-10-12)
+
+- `content/rules.yaml` now has **16 rules** with `when:` conditions on named measures (all must hold; `above`/`below`),
+  `threshold_note` on each (every line is labelled as the app's own choice), and text placeholders for any measure.
+  One per spec starter rule except resources-heavy (waits for a commodity case file); lesson groups all covered:
+  Bubbles (tech_heavy, sharp_rise), Leverage (leverage_on, one_theme), Inflation (bonds_only_cushion), Currency
+  (all_sa), Fraud (one_company, unlisted_promise), Banks (bank_heavy), Sector collapses (property_heavy), Shocks
+  (deep_fall), Liquidity (cant_sell_in_a_hurry); theory: one_bet (avg corr > 0.6, ≥ 3 holdings), risk_gap (risk share
+  ≥ 1.5× and > 10 pp above money share), te_one_bet (one bet > 50% of TE, with direction), high_fees (> 1%, with the
+  20-year cost (1 − fee)^20, exact when the charge comes off the fund's value yearly).
+- **Figures in a rule's history text come from its linked article's summary** (a test checks every number appears in
+  the article, unless the rule lists its own sources). The pop-up then says the figures come from the article.
+- `fundlab/rules.py`: `measures(fund, stats, comp, active, prices, names)` (pure; any input may be None),
+  `evaluate(rules, values)` → (tripped, checked). Tilt measures reuse `lookthrough.tilt_values()` (same thresholds as
+  the composition labels); themes exclude broad market tags; largest company is looked through (an unlisted holding
+  counts as one business). `ui/cached.rule_measures(fund)` caches the measures from the app's cached results.
+- **Pop-up behaviour:** only a *change* pops up. Rules a fund already trips when the session first sees it (link, file,
+  example, copy) go straight to the sidebar **Insights (n)** list (compact: what was noticed + read more). At most 2
+  pop-ups at once ("n more in Insights"). A rule that was checked and stopped tripping forgets its dismissal; one that
+  couldn't be checked keeps it. **Leverage** pops up on Risk in detail when the multiple is above 1 (`extra=`).
+- Tests: `tests/test_rules.py` (26: file sourced and neutral, every group covered, each rule trips just inside its bounds
+  and not on them, skipped when a measure is missing, measures for illiquid/promise/risk gap/themes/fees/sharp rise,
+  AppTests: loaded fund lists without popping, a change pops 2 + "1 more", dismissal, leverage on the Risk page).
+  Browser check: insights listed for the mixed fund, leverage pop-up at 2×.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -524,5 +549,7 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
-**Next:** Phase 3 remainder (more pop-up rules on the new engine, glossary tooltips, remaining case files) or Phase 5
-(fact sheet and polish). Ask the user which.
+**Next (Phase 3, in progress):** ~~pop-up rules~~ done 2026-10-12. Then (a) glossary tooltips (`content/glossary.yaml`,
+terms that open on tap, used in metric help and page text) and (b) the remaining case files in batches of ~6, each
+fully re-sourced; write the commodity slump 2014–16 case file early so the resources-heavy rule can be added. After
+Phase 3: Phase 5 (fact sheet and polish).
