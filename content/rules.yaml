@@ -1,0 +1,28 @@
+# Insight pop-up rules (spec section 7). Edit freely: the app reads this file at start-up.
+#
+# Each rule
+#   id          Unique key (also used to remember which pop-ups a visitor has dismissed).
+#   title       Short heading for the pop-up.
+#   trigger     A measure computed from the fund, by name (fundlab/rules.py TRIGGERS).
+#   above       The rule trips when the measure is strictly above this value.
+#   threshold_note  Where the threshold comes from (an app choice unless a source is given).
+#   severity    info | warning
+#   noticed     What the app noticed in the fund. {value} is the measure, {threshold} the threshold,
+#               both shown as percentages.
+#   history     What history or theory says. Every figure here must also be in the linked article or
+#               in sources below.
+#   article     Slug of the library article to read more (content/library/<slug>.md).
+#   sources     [{title, url, accessed}] for any figure in history.
+
+rules:
+  - id: cant_sell_in_a_hurry
+    title: A large part of this fund can't be sold in a hurry
+    trigger: illiquid_share
+    above: 0.20
+    threshold_note: "The 20% line is this app's own choice, not a legal or industry limit."
+    severity: warning
+    noticed: "{value} of your fund's rands sit in unlisted holdings (more than {threshold}). They can't be sold on an exchange, so getting that money back depends on their lock-ins and on finding a buyer."
+    history: "Locked-up money is harmless until it's needed. The Woodford Equity Income Fund let investors withdraw on any dealing day while it bought more and more hard-to-sell investments. By the run-up to its June 2019 suspension only 8% of its investments could be sold within 7 days, and investors who stayed were trapped."
+    article: woodford
+    sources:
+      - {title: "Financial Conduct Authority (5 August 2025): FCA fines over Woodford Equity Income Fund", url: "https://www.fca.org.uk/news/press-releases/fca-fines-over-woodford-equity-income-fund/printable/print", accessed: 2026-10-11}

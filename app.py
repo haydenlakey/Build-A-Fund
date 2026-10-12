@@ -7,7 +7,7 @@ import streamlit as st
 
 from fundlab.estimators import COV_METHODS
 from fundlab.model import Fund, FundSettings
-from ui import state
+from ui import insights, state
 from ui.components import DISCLAIMER
 
 st.set_page_config(page_title="Build-a-Fund Lab", page_icon="🧪", layout="wide")
@@ -104,6 +104,7 @@ nav = st.navigation(pages)
 with st.sidebar:
     fund_manager()
     settings_panel()
+    insights.panel(state.active())
     st.caption(DISCLAIMER)
 
 if st.session_state.get("share_error"):

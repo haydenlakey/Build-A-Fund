@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 4 follow-ups (a) and (b) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-12 (Phase 4 follow-ups (a)-(c) done, 327 tests; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-12 (Phase 4 follow-ups (a) and (b) done; Phase 4 done; Ph
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **In progress.** Steps 1–6 done (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check); 320 tests pass. Next: step 7 (diversifier explorer, side-by-side comparison). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary and pop-up rules engine still to do. |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. Glossary still to do; pop-up rules engine built 2026-10-12 with its first rule (more rules to add). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -458,7 +458,7 @@ Made in Phase 2 (2026-10-09):
    whole-fund VaR row and fan chart, and moves unlisted holdings with the listed part in stress tests.
 4. ~~Phase 2 step 6 (Reality check)~~ Done (2026-10-11). Next in Phase 2: step 7 (diversifier explorer,
    side-by-side comparison).
-5. **IN PROGRESS: Phase 4 follow-ups** (user asked for these after step 6, 2026-10-11). Order: (a) sheet refresh,
+5. ~~Phase 4 follow-ups~~ Done 2026-10-12 (user asked for these after step 6, 2026-10-11). Order: (a) sheet refresh,
    (b) short-duration bond proxy, (c) "can't sell in a hurry" pop-up. Commit after each.
 
    **(a) Refresh stale unit-trust sheets: DONE (2026-10-12).** `data/unit_trusts.yaml` now uses:
@@ -483,14 +483,21 @@ Made in Phase 2 (2026-10-09):
    now map to it (modelled vol 7.0% → 4.6% and 8.1% → 5.4% a year). IDICH not remapped: its maturity profile isn't
    split by instrument (FRNs may be in it). Look-through sector "Short-term bonds". 3 new tests.
 
-   **(c) "Can't sell in a hurry" pop-up: not started.** Needs the Phase 3 rules engine, which doesn't exist yet: build
-   a minimal one (`content/rules.yaml`: id, trigger key, threshold, severity, message, library slug;
-   `fundlab/rules.py` pure evaluation; a small UI panel that shows newly tripped rules once, dismissible, collected
-   in an "Insights" list) with this first rule using `unlisted.illiquid_share` (link: woodford). Spec section 7 in
-   docs/ORIGINAL_PROMPT.md. Tests: a fund that trips it and one that doesn't.
+   **(c) "Can't sell in a hurry" pop-up: DONE (2026-10-12).** Minimal rules engine: `content/rules.yaml` (id, title,
+   trigger, above, threshold_note, severity info|warning, noticed with {value}/{threshold}, history, article, sources);
+   `fundlab/rules.py` (pure: `TRIGGERS` registry name -> fund measure, `load_rules` validates, `evaluate` -> Insights);
+   `ui/insights.py`: `popups(fund)` on the Build page (bordered callout: what I noticed / what history says / Read more
+   link / threshold note + source; "Got it" dismisses per fund and rule for the session; a rule that stops tripping
+   forgets its dismissal) and `panel(fund)` = sidebar "Insights (n)" expander on every page. First rule
+   `cant_sell_in_a_hurry`: `unlisted.illiquid_share` > 20% (labelled as the app's own threshold, not a legal limit);
+   history uses only the Woodford case file's FCA-sourced figures (8% sellable within 7 days). Rules apply to the
+   applied fund, not the preview. `tests/test_rules.py` (4, incl. AppTest: trips + dismiss, quiet fund); browser check's
+   MIXED fund now has a R6 000 coffee shop (25%) and checks the pop-up shows and dismisses.
+   **Phase 4 follow-ups all done.**
+
 6. Later: remaining case files (44 approved; a 2008 case file would give the 2008 stress test a library link),
-   glossary tooltips and the pop-up rules engine (Phase 3, incl. "leverage switched on" once leverage is saved
-   in the fund, if wanted).
+   glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
+   `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
 Phase 2, step 7 (next in Phase 2): "Explore diversifiers" (from the preset universe, which holdings would historically
 have lowered the fund's risk most per rand added, framed as exploration) and side-by-side comparison of saved funds.

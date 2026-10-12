@@ -26,11 +26,12 @@ EXAMPLE = Fund("Example fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_0
 
 OUT = Path(sys.argv[1] if len(sys.argv) > 1 else "browser_check")
 URL = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:8501"
+# the coffee shop is 25% of the rands, enough to trip the "can't be sold in a hurry" insight
 MIXED = Fund("Mixed fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_000),
                             Holding("UT:ZAE000177358", "Allan Gray Balanced Fund (C)", "unit_trust", 8_000,
                                     method="price_history", params={"allocation": {"sa_equity": 60, "global_equity": 40},
                                                                     "ter": 0.0148}),
-                            Holding("UL:coffee-shop", "Coffee shop", "unlisted", 3_000, method="assumptions",
+                            Holding("UL:coffee-shop", "Coffee shop", "unlisted", 6_000, method="assumptions",
                                     params={"exp_return": 0.25, "lockin_years": 5, "p_loss": 0.05})])
 LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford"]  # prices, multi-line and 2-point charts
 VIEWPORTS = [  # tall viewports, because Streamlit scrolls inside its own container
@@ -131,6 +132,13 @@ def main() -> int:
             if page.get_by_text("Illiquid sleeve and the whole fund").count() == 0:
                 problems.append(f"{label}: mixed fund has no illiquid sleeve panel")
             page.screenshot(path=OUT / f"{label}-9-mixed-build.png")
+            if page.get_by_text("A large part of this fund can't be sold in a hurry").count() == 0:
+                problems.append(f"{label}: mixed fund shows no illiquid insight pop-up")
+            else:
+                page.get_by_role("button", name="Got it").click()
+                settle(page)
+                if page.get_by_role("button", name="Got it").count():
+                    problems.append(f"{label}: insight pop-up did not dismiss")
             page.goto(f"{URL}/composition?fund={MIXED.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-9-mixed-composition.png")

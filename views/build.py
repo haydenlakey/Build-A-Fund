@@ -8,7 +8,7 @@ import streamlit as st
 from fundlab import data, unlisted, var, verdict
 from fundlab.analysis import Comparison
 from fundlab.model import HOLDING_KINDS, Fund
-from ui import cached, charts, pickers, state
+from ui import cached, charts, insights, pickers, state
 from ui import diligence as dd
 from ui import components as C
 
@@ -315,6 +315,8 @@ if not fund.holdings and not moved:
         state.put(state.example_fund())
         st.rerun()
     st.stop()
+
+insights.popups(fund)
 
 with st.spinner("Crunching the numbers…"):
     cmp = cached.compare(fund, after)

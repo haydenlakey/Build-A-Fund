@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from fundlab import (active, analysis, backtest, content, costs, data, estimators, factors, frontier, lookthrough, risk,
-                     stress, synthetic, unit_trusts, unlisted, var)
+                     rules, stress, synthetic, unit_trusts, unlisted, var)
 from fundlab.model import HOLDING_KINDS, Fund
 
 
@@ -137,6 +137,16 @@ def library() -> dict:
     """All library articles; re-read whenever a file in content/library changes."""
     files = sorted(content.LIBRARY_PATH.glob("*.md"))
     return _library(tuple((f.name, f.stat().st_mtime_ns) for f in files))
+
+
+@st.cache_data(show_spinner=False)
+def _rules(stamp: int) -> list:
+    return rules.load_rules()
+
+
+def insight_rules() -> list:
+    """The pop-up rules; re-read whenever content/rules.yaml changes."""
+    return _rules(rules.RULES_PATH.stat().st_mtime_ns)
 
 
 # ---- risk detail ------------------------------------------------------------------
