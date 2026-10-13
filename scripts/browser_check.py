@@ -33,7 +33,7 @@ MIXED = Fund("Mixed fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_000),
                                                                     "ter": 0.0148}),
                             Holding("UL:coffee-shop", "Coffee shop", "unlisted", 6_000, method="assumptions",
                                     params={"exp_return": 0.25, "lockin_years": 5, "p_loss": 0.05})])
-LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford"]  # prices, multi-line and 2-point charts
+LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford", "gfc-2008", "vbs"]  # prices, multi-line and 2-point charts
 VIEWPORTS = [  # tall viewports, because Streamlit scrolls inside its own container
     ("desktop", {"width": 1366, "height": 2600}, "light"),
     ("phone", {"width": 390, "height": 4200}, "light"),

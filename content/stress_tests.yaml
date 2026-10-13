@@ -12,6 +12,7 @@ episodes:
     start: 2008-05-16
     end: 2008-11-21
     what: "From the Top 40's weekly high in May 2008 to its low in November 2008, when the collapse of US banks spread to every market."
+    article: gfc-2008
   - key: nenegate_2015
     name: "December 2015: Nenegate"
     start: 2015-12-04

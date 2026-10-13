@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-12 (Phase 3 rules + glossary + commodity case file done, 405 tests; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-13 (Phase 3 case-file batch 3 part 2: 6 more case files, 19 of 44 written; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-12 (Phase 3 rules + glossary + commodity case file done, 
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** Still to do: remaining case files (31 of 44). |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** Still to do: remaining case files (25 of 44). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -226,6 +226,30 @@ explorer and side-by-side comparison. In order:
   Glencore line). Currency in prose is now written `US\$10`; LTCM, MTI and Situational Awareness escaped too; a content
   test fails on any paragraph with two unescaped `$<digit>` (table rows exempt).
 - fees.md: "Reality check page (coming)" → it exists now.
+
+### Phase 3: case-file batch 3, part 2 (2026-10-13)
+
+- Written (6), all sources fetched 2026-10-13:
+  - **gfc-2008** (Leverage): Fed History essays (Rich; Duca), FCIC Conclusions pp. xv–xx (40 to 1, <3% wipes out,
+    Bear Stearns overnight borrowing, GSEs 75 to 1, 26 million, US\$11 trillion), HISTORY.com for Lehman (US\$639bn,
+    15 Sep 2008). App data: Top 40 −47% (May–Nov 2008, back to May 2008 level Feb 2012), BAC −93% (USD), FSR −51%,
+    SBK −46%, SPY −55% USD / −30% ZAR (Oct 2007–Mar 2009), TLT +26% USD. **Linked from the 2008 stress test**
+    (`content/stress_tests.yaml`).
+  - **crash-1987** (Shocks): Fed History essay (Bernhardt and Eckblad); chart = ^GSPC from yfinance (points). The
+    "24 standard deviations" figure is the app's own calculation (daily sd 0.85%, Jan 1985–Sep 1987), labelled so.
+  - **enron** (Fraud): CRS RS21135 (Feb 2002) via EveryCRSReport, DOJ press release 23 Oct 2006. FBI page 403s.
+    Yahoo has no Enron prices, so the chart is CRS's 2 points (>US\$80 Jan 2001, <70c Jan 2002), labelled.
+  - **rand-2001** (Currency): 2002 Budget Review ch. 2 (37.4% vs USD; possible causes; 1985/1998/2001 table),
+    Mail & Guardian 10 May 2002 (Deloitte, KPMG findings before the Myburgh report). **FRED DEXSFUS** (free CSV,
+    no key) gives USD/ZAR before 2003; used for the chart and for SPY/Top 40 in rand vs dollars in 2001–02.
+    Explains 37% vs 59% (quoting direction). Myburgh final findings left out (only seen in search summaries;
+    polity.org.za 403s).
+  - **vbs** (Banks): Motau report "The Great Bank Heist" (Corruption Watch copy; SARB page blocks scripts),
+    BusinessTech. R1 894 923 674 to 53 persons (Mar 2015–Jun 2018); reported deposits R285m → R1.55bn chart.
+  - **japan-1989** (Bubbles): Okina, Shirakawa and Shiratsuka (BoJ IMES, 2001); Nikkei from yfinance (peak
+    38,915.87 on 29 Dec 1989, low 7,054.98 on 10 Mar 2009, first close above on 22 Feb 2024).
+- Tips: FCIC PDFs drop their old-style digits in `pdftotext`; render pages with `pdftoppm -png` and read the image.
+- `scripts/browser_check.py` also checks gfc-2008 and vbs.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -587,6 +611,7 @@ Made in Phase 2 (2026-10-09):
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
 **Next (Phase 3, in progress):** ~~pop-up rules~~, ~~glossary tooltips~~ and ~~commodity slump case file + resources rule~~
-done 2026-10-12. Then the remaining 31 case files in batches of ~6, each fully re-sourced (a 2008 case file first: it gives
-the 2008 stress test a library link). Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
+done 2026-10-12. Batch 3 part 2 (2008, 1987, Enron, 2001 rand, VBS, Japan) done 2026-10-13. Then the remaining 25 case
+files in batches of ~6, each fully re-sourced. Suggested next batch: Lehman (or fold into 2008), Madoff, Tongaat Hulett,
+1997 Asian crisis, UK LDI 2022, Century of US equities. Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
 Phase 5 (fact sheet and polish).
