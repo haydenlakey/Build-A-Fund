@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-22 (Phase 3 case-file batch 4: Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century; 25 of 44 written; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-22 (**Phase 3 done**: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-22 (Phase 3 case-file batch 4: Madoff, Tongaat, Asian cri
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** Still to do: remaining case files (19 of 44). |
+| 3 | Library and insight pop-ups | **Done (2026-10-22).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** **Done (2026-10-22): every item on the approved list is written (46 case files + 5 counterexamples, 61 articles); 551 tests pass; browser-checked.** |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -271,6 +271,28 @@ explorer and side-by-side comparison. In order:
   - **us-century** (Counterexamples, section `counter`): Damodaran histretSP (1928–2025) deflated by FRED CPIAUCNS
     (Dec–Dec); first **`log: true`** chart. All statistics are the app's calculation, labelled.
 - Next batch suggestion: Tulip mania, South Sea 1720, 1929, 1970s stagflation, Wirecard, Long-run JSE real returns.
+
+### Phase 3: case-file batch 5, the rest of the list (2026-10-22)
+
+- **Count fix:** the approved list has 53 items, not 44. All are now covered: 1720 Mississippi + South Sea are one
+  article (`bubbles-1720`, the research treats them as linked); the July 2026 AI chip sell-off is covered by
+  `situational-awareness`; Lehman got its own file (Repo 105, Reserve Primary Fund).
+- Written (27): tulip-mania, bubbles-1720, railway-mania, crash-1929, nifty-fifty, crypto-2021-22, volmageddon-2018,
+  archegos, stagflation-1970s, volcker-1979, flash-crash-2010, uk-property-funds, russia-rand-1998, zimbabwe,
+  argentina-2001, russia-2022, wirecard, sharemax, sa-small-banks-2002, svb-credit-suisse-2023, negative-oil-2020,
+  platinum, telecoms-bust, jse-long-run, index-funds-spiva, buying-through-2008 (plus lehman etc. in batch 4).
+- **New: `chart: {kind: none, reason: ...}`** for case files with no sourced series (tulip-mania, sharemax). The library
+  shows "No chart: <reason>"; the content test requires a reason; the browser check covers tulip-mania.
+- Data sources used beyond the app's bundle: yfinance live (^GSPC from 1927, ^N225, ^VIX, SVXY, BTC/ETH, CL=F/BZ=F, PL=F,
+  GLTL/INXG/ISF/IUKP.L, BIDU/TME/IQ, WRCDF, ^MERV, ARS=X, RUB=X, KRE, VFINX); FRED CSV (DEXSFUS, DEXTHUS/KOUS/MAUS,
+  FEDFUNDS, GS10, CPIAUCNS, ZAFCPIALLMINMEI); Damodaran histretSP (1928–2025).
+- Left out (couldn't verify on a fetched page): Garber/Thompson tulip price index (paywalled); Yale 1720 dataset (licence
+  forbids redistribution); Hanke's Zimbabwe peak estimate (Cato blocks fetching; IMF's 500 billion % official figure
+  used); SPIVA 2025 figures (spglobal.com 403; 2015 inaugural figures used); Myburgh's final findings; FTX conviction and
+  Hwang conviction (DOJ pages block fetching; regulators' allegations used and labelled as such); Credit Suisse AT1
+  court annulment (Oct 2025, only seen in search summaries).
+- Many sites block scripts (DOJ, FBI, Cato, spglobal, JSE SENS, polity, Britannica). Workarounds that worked: university
+  mirrors (UCEMA for the IMF IEO report, Stanford for Valukas), EveryCRSReport, SEC/Fed/BIS/FINMA/IMF direct.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -540,7 +562,7 @@ Made in Phase 2 (2026-10-09):
   1nvest/NewGold sites block them). MSCI EM country weights: MSCI factsheet, 30 Sep 2026.
   Tip: `pdftotext -raw` reads Satrix/Sygnia/10X sheets; 1nvest needs word coordinates (pdfplumber).
 
-## Approved case-file list (44)
+## Approved case-file list (53 items; the old heading said 44, a miscount)
 
 - **Bubbles and manias:** Tulip mania 1637 (with Goldgar's revisionist view) · Mississippi Bubble 1720 · South Sea 1720 · Railway Mania 1840s · 1929 · Nifty Fifty 1972–74 · Japan 1989 · Dot-com 2000 · Crypto 2021–22 · July 2026 AI chip sell-off (still unfolding)
 - **Leverage and forced selling:** LTCM · 2008 · Volmageddon/XIV 2018 · Archegos · UK LDI 2022 · Situational Awareness 2026
@@ -631,8 +653,6 @@ Made in Phase 2 (2026-10-09):
    glossary tooltips, and the other spec section 7 rules on the new engine (one per lesson group; add a trigger to
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
-**Next (Phase 3, in progress):** ~~pop-up rules~~, ~~glossary tooltips~~ and ~~commodity slump case file + resources rule~~
-done 2026-10-12. Batch 3 part 2 (2008, 1987, Enron, 2001 rand, VBS, Japan) done 2026-10-13. Batch 4 done 2026-10-22. Then the
-remaining 19 case files in batches of ~6, each fully re-sourced. Suggested next batch: Tulip mania, South Sea 1720, 1929,
-1970s stagflation, Wirecard, Long-run JSE real returns. Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
-Phase 5 (fact sheet and polish).
+**Phase 3 is done (2026-10-22).** Every approved case file is written (see "case-file batch 5" above). Write currency in
+prose as `US\$10` (see the LaTeX bug above). **Next: Phase 5 (fact sheet and polish).** Small leftovers: the Steinhoff
+article has no glossary term marked; the SPIVA 2025 figures could replace the 2015 ones if S&P's pages become fetchable.

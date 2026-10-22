@@ -59,7 +59,7 @@ announced that Tongaat Hulett will be removed from the exchange on **3 November 
 
 ## Who was hurt
 
-Shareholders, who expect to get nothing back. South African funds that held the share as part of the JSE carried the loss in proportion to their
+Shareholders, who expect to get nothing back. South African funds, including any index fund that held the share, carried the loss in proportion to their
 holding.
 
 ## The lesson for a fund builder

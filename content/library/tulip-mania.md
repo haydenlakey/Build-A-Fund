@@ -48,7 +48,7 @@ had to pay. On that reading "there was nothing maniacal about prices in this per
 ## Why it matters
 
 Tulip mania is still the first example most people hear of, and it gets used as shorthand for any price that looks
-too high. The evidence suggests a short, small episode among a limited group of traders, whose main damage was to
+too high. Looking back, it is easy to call any price that later fell a bubble, a form of hindsight bias. The evidence suggests a short, small episode among a limited group of traders, whose main damage was to
 reputations and trust, not to the Dutch economy.
 
 ## Who was hurt

@@ -33,7 +33,9 @@ MIXED = Fund("Mixed fund", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_000),
                                                                     "ter": 0.0148}),
                             Holding("UL:coffee-shop", "Coffee shop", "unlisted", 6_000, method="assumptions",
                                     params={"exp_return": 0.25, "lockin_years": 5, "p_loss": 0.05})])
-LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford", "gfc-2008", "vbs", "us-century"]  # prices, multi-line, 2-point and log charts
+LIBRARY_ARTICLES = ["situational-awareness", "sa-property-2018", "woodford", "gfc-2008", "vbs", "us-century",
+                    "tulip-mania"]  # prices, multi-line, 2-point, log and "no chart" articles
+NO_CHART = {"tulip-mania"}
 VIEWPORTS = [  # tall viewports, because Streamlit scrolls inside its own container
     ("desktop", {"width": 1366, "height": 2600}, "light"),
     ("phone", {"width": 390, "height": 4200}, "light"),
@@ -160,7 +162,10 @@ def main() -> int:
             for slug in LIBRARY_ARTICLES:
                 page.goto(f"{URL}/library?article={slug}")
                 settle(page)
-                if page.locator(".js-plotly-plot").count() == 0:
+                if slug in NO_CHART:
+                    if page.get_by_text("No chart:").count() == 0:
+                        problems.append(f"{label}: library article {slug} does not say why it has no chart")
+                elif page.locator(".js-plotly-plot").count() == 0:
                     problems.append(f"{label}: library article {slug} has no chart")
                 if page.locator("span.gl[data-def]").count() == 0:
                     problems.append(f"{label}: library article {slug} has no glossary terms marked")
