@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-13 (Phase 3 case-file batch 3 part 2: 6 more case files, 19 of 44 written; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-22 (Phase 3 case-file batch 4: Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century; 25 of 44 written; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -11,7 +11,7 @@ _Last updated: 2026-10-13 (Phase 3 case-file batch 3 part 2: 6 more case files, 
 |---|---|---|
 | 1 | Fund builder and core risk maths | **Done** (2026-10-09). 72 tests pass. Browser-checked at desktop and phone (dark mode didn't actually switch until the Phase 2 config fix). |
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
-| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** Still to do: remaining case files (25 of 44). |
+| 3 | Library and insight pop-ups | **In progress (moved ahead at the user's request, 2026-10-09).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** Still to do: remaining case files (19 of 44). |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
 | 5 | Fact sheet and polish | Not started |
 
@@ -250,6 +250,27 @@ explorer and side-by-side comparison. In order:
     38,915.87 on 29 Dec 1989, low 7,054.98 on 10 Mar 2009, first close above on 22 Feb 2024).
 - Tips: FCIC PDFs drop their old-style digits in `pdftotext`; render pages with `pdftoppm -png` and read the image.
 - `scripts/browser_check.py` also checks gfc-2008 and vbs.
+
+### Phase 3: case-file batch 4 (2026-10-22)
+
+- Written (6), all sources fetched 2026-10-22:
+  - **madoff** (Fraud): SDNY sentencing release (29 Jun 2009; US\$170.8bn forfeiture), SEC OIG-509 executive summary
+    (six complaints; Markopolos 3 vs 26 down months; DTC: <US\$18m vs US\$2.5bn claimed), madofftrustee.com
+    (US\$15.494bn recovered, US\$14.799bn distributed, as of 29 Sep 2026). Chart: S&P 500 vs an app-drawn steady 15%
+    line (Barron's figure via OIG), labelled as an illustration. Principal-lost % left out (sources disagree).
+  - **tongaat-hulett** (Fraud): BizNews (board's PwC summary), The Herald/Business Day 11 Dec 2019 (R11.886bn; equity
+    R62m vs R12bn reported), BusinessTech 12 Oct 2026 (**delisting on 3 Nov 2026**, no value for shareholders).
+    JSE SENS PDFs and Engineering News block scripts; Yahoo has no TON.JO. Chart: 2-point write-down estimate.
+  - **asian-crisis-1997** (Currency): Fed History (Carson and Clark), IMF Issues Brief 00/05; FRED DEXTHUS/DEXKOUS/
+    DEXMAUS chart; KOSPI/KLCI/JKSE falls from Yahoo. Thailand's 1998 GDP left out (the IMF brief gives −6% and −10.2%).
+  - **uk-ldi-2022** (Leverage): Cunliffe letter 5 Oct 2022, BoE Quarterly Bulletin 2023 (£19.3bn); daily GLTL.L,
+    INXG.L, ISF.L from Yahoo.
+  - **lehman** (Banks): Valukas examiner report vol. 1 (Stanford mirror; Repo 105 ~US\$50bn, net leverage 12.1 vs 13.9),
+    SEC 2009-104 (Reserve Primary, US\$785m Lehman paper), Treasury HP-1147. Chart: BAC/JPM/XLF/SPY in rand
+    (JPM ended H2 2008 up 6% in rand, so the text says not every bank fell).
+  - **us-century** (Counterexamples, section `counter`): Damodaran histretSP (1928–2025) deflated by FRED CPIAUCNS
+    (Dec–Dec); first **`log: true`** chart. All statistics are the app's calculation, labelled.
+- Next batch suggestion: Tulip mania, South Sea 1720, 1929, 1970s stagflation, Wirecard, Long-run JSE real returns.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -611,7 +632,7 @@ Made in Phase 2 (2026-10-09):
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
 **Next (Phase 3, in progress):** ~~pop-up rules~~, ~~glossary tooltips~~ and ~~commodity slump case file + resources rule~~
-done 2026-10-12. Batch 3 part 2 (2008, 1987, Enron, 2001 rand, VBS, Japan) done 2026-10-13. Then the remaining 25 case
-files in batches of ~6, each fully re-sourced. Suggested next batch: Lehman (or fold into 2008), Madoff, Tongaat Hulett,
-1997 Asian crisis, UK LDI 2022, Century of US equities. Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
+done 2026-10-12. Batch 3 part 2 (2008, 1987, Enron, 2001 rand, VBS, Japan) done 2026-10-13. Batch 4 done 2026-10-22. Then the
+remaining 19 case files in batches of ~6, each fully re-sourced. Suggested next batch: Tulip mania, South Sea 1720, 1929,
+1970s stagflation, Wirecard, Long-run JSE real returns. Write currency in prose as `US\$10` (see the LaTeX bug above). After Phase 3:
 Phase 5 (fact sheet and polish).
