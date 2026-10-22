@@ -32,10 +32,12 @@ def test_article_is_sourced_and_well_formed(slug):
 def test_case_files_have_group_lesson_and_chart(slug):
     a = LIB[slug]
     assert a.group in GROUPS and a.lesson and a.years
-    assert a.chart and a.chart["kind"] in ("prices", "points")
+    assert a.chart and a.chart["kind"] in ("prices", "points", "none")
+    if a.chart["kind"] == "none":
+        assert len(a.chart.get("reason", "")) > 20, "a case file without a chart must say why"
 
 
-@pytest.mark.parametrize("slug", sorted(s for s, a in LIB.items() if a.chart))
+@pytest.mark.parametrize("slug", sorted(s for s, a in LIB.items() if a.chart and a.chart["kind"] != "none"))
 def test_charts_have_data(slug):
     c = LIB[slug].chart
     if c["kind"] == "points":

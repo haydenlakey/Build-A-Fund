@@ -35,6 +35,9 @@ def chart(a: Article) -> None:
     c = a.chart
     if not c:
         return
+    if c.get("kind") == "none":
+        st.caption(f"No chart: {c['reason']}")
+        return
     if c.get("kind") == "points":
         fig = charts.history_lines(points_frame(c, a.title), {}, c.get("unit", ""), log=bool(c.get("log")))
         source = c.get("source", "")

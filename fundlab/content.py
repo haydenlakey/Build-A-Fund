@@ -11,7 +11,8 @@ Each file looks like
     lesson: The one-line lesson for someone building a fund.
     years: "1995-2002"       # optional
     chart:                   # optional
-      kind: prices           # prices (from the app's price data) | points (sourced values in this file)
+      kind: prices           # prices (from the app's price data) | points (sourced values in this file) |
+                             # none (no sourced series exists; `reason` says why, shown instead of a chart)
       tickers: [^J200.JO]
       start: 2007-06-01
       end: 2009-12-31
