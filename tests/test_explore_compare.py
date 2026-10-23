@@ -104,3 +104,22 @@ def test_explore_page_lists_candidates_and_makes_a_copy():
 def test_compare_page_with_one_fund_explains_what_to_do():
     at = app("views/compare.py")
     assert any("at least two funds" in i.value for i in at.info)
+
+
+@pytestmark_app
+def test_compare_keeps_each_funds_own_unit_trust_inputs():
+    def fund(name, alloc):
+        return Fund(name, [Holding("STX40.JO", "Satrix 40", "jse_etf", 1000),
+                           Holding("UT:mine", "My balanced fund", "unit_trust", 3000, method="allocation_model",
+                                   params={"allocation": alloc, "ter": 0.01})])
+    calm, bold = fund("Calm", {"sa_cash": 1.0}), fund("Bold", {"global_equity": 1.0})
+    at = AppTest.from_file(str(data.ROOT / "app.py"), default_timeout=120)
+    at.query_params.update({"fund": calm.to_share_code()})
+    at.run()
+    funds = dict(at.session_state.funds)
+    funds[bold.id] = bold
+    at.session_state.funds = funds
+    at.switch_page("views/compare.py").run()
+    assert not at.exception, [e.value for e in at.exception]
+    vol = at.dataframe[0].value.loc["Volatility"]
+    assert vol.iloc[0] != vol.iloc[1]  # before the fix both funds used the last fund's allocation

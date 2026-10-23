@@ -6,7 +6,7 @@ import math
 import pandas as pd
 import streamlit as st
 
-from fundlab import unlisted
+from fundlab import synthetic, unlisted
 from ui import cached, charts, glossary, state
 from ui import components as C
 
@@ -109,6 +109,14 @@ settings_from = state.active() if ss.active in chosen else funds[0]
 
 with st.spinner("Measuring the funds together…"):
     mc = cached.compare_many(funds, settings_from)
+# a unit trust modelled differently in two funds is measured as two holdings (UT:x and UT:x~2)
+versioned = {h.ticker: h.name for f in synthetic.distinct_versions(funds) for h in f.holdings if "~" in h.ticker}
+
+
+def name_of(t: str) -> str:
+    return versioned.get(t) or cached.name_of(t)
+
+
 rep = mc.est.report
 if rep.start is None:
     st.warning("None of these funds' holdings has enough price history to measure.")
@@ -116,7 +124,7 @@ if rep.start is None:
 st.caption(f"Shared window: {rep.start:%d %b %Y} to {rep.end:%d %b %Y} ({rep.n_weeks / 52:.1f} years). "
            f"Assumptions from **{fund_label(settings_from)}**.")
 if rep.limited_by:
-    st.caption(f"The window starts when {cached.name_of(rep.limited_by)} begins trading; the funds without it are "
+    st.caption(f"The window starts when {name_of(rep.limited_by)} begins trading; the funds without it are "
                "measured over the same shorter window.")
 
 st.subheader("The numbers side by side")
@@ -126,9 +134,9 @@ excluded = {t: r for s in mc.stats if s for t, r in s.excluded.items()}
 if excluded:
     with st.expander(f"Holdings left out of the history-based numbers ({len(excluded)})"):
         for t, r in excluded.items():
-            st.markdown(f"- **{cached.name_of(t)}**: {r}")
+            st.markdown(f"- **{name_of(t)}**: {r}")
 
-names = {t: cached.name_of(t) for t in mc.est.mu.index}
+names = {t: name_of(t) for t in mc.est.mu.index}
 labels = [fund_label(f) for f in funds]
 st.subheader("Risk and return")
 st.plotly_chart(charts.funds_risk_return(mc, labels, names), config=CHART_CONFIG, key="cmp_rr")

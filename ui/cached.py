@@ -303,7 +303,7 @@ def diversifier_scan(fund: Fund, add_zar: float) -> diversifiers.Exploration | N
 
 @st.cache_data(max_entries=32, show_spinner=False)
 def _compare_many(funds_json: tuple, settings_json: str) -> analysis.MultiComparison:
-    funds = [Fund.from_json(j) for j in funds_json]
+    funds = synthetic.distinct_versions([Fund.from_json(j) for j in funds_json])
     settings = Fund.from_json(settings_json).settings
     return analysis.compare_many(funds, fund_prices(*funds), settings)
 

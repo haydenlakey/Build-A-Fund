@@ -24,6 +24,7 @@ fund's broad risk, not its manager's skill.
 from __future__ import annotations
 
 import io
+import json
 from collections.abc import Callable
 
 import numpy as np
@@ -186,13 +187,45 @@ def holding_series(h: Holding, store_prices: pd.DataFrame, risk_free: float) -> 
     return None
 
 
+MODELLED = ("uploaded", "allocation_model")
+
+
+def distinct_versions(funds: list[Fund]) -> list[Fund]:
+    """Give each different modelled version of a holding its own ticker, so funds measured together
+    (Compare) each keep their own inputs: `UT:x` stays for the store's prices (or the first modelled
+    version), later versions become `UT:x~2`, `UT:x~3`, ... named "<name> (<fund>'s inputs)".
+    Funds whose versions all agree are returned unchanged.
+    """
+    versions: dict[str, list[str]] = {}
+    for f in funds:
+        for h in f.holdings:
+            key = json.dumps([h.method, h.params], sort_keys=True, default=str) if h.method in MODELLED else "store"
+            seen = versions.setdefault(h.ticker, [])
+            if key not in seen:
+                seen.append(key)
+    for vs in versions.values():
+        if "store" in vs:
+            vs.insert(0, vs.pop(vs.index("store")))
+    out = []
+    for f in funds:
+        g = f.copy(keep_id=True)
+        for h in g.holdings:
+            if h.method not in MODELLED or len(versions[h.ticker]) < 2:
+                continue
+            k = versions[h.ticker].index(json.dumps([h.method, h.params], sort_keys=True, default=str))
+            if k:
+                h.ticker, h.name = f"{h.ticker}~{k + 1}", f"{h.name} ({f.name}'s inputs)"
+        out.append(g)
+    return out
+
+
 def price_frame(funds: list[Fund], get_prices: Callable[[list[str]], pd.DataFrame],
                 risk_free: float) -> pd.DataFrame:
     """Weekly rand prices for every holding of the funds that has (real or modelled) prices.
 
     Unlisted holdings get no column: they have no price history, and the app never invents one.
-    When funds hold the same modelled ticker with different inputs (before/after an edit), the
-    last fund's version is used.
+    When funds hold the same modelled ticker with different inputs, the last fund's version is used
+    (right for before/after an edit); `distinct_versions` first keeps each fund's own version.
     """
     store = get_prices(needed_tickers(funds))
     cols = {t: store[t] for t in store.columns}

@@ -135,3 +135,35 @@ def test_with_amount_keeps_or_replaces_params():
     assert g.holding("UL:x").params == {"p_loss": 0.1} and g.holding("UL:x").amount_zar == 200
     h = f.with_amount("UL:x", 200, params={"p_loss": 0.2})
     assert h.holding("UL:x").params == {"p_loss": 0.2} and f.holding("UL:x").params == {"p_loss": 0.1}
+
+
+def _ut(alloc, method="allocation_model"):
+    return Holding("UT:bal", "A balanced fund", "unit_trust", 1000, method=method,
+                   params={"allocation": alloc, "ter": 0.01})
+
+
+def test_compare_measures_each_funds_own_version_of_a_modelled_unit_trust():
+    """Regression: two funds holding UT:bal with different allocations both used the last one's."""
+    px = proxies()
+    calm = Fund("Calm", [_ut({"sa_equity": 0.2, "sa_bonds": 0.8})])
+    bold = Fund("Bold", [_ut({"sa_equity": 1.0})])
+    calm_too = Fund("Calm too", [_ut({"sa_equity": 0.2, "sa_bonds": 0.8})])
+    funds = synthetic.distinct_versions([calm, bold, calm_too])
+    assert [f.holdings[0].ticker for f in funds] == ["UT:bal", "UT:bal~2", "UT:bal"]
+    assert funds[1].holdings[0].name == "A balanced fund (Bold's inputs)"
+    assert calm.holdings[0].ticker == "UT:bal"  # the originals are untouched
+    get = lambda ts: px[[t for t in ts if t in px.columns]]  # noqa: E731
+    mc = analysis.compare_many(funds, synthetic.price_frame(funds, get, 0.07), FundSettings(lookback_years=None))
+    alone = [analysis.compare_many([f], synthetic.price_frame([f], get, 0.07), FundSettings(lookback_years=None))
+             for f in (calm, bold)]
+    assert mc.stats[0].vol == pytest.approx(alone[0].stats[0].vol)
+    assert mc.stats[1].vol == pytest.approx(alone[1].stats[0].vol)
+    assert mc.stats[1].vol != pytest.approx(mc.stats[0].vol, rel=0.05)
+
+
+def test_distinct_versions_leaves_agreeing_and_store_priced_holdings_alone():
+    same = [Fund("A", [_ut({"sa_equity": 1.0})]), Fund("B", [_ut({"sa_equity": 1.0})])]
+    assert [f.holdings[0].ticker for f in synthetic.distinct_versions(same)] == ["UT:bal", "UT:bal"]
+    # store prices don't depend on the inputs, so the store version keeps the plain ticker even when listed second
+    mixed = [Fund("A", [_ut({"sa_equity": 1.0})]), Fund("B", [_ut({"sa_equity": 0.5}, method="price_history")])]
+    assert [f.holdings[0].ticker for f in synthetic.distinct_versions(mixed)] == ["UT:bal~2", "UT:bal"]
