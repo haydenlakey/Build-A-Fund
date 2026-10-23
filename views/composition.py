@@ -5,17 +5,11 @@ import pandas as pd
 import streamlit as st
 
 from fundlab.factors import FACTORS, cluster, correlation
-from fundlab.lookthrough import ASSET_LABELS, DOMINANT, EARNINGS_LABELS, TILTS, Composition
+from fundlab.lookthrough import ASSET_LABELS, COUNTRY_NAMES, DOMINANT, EARNINGS_LABELS, TILTS, Composition
 from fundlab.model import Fund
 from ui import cached, charts, state
 from ui import components as C
 
-COUNTRY_NAMES = {
-    "ZA": "South Africa", "US": "United States", "GB": "United Kingdom", "JP": "Japan", "CA": "Canada",
-    "CN": "China", "TW": "Taiwan", "KR": "South Korea", "IN": "India", "BR": "Brazil", "CH": "Switzerland",
-    "NL": "Netherlands", "FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy", "BE": "Belgium",
-    "IE": "Ireland", "LU": "Luxembourg", "RO": "Romania", "AU": "Australia", "Other": "Other or global",
-}
 CHART_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
 SECTOR_WHAT = """

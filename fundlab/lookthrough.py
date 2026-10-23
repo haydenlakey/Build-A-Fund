@@ -31,6 +31,12 @@ EARNINGS_LABELS = {
     "global": "Mostly offshore",
     "unclassified": "Not classified",
 }
+COUNTRY_NAMES = {
+    "ZA": "South Africa", "US": "United States", "GB": "United Kingdom", "JP": "Japan", "CA": "Canada",
+    "CN": "China", "TW": "Taiwan", "KR": "South Korea", "IN": "India", "BR": "Brazil", "CH": "Switzerland",
+    "NL": "Netherlands", "FR": "France", "DE": "Germany", "ES": "Spain", "IT": "Italy", "BE": "Belgium",
+    "IE": "Ireland", "LU": "Luxembourg", "RO": "Romania", "AU": "Australia", "Other": "Other or global",
+}
 NOT_DISCLOSED = "Not disclosed"
 UNCLASSIFIED = "unclassified"
 
