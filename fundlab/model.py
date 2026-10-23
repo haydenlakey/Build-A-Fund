@@ -101,13 +101,18 @@ class Fund:
         return [h for h in self.holdings if h.kind == "unlisted" and h.amount_zar > 0]
 
     # ---- edits (all return a new Fund so before/after can be compared) -----
-    def with_amount(self, ticker: str, amount: float, *, name: str = "", kind: str = "jse_share",
+    def with_amount(self, ticker: str, amount: float, *, name: str = "", kind: str | None = None,
                     currency: str = "ZAR", method: str = "price_history", params: dict | None = None) -> "Fund":
-        """Add, resize or (amount 0) remove a holding. `params`, if given, replaces a held holding's inputs."""
+        """Add, resize or (amount 0) remove a holding. `params`, if given, replaces a held holding's inputs.
+
+        Adding a new holding needs its `kind` (there is no safe default: an ETF is not a share).
+        """
         new = self.copy(keep_id=True)
         h = new.holding(ticker)
         if h is None:
             if amount > 0:
+                if kind is None:
+                    raise ValueError(f"adding {ticker} needs its kind (one of {', '.join(HOLDING_KINDS)})")
                 new.holdings.append(Holding(ticker, name or ticker, kind, amount, currency, method, params or {}))
         elif amount <= 0:
             new.holdings = [x for x in new.holdings if x.ticker != ticker]

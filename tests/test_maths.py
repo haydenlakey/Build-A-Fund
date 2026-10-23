@@ -59,6 +59,14 @@ def test_edits_return_new_fund_and_zero_removes():
     assert "D" in f.with_amount("D", 10, kind="us_share", currency="USD").weights().index
 
 
+def test_adding_a_holding_needs_its_kind():
+    f = make_fund()
+    with pytest.raises(ValueError, match="needs its kind"):
+        f.with_amount("STX40.JO", 10)  # no silent "JSE share" for an ETF
+    assert f.with_amount("STX40.JO", 0).holdings == f.holdings  # nothing added, so no kind needed
+    assert f.with_amount("STX40.JO", 10, kind="jse_etf").holding("STX40.JO").kind == "jse_etf"
+
+
 def test_negative_amount_rejected():
     with pytest.raises(ValueError):
         model.Holding("A", "A", "jse_share", -1)
