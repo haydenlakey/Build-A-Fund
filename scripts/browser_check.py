@@ -67,7 +67,7 @@ def pick(page: Page, query: str, amount: str | None = None) -> None:
 
 
 def marker_moves(page: Page) -> bool:
-    js = "() => { const g = document.querySelector('.js-plotly-plot'); return g._fullData[g._fullData.length - 1].x[0]; }"
+    js = "() => { const g = document.querySelector('.js-plotly-plot'); return g._fullData.find(t => t.name === 'After').x[0]; }"
     end = page.evaluate(js)
     page.get_by_text("Replay the move").click()
     xs = []

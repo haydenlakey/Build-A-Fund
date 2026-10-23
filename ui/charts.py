@@ -9,6 +9,7 @@ from fundlab.analysis import Comparison
 from .theme import FONT, base_layout, palette
 
 N_FRAMES = 14
+SMALL_MOVE = 0.03  # moves shorter than ~3% of the plotted range: the markers overlap and hide an arrow
 
 
 def _short(ticker: str, names: dict[str, str] | None = None) -> str:
@@ -17,6 +18,43 @@ def _short(ticker: str, names: dict[str, str] | None = None) -> str:
         name = (names or {}).get(ticker, ticker.split(":", 1)[1])
         return name if len(name) <= 16 else name[:15].rstrip() + "…"
     return ticker.removesuffix(".JO")
+
+
+def _pp(change: float) -> str:
+    return "≈ 0 pp" if abs(change) < 0.00005 else f"{change * 100:+.2f} pp"
+
+
+def _spans(xs, ys) -> tuple[float, float]:
+    """Rough plotted ranges (x starts at zero) used to judge on-screen closeness in data units."""
+    xs, ys = [v for v in xs if np.isfinite(v)], [v for v in ys if np.isfinite(v)]
+    xspan = max(max(xs, default=0.0), 1e-9)
+    yspan = max(max(ys, default=0.0) - min(min(ys, default=0.0), 0.0), 1e-9)
+    return xspan, yspan
+
+
+def _label_positions(xs, ys, avoid, xspan: float, yspan: float) -> list[str]:
+    """'top center' for each holding label, unless a fund marker sits where it would be drawn;
+    then below the dot, then to its right."""
+    def hits(x, y, box):
+        return any(box[0] <= (fx - x) / xspan <= box[1] and box[2] <= (fy - y) / yspan <= box[3]
+                   for fx, fy in avoid)
+    boxes = [("top center", (-0.1, 0.1, -0.03, 0.11)), ("bottom center", (-0.1, 0.1, -0.11, 0.03)),
+             ("middle right", (0.02, 0.2, -0.05, 0.05))]
+    out = []
+    for x, y in zip(xs, ys):
+        out.append(next((pos for pos, box in boxes if not hits(x, y, box)), "top center"))
+    return out
+
+
+def _holding_labels(xs, ys, labels, avoid, p: dict, size: int) -> go.Scatter:
+    """Holding labels as their own text layer, drawn after (so above) the fund markers, with a
+    halo in the chart's background colour so a marker underneath never hides them."""
+    xspan, yspan = _spans(list(xs) + [a[0] for a in avoid], list(ys) + [a[1] for a in avoid])
+    halo = ", ".join(f"{dx}px {dy}px 1px {p['surface']}" for dx, dy in ((1, 1), (-1, -1), (1, -1), (-1, 1)))
+    return go.Scatter(
+        x=list(xs), y=list(ys), mode="text", text=labels, showlegend=False, hoverinfo="skip",
+        textposition=_label_positions(xs, ys, avoid, xspan, yspan),
+        textfont=dict(size=size, color=p["muted"], shadow=halo))
 
 
 def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figure:
@@ -34,9 +72,7 @@ def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figur
     tick = list(est.mu.index)
     vols = np.sqrt(np.diag(est.cov.loc[tick, tick])) if tick else []
     fig.add_trace(go.Scatter(
-        x=vols, y=est.mu.values, mode="markers+text", name="Individual holdings",
-        text=[_short(t, names) for t in tick], textposition="top center",
-        textfont=dict(size=11, color=p["muted"]),
+        x=vols, y=est.mu.values, mode="markers", name="Individual holdings",
         marker=dict(size=8, color=p["muted"], line=dict(width=2, color=p["surface"])),
         customdata=[names.get(t, t) for t in tick],
         hovertemplate="<b>%{customdata}</b><br>Expected return %{y:.1%}<br>Volatility %{x:.1%}<extra></extra>",
@@ -61,6 +97,10 @@ def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figur
             marker=dict(size=16, color=orange, line=dict(width=2, color=p["surface"])),
             hovertemplate=f"<b>{'After' if moved else 'Your fund'}</b><br>Return %{{y:.1%}}<br>Volatility %{{x:.1%}}<extra></extra>",
         ))
+    after_idx = len(fig.data) - 1
+    fund_points = [(s.vol, s.exp_return) for s in ((b if moved else None), a) if s is not None]
+    if tick:
+        fig.add_trace(_holding_labels(vols, est.mu.values, [_short(t, names) for t in tick], fund_points, p, 11))
     layout = base_layout(
         p, height=440,
         xaxis=dict(base_layout(p)["xaxis"], title="Volatility (risk), % a year", tickformat=".0%", rangemode="tozero"),
@@ -69,10 +109,19 @@ def risk_return(cmp: Comparison, names: dict[str, str], moved: bool) -> go.Figur
     fig.update_layout(**layout)
 
     if moved and b is not None and a is not None:
-        fig.add_annotation(x=a.vol, y=a.exp_return, ax=b.vol, ay=b.exp_return,
-                           xref="x", yref="y", axref="x", ayref="y", showarrow=True,
-                           arrowhead=3, arrowsize=1.2, arrowwidth=1.5, arrowcolor=p["ink2"], standoff=9, text="")
-        after_idx = len(fig.data) - 1
+        xspan, yspan = _spans(list(vols) + list(fr.vols) + [b.vol, a.vol],
+                              list(est.mu.values) + list(fr.rets) + [b.exp_return, a.exp_return])
+        if np.hypot((a.vol - b.vol) / xspan, (a.exp_return - b.exp_return) / yspan) < SMALL_MOVE:
+            fig.add_annotation(  # point into the side of the chart with more room
+                x=a.vol, y=a.exp_return, ax=44 if a.vol < 0.55 * xspan else -44, ay=-52, showarrow=True,
+                arrowhead=0, arrowwidth=1, arrowcolor=p["ink2"], standoff=9, bgcolor=p["surface"],
+                bordercolor=p["axis"], borderpad=3, align="left", font=dict(color=p["ink2"], size=12),
+                text=f"Barely moved<br>expected return {_pp(a.exp_return - b.exp_return)}, "
+                     f"volatility {_pp(a.vol - b.vol)}")
+        else:
+            fig.add_annotation(x=a.vol, y=a.exp_return, ax=b.vol, ay=b.exp_return,
+                               xref="x", yref="y", axref="x", ayref="y", showarrow=True,
+                               arrowhead=3, arrowsize=1.2, arrowwidth=1.5, arrowcolor=p["ink2"], standoff=9, text="")
         frames = []
         for k in range(N_FRAMES + 1):
             t = k / N_FRAMES
@@ -584,8 +633,7 @@ def funds_risk_return(mc, fund_names: list[str], names: dict[str, str]) -> go.Fi
     tick = list(est.mu.index)
     if tick:
         fig.add_trace(go.Scatter(
-            x=np.sqrt(np.diag(est.cov.loc[tick, tick])), y=est.mu.values, mode="markers+text", name="Holdings",
-            text=[_short(t, names) for t in tick], textposition="top center", textfont=dict(size=10, color=p["muted"]),
+            x=np.sqrt(np.diag(est.cov.loc[tick, tick])), y=est.mu.values, mode="markers", name="Holdings",
             marker=dict(size=7, color=p["muted"], line=dict(width=1, color=p["surface"])),
             customdata=[names.get(t, t) for t in tick],
             hovertemplate="<b>%{customdata}</b><br>Expected return %{y:.1%}<br>Volatility %{x:.1%}<extra></extra>"))
@@ -601,6 +649,10 @@ def funds_risk_return(mc, fund_names: list[str], names: dict[str, str]) -> go.Fi
             x=[s.vol], y=[s.exp_return], mode="markers", name=name,
             marker=dict(size=16, color=colour, line=dict(width=2, color=p["surface"])),
             hovertemplate=f"<b>{name}</b><br>Expected return %{{y:.1%}}<br>Volatility %{{x:.1%}}<extra></extra>"))
+    if tick:
+        fund_points = [(s.vol, s.exp_return) for s in mc.stats if s is not None]
+        fig.add_trace(_holding_labels(np.sqrt(np.diag(est.cov.loc[tick, tick])), est.mu.values,
+                                      [_short(t, names) for t in tick], fund_points, p, 10))
     layout = base_layout(p, height=460)
     fig.update_layout(**_axes(layout, dict(title="Volatility (risk), % a year", tickformat=".0%", rangemode="tozero"),
                               dict(title="Expected return, % a year", tickformat=".0%")))
