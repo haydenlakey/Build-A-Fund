@@ -22,6 +22,11 @@ def test_risk_level_bands(vol, level):
     assert factsheet.risk_level(vol) == level
 
 
+def test_pct_has_no_negative_zero():
+    assert factsheet.pct(-0.0002) == "0.0%" and factsheet.pct(-0.0002, signed=True) == "+0.0%"
+    assert factsheet.pct(-0.012) == "-1.2%" and factsheet.pct(float("nan")) == "–"
+
+
 def test_constant_growth_gives_the_same_yearly_return_for_every_period():
     r = 0.002
     p = factsheet.performance(wealth(r), wealth(0.001))
@@ -112,3 +117,68 @@ def test_sheet_text_never_advises():
     text = " ".join(f"{k} {v}" for k, v in sheet.details + sheet.risk + sheet.fees)
     assert not re.search(words, text, re.I)
     assert sheet.by_country.index.tolist() == ["South Africa"] and sheet.by_asset.index.tolist() == ["Shares"]
+
+
+# ---- the page -------------------------------------------------------------------------------
+
+from streamlit.testing.v1 import AppTest  # noqa: E402
+
+from fundlab import data  # noqa: E402
+
+app_only = pytest.mark.skipif(not data.SAMPLE_PATH.exists(), reason="bundled sample not built")
+EXAMPLE = Fund("Example", [Holding("STX40.JO", "Satrix 40", "jse_etf", 10_000),
+                           Holding("STX500.JO", "Satrix S&P 500", "jse_etf", 5_000),
+                           Holding("NPN.JO", "Naspers", "jse_share", 4_000),
+                           Holding("GLD.JO", "NewGold Gold ETF", "jse_etf", 2_000)])
+
+
+def page(fund: Fund) -> AppTest:
+    at = AppTest.from_file(str(data.ROOT / "app.py"), default_timeout=120)
+    at.query_params.update({"fund": fund.to_share_code()})
+    at.run()
+    at.switch_page("views/factsheet.py").run()
+    assert not at.exception, [e.value for e in at.exception]
+    return at
+
+
+@app_only
+def test_fact_sheet_page_shows_every_block():
+    at = page(EXAMPLE)
+    heads = [h.value for h in at.subheader]
+    for h in ["Fund details", "Risk", "Fees", "Asset classes", "Performance (simulated)", "Top holdings",
+              "Sectors", "Countries", "Top insights"]:
+        assert h in heads
+    assert at.header[0].value == "Example"
+    assert len(at.get("plotly_chart")) == 3
+    assert sum(t.label == "Show me the maths" for t in at.toggle) >= 3  # every chart has its notes
+    holdings = next(m.value for m in at.markdown if "<th class=l>Holding</th>" in m.value)
+    assert holdings.index("Satrix 40") < holdings.index("Naspers")  # largest first
+
+
+@app_only
+def test_objective_and_benchmark_are_saved_with_the_fund():
+    at = page(EXAMPLE)
+    fid = at.session_state.active
+    at.text_area(key=f"objective_{fid}").input("Growth over ten years or more.").run()
+    assert not at.exception
+    assert at.session_state.funds[fid].objective == "Growth over ten years or more."
+    assert any("Growth over ten years" in m.value for m in at.markdown)
+    at.selectbox[0].select("sp500").run()
+    assert at.session_state.funds[fid].settings.benchmark == "sp500"
+    details = next(m.value for m in at.markdown if "Fund size" in m.value)
+    assert ">US shares (S&amp;P 500 in rand)</td>" in details  # values are escaped
+
+
+@app_only
+def test_fact_sheet_for_an_empty_and_an_unlisted_fund():
+    at = AppTest.from_file(str(data.ROOT / "app.py"), default_timeout=120)
+    at.run()
+    at.switch_page("views/factsheet.py").run()
+    assert not at.exception and any("empty" in i.value for i in at.info)
+    unl = Fund("Side business", [Holding("STX40.JO", "Satrix 40", "jse_etf", 3_000),
+                                 Holding("UL:shop", "Coffee shop", "unlisted", 6_000, method="assumptions",
+                                         params={"exp_return": 0.25, "lockin_years": 5, "p_loss": 0.05})])
+    at = page(unl)
+    risk = next(m.value for m in at.markdown if "<td class=l>Volatility</td>" in m.value)
+    assert "<td class=l>Whole fund volatility (with unlisted)</td>" in risk
+    assert any("cover the 33%" in c.value for c in at.caption)

@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-23 (**Phase 5 step 1 (polish) done**, 559 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-23 (**Phase 5 steps 1–3 done** (polish, fact-sheet data, Fact sheet page), 580 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -13,7 +13,7 @@ _Last updated: 2026-10-23 (**Phase 5 step 1 (polish) done**, 559 tests; Phase 3 
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
 | 3 | Library and insight pop-ups | **Done (2026-10-22).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** **Done (2026-10-22): every item on the approved list is written (46 case files + 5 counterexamples, 61 articles); 551 tests pass; browser-checked.** |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
-| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Step 1 (polish) done 2026-10-23, 559 tests. |
+| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Steps 1–3 done 2026-10-23 (polish, fact-sheet data, page), 580 tests. |
 
 ### Phase 1: what was delivered
 
@@ -312,12 +312,24 @@ fact sheet (it would need sourced ASISA rules; the sheet shows a labelled risk l
      (`UT:x~2`, named "<name> (<fund>'s inputs)"); store-priced copies keep the plain ticker.
    - `Fund.with_amount` raises if a *new* holding has no `kind` (no `jse_share` default).
    - Glossary: **market capitalisation** and **delisting** (54 terms); a test checks every article marks a term.
-2. **Fact-sheet data** (`fundlab/factsheet.py`, pure): header, objective, details, top 10 holdings + other, look-through
+2. ~~**Fact-sheet data**~~ Done (2026-10-23). `fundlab/factsheet.py` (pure): header, objective, details, top 10 holdings + other, look-through
    sector and country, simulated performance vs benchmark (1/3/5 y, best/worst calendar year, growth of R1 000), risk
    statistics, TER/TC/TIC + platform costs, top 3 insights (warnings first, then `rules.yaml` order). Risk level on the
-   SA five-step scale from volatility, thresholds labelled as the app's own.
-3. **Fact sheet page** (`views/factsheet.py`, after Compare): on-screen sheet with Plotly charts and `chart_notes`;
-   editable **objective** (saved in the fund); phones stack.
+   SA five-step scale from volatility, thresholds labelled as the app's own: **under 4 / 7 / 9 / 12% a year** = Low,
+   Low to medium, Medium, Medium to high, High. Calibration (2026-10-23, 5-year weekly prices): 17 of the 27 measurable
+   curated unit trusts land on their own published level, the other 10 one step away. The whole-fund volatility
+   (with unlisted) sets the level when the fund has unlisted holdings. Performance = today's weights, rebalanced
+   quarterly, no trading costs (`factsheet.SCHEDULE`); the benchmark is rebased to the fund where its prices start and
+   shown only where it has prices at both ends of a period. `ui/cached.fact_sheet(fund)` assembles it (insights via
+   `rules.evaluate` directly, so building the sheet never changes pop-up state). `COUNTRY_NAMES` moved to
+   `fundlab.lookthrough`.
+3. ~~**Fact sheet page**~~ Done (2026-10-23). `views/factsheet.py` after Compare: "Objective and benchmark" expander
+   (objective saved in the fund; the benchmark picker moved to `components.pick_benchmark`, shared with Against a
+   benchmark), then the sheet in a bordered box: header + disclaimer, performance (growth chart, period and calendar
+   tables), top holdings, fund details, risk, fees, asset classes, sector and country bars, top 3 insights with library
+   links. 3 charts, each with `chart_notes`. Tables are small HTML tables (`html_table`, border colour from
+   `ui/theme.py`) because dataframes clipped long values in the narrow column and on phones. 21 tests (18 pure, 3
+   AppTests); browser check screenshots the example and mixed funds' sheets.
 4. **PDF** (fpdf2 + matplotlib, one A4 page, DejaVu Sans from matplotlib, light palette from `ui/theme.py`, built on
    demand): share link + QR code; "model fund for learning, not a real unit trust" on the page; tests for one page in
    stress cases and no advice words; browser check downloads it and renders it with `pdftoppm`.
@@ -613,6 +625,8 @@ Made in Phase 2 (2026-10-09):
 - **Cold start is slow on this machine:** importing the stack takes about 20 s on the first run (probably antivirus
   scanning the venv). Each interaction then takes about 1.5 s. Check on Streamlit Cloud.
 - On a phone the "Barely moved" callout can cover a nearby holding's label (seen: GLD in the example fund).
+- A "Page not found" toast showed once on a deep link to `/factsheet` straight after a server start (cold start, like
+  the `stDialog` overlay noted in Phase 3); not reproducible on a warm server.
 - **Holdings table on phones:** Ticker/Type scroll off to the right (by design: key columns first).
 - **Data limits:** USD/ZAR from Dec 2003 only; JSE shares from 2000 at the earliest; STX40.JO from 2009; STXGOV.JO
   (SA bonds) from May 2020; short JSE listings (CFR 2023, BHG 2022, NPH 2021, SSW 2020, PRX 2019); CRWV from 2025.
@@ -686,4 +700,5 @@ Made in Phase 2 (2026-10-09):
 prose as `US\$10` (see the LaTeX bug above). Leftover: the SPIVA 2025 figures could replace the 2015 ones if S&P's
 pages become fetchable.
 
-**Phase 5 (2026-10-23):** step 1 (polish) done. **Next: step 2, fact-sheet data** (see "Phase 5 plan").
+**Phase 5 (2026-10-23):** steps 1–3 done. **Next: step 4, the PDF** (see "Phase 5 plan"); the user is deploying to
+Streamlit Cloud and will send the URL (check what `st.context.url` gives there before building the PDF's share link).

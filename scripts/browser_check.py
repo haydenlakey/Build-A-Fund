@@ -1,6 +1,6 @@
 """Drive the running app in headless Chromium: screenshots at desktop, phone and dark-mode sizes,
 plus a check that the risk-return marker really animates, the composition page in each view,
-the active-bets page, and the library (index and a few articles, each must show its chart).
+the active-bets page, the fact sheet, and the library (index and a few articles, each must show its chart).
 
 Usage (with the app running on localhost:8501):
     python scripts/browser_check.py [out_dir] [url]
@@ -154,6 +154,16 @@ def main() -> int:
             page.goto(f"{URL}/composition?fund={MIXED.to_share_code()}")
             settle(page)
             page.screenshot(path=OUT / f"{label}-9-mixed-composition.png")
+            page.goto(f"{URL}/factsheet?fund={EXAMPLE.to_share_code()}")
+            settle(page)
+            if page.locator(".js-plotly-plot").count() < 3:
+                problems.append(f"{label}: fact sheet shows fewer than 3 charts")
+            page.screenshot(path=OUT / f"{label}-14-factsheet.png")
+            page.goto(f"{URL}/factsheet?fund={MIXED.to_share_code()}")
+            settle(page)
+            if page.get_by_text("Whole fund volatility (with unlisted)").count() == 0:
+                problems.append(f"{label}: mixed fund's fact sheet has no whole-fund volatility")
+            page.screenshot(path=OUT / f"{label}-14-factsheet-mixed.png")
             page.goto(f"{URL}/library")
             settle(page)
             page.get_by_text("Case files", exact=True).click()

@@ -98,21 +98,6 @@ calls are made. Historically, few professional managers keep a high one for long
 """
 
 
-def pick_benchmark(fund) -> str:
-    bms = cached.universe().benchmarks
-    current = cached.benchmark_key(fund)
-    key = st.selectbox("Benchmark", list(bms), index=list(bms).index(current), format_func=lambda k: bms[k]["name"],
-                       help="What you compare your fund against. You can change it at any time.")
-    if key != fund.settings.benchmark:
-        f = fund.copy(keep_id=True)
-        f.settings.benchmark = key
-        state.put(f)
-    b = bms[key]
-    parts = " + ".join(f"{w:.0%} {cached.name_of(t)}" for t, w in b["components"].items())
-    st.caption(f"{parts}. {b.get('note', '')}")
-    return key
-
-
 def headline(rep: active.ActiveReport, bench_name: str) -> None:
     c = st.columns(4)
     with c[0].container(border=True, height="stretch"):
@@ -177,7 +162,7 @@ if not fund.holdings:
             icon=":material/lightbulb:")
     st.stop()
 
-key = pick_benchmark(fund)
+key = C.pick_benchmark(fund)
 bench_name = cached.universe().benchmarks[key]["name"]
 with st.spinner("Comparing with the benchmark…"):
     rep, hist, missing = cached.active_report(fund, key)

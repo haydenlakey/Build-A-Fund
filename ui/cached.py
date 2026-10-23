@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from fundlab import (active, analysis, backtest, content, costs, data, diversifiers, estimators, factors, frontier,
-                     lookthrough, risk,
+from fundlab import (active, analysis, backtest, content, costs, data, diversifiers, estimators, factors, factsheet,
+                     frontier, lookthrough, risk,
                      rules, stress, synthetic, unit_trusts, unlisted, var)
 from fundlab.model import HOLDING_KINDS, Fund
 
@@ -330,3 +330,50 @@ def _rule_measures(fund_json: str) -> dict:
 def rule_measures(fund: Fund) -> dict:
     """The measures the insight rules look at (fundlab.rules.measures), from the app's cached results."""
     return _rule_measures(fund.to_json())
+
+
+def _bench_wealth(key: str, index: pd.DatetimeIndex, schedule: str) -> pd.Series | None:
+    """The benchmark's simulated wealth over the weeks where all its components have prices."""
+    comp = pd.Series(universe().benchmarks[key]["components"], dtype=float)
+    px = prices(list(comp.index)).reindex(index.union([index[0] - pd.Timedelta(weeks=1)]))
+    r = estimators.prices_to_returns(px).reindex(index).dropna()
+    if r.empty:
+        return None
+    return backtest.run(r, comp, schedule).wealth
+
+
+@st.cache_data(max_entries=32, show_spinner=False)
+def _fact_sheet(fund_json: str) -> factsheet.FactSheet:
+    fund = Fund.from_json(fund_json)
+    key = benchmark_key(fund)
+    listed = [h for h in fund.holdings if h.kind != "unlisted" and h.amount_zar > 0]
+    stats = _compare(fund_json, fund_json).after if listed else None
+    comp = _compose(fund_json)
+    rep = _active(fund_json, key)[0] if stats is not None else None
+    fund_w = bench_w = None
+    if stats is not None:
+        idx = stats.port_returns.index
+        rets = _compare(fund_json, fund_json).est.returns.loc[idx, stats.weights.index]
+        fund_w = backtest.run(rets, stats.weights, factsheet.SCHEDULE).wealth
+        bench_w = _bench_wealth(key, idx, factsheet.SCHEDULE)
+    pc = platform_costs()
+    cost = costs.summarise(fund, {t: p.ter for t, p in comp.profiles.items()}, {t: p.tc for t, p in comp.profiles.items()},
+                           costs.TradingCosts.from_platform(pc), pc["unit_trust_platform_fee"], pc["thrive_fee_monthly"])
+    whole = None
+    if fund.unlisted():
+        whole = unlisted.whole_fund(fund, stats.exp_return if stats else float("nan"),
+                                    stats.vol if stats else float("nan"))
+    tripped = rules.evaluate(insight_rules(), _rule_measures(fund_json))[0]
+    h = fund.settings.var_horizon_weeks
+    return factsheet.build(
+        fund, names={t: name_of(t, fund) for t in fund.weights().index}, stats=stats, comp=comp, active_report=rep,
+        benchmark=universe().benchmarks[key]["name"], fund_wealth=fund_w, bench_wealth=bench_w, cost_summary=cost,
+        whole=whole, illiquid=unlisted.illiquid_share(fund), tripped=tripped,
+        articles={slug: a.title for slug, a in library().items()},
+        as_of=stats.port_returns.index[-1] if stats is not None else None,
+        var_label=f"{'1-month' if h == 4 else f'{h}-week'} VaR ({fund.settings.var_alpha:.0%})")
+
+
+def fact_sheet(fund: Fund) -> factsheet.FactSheet:
+    """The fund's one-page fact sheet (fundlab.factsheet), from the app's cached results."""
+    return _fact_sheet(fund.to_json())

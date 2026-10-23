@@ -47,7 +47,8 @@ def rand(x: float) -> str:
 def pct(x: float | None, decimals: int = 1, signed: bool = False) -> str:
     if x is None or not math.isfinite(x):
         return "–"
-    return f"{x * 100:{'+' if signed else ''}.{decimals}f}%"
+    v = x * 100 if round(x * 100, decimals) != 0 else 0.0  # no "-0.0%"
+    return f"{v:{'+' if signed else ''}.{decimals}f}%"
 
 
 def risk_level(vol: float) -> str:
@@ -228,7 +229,9 @@ def build(fund: Fund, *, names: dict[str, str], stats=None, comp=None, active_re
                  ("Transaction costs (TC)", pct(comp.weighted_tc, 2)),
                  ("Total investment charge (TIC)", pct(comp.weighted_ter + comp.weighted_tc, 2))]
     if cost_summary is not None:
-        fees += [("Platform and account fees", f"{pct(cost_summary.platform + cost_summary.account, 2)} a year"),
+        fixed = cost_summary.account * cost_summary.total_zar
+        fees += [("Platform and account fees", f"{pct(cost_summary.platform + cost_summary.account, 2)} a year"
+                  + (f", incl. a {rand(fixed)} yearly account fee" if fixed > 0.5 else "")),
                  ("One-off cost of buying it all", f"{rand(cost_summary.buy * cost_summary.total_zar)} "
                                                 f"({pct(cost_summary.buy, 2)})")]
 

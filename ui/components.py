@@ -6,7 +6,7 @@ import math
 import streamlit as st
 
 from fundlab.analysis import Comparison, FundStats
-from ui import glossary
+from ui import cached, glossary, state
 
 DISCLAIMER = ("**Education, not financial advice.** This tool explains what a fund's characteristics mean "
               "and what history says about them. It never tells you to buy or sell anything. Past returns "
@@ -98,3 +98,18 @@ def metric_panel(cmp: Comparison, settings, moved: bool) -> None:
             st.metric(label, fmt(value), delta, delta_color=colour, help=help_)
             if extra:
                 st.caption(extra)
+
+
+def pick_benchmark(fund) -> str:
+    bms = cached.universe().benchmarks
+    current = cached.benchmark_key(fund)
+    key = st.selectbox("Benchmark", list(bms), index=list(bms).index(current), format_func=lambda k: bms[k]["name"],
+                       help="What you compare your fund against. You can change it at any time.")
+    if key != fund.settings.benchmark:
+        f = fund.copy(keep_id=True)
+        f.settings.benchmark = key
+        state.put(f)
+    b = bms[key]
+    parts = " + ".join(f"{w:.0%} {cached.name_of(t)}" for t, w in b["components"].items())
+    st.caption(f"{parts}. {b.get('note', '')}")
+    return key
