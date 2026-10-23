@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-22 (**Phase 3 done**: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-23 (**Phase 5 step 1 (polish) done**, 559 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -13,7 +13,7 @@ _Last updated: 2026-10-22 (**Phase 3 done**: all approved case files written, 61
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
 | 3 | Library and insight pop-ups | **Done (2026-10-22).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** **Done (2026-10-22): every item on the approved list is written (46 case files + 5 counterexamples, 61 articles); 551 tests pass; browser-checked.** |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
-| 5 | Fact sheet and polish | Not started |
+| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Step 1 (polish) done 2026-10-23, 559 tests. |
 
 ### Phase 1: what was delivered
 
@@ -293,6 +293,39 @@ explorer and side-by-side comparison. In order:
   court annulment (Oct 2025, only seen in search summaries).
 - Many sites block scripts (DOJ, FBI, Cato, spglobal, JSE SENS, polity, Britannica). Workarounds that worked: university
   mirrors (UCEMA for the IMF IEO report, Stanford for Valukas), EveryCRSReport, SEC/Fed/BIS/FINMA/IMF direct.
+
+## Phase 5 plan (approved 2026-10-23)
+
+User decisions (2026-10-23): take every recommendation in the proposal. **Push to GitHub after each step** (pull and
+rebase first: the weekly bot pushes to `master`); **deploy to Streamlit Community Cloud after step 1** (the user
+does the deploy and sends the URL); **QR code on the PDF** (free `qrcode` package); **no ASISA-style category** on the
+fact sheet (it would need sourced ASISA rules; the sheet shows a labelled risk level instead).
+
+1. ~~**Polish**~~ Done (2026-10-23):
+   - Risk-return charts (Build and Compare): holding labels are their own text layer drawn after the fund markers, with
+     a background-coloured halo (`textfont.shadow`); a label moves below, then right of its dot when a fund marker sits
+     where it would be drawn (`charts._label_positions`).
+   - Moves shorter than ~3% of the plotted range (`charts.SMALL_MOVE`) get a two-line "Barely moved" callout with the
+     changes in pp (≈ 0 under 0.005 pp), pointing into the side of the chart with more room, instead of a hidden arrow.
+     The browser check finds the "After" trace by name.
+   - `synthetic.distinct_versions()`: Compare gives each differently modelled copy of a unit trust its own ticker
+     (`UT:x~2`, named "<name> (<fund>'s inputs)"); store-priced copies keep the plain ticker.
+   - `Fund.with_amount` raises if a *new* holding has no `kind` (no `jse_share` default).
+   - Glossary: **market capitalisation** and **delisting** (54 terms); a test checks every article marks a term.
+2. **Fact-sheet data** (`fundlab/factsheet.py`, pure): header, objective, details, top 10 holdings + other, look-through
+   sector and country, simulated performance vs benchmark (1/3/5 y, best/worst calendar year, growth of R1 000), risk
+   statistics, TER/TC/TIC + platform costs, top 3 insights (warnings first, then `rules.yaml` order). Risk level on the
+   SA five-step scale from volatility, thresholds labelled as the app's own.
+3. **Fact sheet page** (`views/factsheet.py`, after Compare): on-screen sheet with Plotly charts and `chart_notes`;
+   editable **objective** (saved in the fund); phones stack.
+4. **PDF** (fpdf2 + matplotlib, one A4 page, DejaVu Sans from matplotlib, light palette from `ui/theme.py`, built on
+   demand): share link + QR code; "model fund for learning, not a real unit trust" on the page; tests for one page in
+   stress cases and no advice words; browser check downloads it and renders it with `pdftoppm`.
+   **Why:** pure-Python wheels that install on Streamlit Cloud from `requirements.txt` alone. Kaleido 1.x needs Chrome;
+   WeasyPrint/wkhtmltopdf need system libraries; browser print varies by device and includes the sidebar.
+5. **Deployment readiness:** clean Python 3.10 install from `requirements.txt` (pytest moves to dev), memory and
+   first-load timing, README, `browser_check.py --url` against the live app.
+6. Wrap-up: PLAN.md, tests, browser check.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -579,18 +612,14 @@ Made in Phase 2 (2026-10-09):
 
 - **Cold start is slow on this machine:** importing the stack takes about 20 s on the first run (probably antivirus
   scanning the venv). Each interaction then takes about 1.5 s. Check on Streamlit Cloud.
-- **Fund marker can hide a holding's label** on the risk-return chart when they coincide (e.g. "STX500" on a phone).
-  Phase 5 polish.
-- **The arrow is invisible for very small moves** (markers overlap); Replay still shows the motion.
-- **Compare funds:** if two funds hold the same modelled unit trust with different inputs, the last fund's version
-  is used for both (`synthetic.price_frame`).
+- On a phone the "Barely moved" callout can cover a nearby holding's label (seen: GLD in the example fund).
 - **Holdings table on phones:** Ticker/Type scroll off to the right (by design: key columns first).
-- `Fund.with_amount` defaults `kind="jse_share"`; the Build page passes the universe kind, but other callers must too.
 - **Data limits:** USD/ZAR from Dec 2003 only; JSE shares from 2000 at the earliest; STX40.JO from 2009; STXGOV.JO
   (SA bonds) from May 2020; short JSE listings (CFR 2023, BHG 2022, NPH 2021, SSW 2020, PRX 2019); CRWV from 2025.
   OUT.JO before 2011-03-18 is a predecessor company (cut via `history_from`). Six ETF tickers return nothing
   (STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN).
-- The GitHub Action and Streamlit Cloud deployment are untested (no GitHub repo yet).
+- **GitHub:** repo `haydenlakey/Build-A-Fund` exists; the weekly Action ran (bot commit "Refresh bundled price data
+  (2026-10-17)"). Streamlit Cloud deployment still untested (Phase 5 step 5).
 - CRLF warnings on commit (Windows). Harmless; add `.gitattributes` if they get annoying.
 - **Stale ETF sheets:** 1nvest (ETFT40, ETFSWX, ETF500, ETFGLD), NewGold (GLD, NGPLT) and SYGEU data date from
   Oct–Dec 2025. Refresh by hand from etfsa.co.za when a browser is available.
@@ -603,7 +632,7 @@ Made in Phase 2 (2026-10-09):
 - Risk-free default (7%): replace with a sourced current SA 91-day T-bill yield (with date), or keep it as a labelled assumption.
 - A longer free SA government bond series for the balanced benchmark (STXGOV.JO starts 2020).
 - Should a user be able to force-include a holding with < 52 weeks of history (planned override, not built)?
-- GitHub repo name/visibility, and when to deploy to Streamlit Community Cloud (needs the user's GitHub account).
+- Repo visibility not confirmed (no `gh` CLI here). Deploy after Phase 5 step 1 (user, 2026-10-23).
 
 ## Next step
 
@@ -654,5 +683,7 @@ Made in Phase 2 (2026-10-09):
    `rules.TRIGGERS` + an entry in `content/rules.yaml`; "leverage switched on" needs leverage saved in the fund).
 
 **Phase 3 is done (2026-10-22).** Every approved case file is written (see "case-file batch 5" above). Write currency in
-prose as `US\$10` (see the LaTeX bug above). **Next: Phase 5 (fact sheet and polish).** Small leftovers: the Steinhoff
-article has no glossary term marked; the SPIVA 2025 figures could replace the 2015 ones if S&P's pages become fetchable.
+prose as `US\$10` (see the LaTeX bug above). Leftover: the SPIVA 2025 figures could replace the 2015 ones if S&P's
+pages become fetchable.
+
+**Phase 5 (2026-10-23):** step 1 (polish) done. **Next: step 2, fact-sheet data** (see "Phase 5 plan").
