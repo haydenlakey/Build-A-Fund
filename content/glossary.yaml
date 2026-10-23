@@ -140,6 +140,12 @@ terms:
   - term: P/E ratio
     aliases: [price-to-earnings]
     def: "A share's price divided by the company's profit per share: how many years of today's profits the price pays for."
+  - term: market capitalisation
+    aliases: [market value, market cap, market capitalization]
+    def: "What all of a company's shares are worth together at today's share price: the price times the number of shares."
+  - term: delisting
+    aliases: [delisted, delist]
+    def: "Removing a company's shares from a stock exchange, so they can no longer be bought or sold there. Shareholders may still own them but have no easy place to sell."
   - term: compounding
     aliases: [compounds]
     def: "Earning returns on past returns. Small yearly differences, in returns or in costs, grow large over decades."

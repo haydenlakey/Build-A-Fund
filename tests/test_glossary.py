@@ -61,6 +61,11 @@ def test_definitions_are_escaped_and_used_is_shared():
     assert marked(first) == ["beta"] and marked(second) == []
 
 
+def test_every_library_article_marks_at_least_one_term():
+    bare = [slug for slug, a in LIB.items() if not marked(glossary.annotate(a.body, TERMS))]
+    assert not bare, f"articles with no glossary term: {bare}"
+
+
 @pytest.mark.skipif(not data.SAMPLE_PATH.exists(), reason="bundled sample not built")
 def test_library_glossary_section_and_marked_articles():
     at = AppTest.from_file(str(data.ROOT / "app.py"), default_timeout=120).run()
