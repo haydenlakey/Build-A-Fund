@@ -14,14 +14,14 @@ next step) and [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md) (the full spec
 
 ```bash
 python -m venv .venv                                  # Python 3.10
-.venv/Scripts/python -m pip install -r requirements.txt
-.venv/Scripts/python -m pytest -q                     # all tests (~70 s; includes headless AppTest runs)
+.venv/Scripts/python -m pip install -r requirements-dev.txt   # the app (requirements.txt) + pytest, playwright, pypdf
+.venv/Scripts/python -m playwright install chromium
+.venv/Scripts/python -m pytest -q                     # all tests (~2 min; includes headless AppTest runs)
 .venv/Scripts/streamlit run app.py                    # the app on http://localhost:8501
 .venv/Scripts/python scripts/build_sample.py          # re-download the bundled price sample (needs network)
 
-# browser check (dev only): screenshots at desktop/phone/dark + console errors + animation check
-.venv/Scripts/python -m pip install -r requirements-dev.txt && .venv/Scripts/python -m playwright install chromium
-.venv/Scripts/python scripts/browser_check.py <out_dir>   # with the app running
+# browser check: screenshots at desktop/phone/dark + console errors + animation check + fact sheet PDF
+.venv/Scripts/python scripts/browser_check.py <out_dir> [url]   # with the app running (default localhost:8501)
 ```
 
 pip has hung on this machine during one large install. If it stalls, install in
