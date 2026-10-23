@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-23 (**Phase 5 steps 1–3 done** (polish, fact-sheet data, Fact sheet page), 580 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-10-23 (**Phase 5 steps 1–4 done** (polish, fact-sheet data, Fact sheet page, PDF), 591 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
 
 ## Phase status
 
@@ -13,7 +13,7 @@ _Last updated: 2026-10-23 (**Phase 5 steps 1–3 done** (polish, fact-sheet data
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
 | 3 | Library and insight pop-ups | **Done (2026-10-22).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** **Done (2026-10-22): every item on the approved list is written (46 case files + 5 counterexamples, 61 articles); 551 tests pass; browser-checked.** |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
-| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Steps 1–3 done 2026-10-23 (polish, fact-sheet data, page), 580 tests. |
+| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Steps 1–4 done 2026-10-23 (polish, fact-sheet data, page, PDF), 591 tests. Next: deployment readiness. |
 
 ### Phase 1: what was delivered
 
@@ -330,9 +330,21 @@ fact sheet (it would need sourced ASISA rules; the sheet shows a labelled risk l
    links. 3 charts, each with `chart_notes`. Tables are small HTML tables (`html_table`, border colour from
    `ui/theme.py`) because dataframes clipped long values in the narrow column and on phones. 21 tests (18 pure, 3
    AppTests); browser check screenshots the example and mixed funds' sheets.
-4. **PDF** (fpdf2 + matplotlib, one A4 page, DejaVu Sans from matplotlib, light palette from `ui/theme.py`, built on
-   demand): share link + QR code; "model fund for learning, not a real unit trust" on the page; tests for one page in
-   stress cases and no advice words; browser check downloads it and renders it with `pdftoppm`.
+4. ~~**PDF**~~ Done (2026-10-23). `ui/factsheet_pdf.py`: fpdf2 2.8.9 page + matplotlib 3.10.9 charts (object API, no
+   pyplot; light palette from `ui/theme.py`), DejaVu Sans from matplotlib's own font folder, qrcode 8.2 (27 mm, error
+   level L; left out for links over 2 000 characters). One A4 page: blue band, name, prices date, benchmark,
+   objective (3 lines max), QR code; left: growth chart, period + calendar tables, hindsight note, top holdings,
+   sector and country bars; right: details, risk, fees, asset classes, risk-level note; across: top 3 insights
+   (warnings marked, linked "Read more in the library"); footer: notes, disclaimer, "Open this fund" link. **Fit:**
+   three layouts (`LAYOUTS`: growth chart 50/42/36 mm, bar rows 4.2/3.5/3.0 mm, insight text 2/1/0 lines), the first
+   that doesn't run into the footer is used; the last raises. The page's "Download the fact sheet (PDF)" button builds it
+   on click (`st.download_button` with a callable, `on_click="ignore"`); first build ~5 s (matplotlib import).
+   **Links** use `state.app_url()`: `st.context.url` without the page path or query (empty in AppTests, so no QR or
+   links there). Share link = `<root>/?fund=<code>` (opens on Build); articles = `<root>/library?article=<slug>`.
+   Tests: `tests/test_factsheet_pdf.py` (11: one page for a 40-holding fund with very long names, objective and
+   insights, unlisted-only, short history, no benchmark; contents, links, QR on/off, no advice words, `app_url`).
+   `pypdf` is in `requirements-dev.txt` only. Browser check downloads the PDF, checks one page, renders it with
+   `pdftoppm` (`factsheet-pdf-1.png`).
    **Why:** pure-Python wheels that install on Streamlit Cloud from `requirements.txt` alone. Kaleido 1.x needs Chrome;
    WeasyPrint/wkhtmltopdf need system libraries; browser print varies by device and includes the sidebar.
 5. **Deployment readiness:** clean Python 3.10 install from `requirements.txt` (pytest moves to dev), memory and
@@ -700,5 +712,5 @@ Made in Phase 2 (2026-10-09):
 prose as `US\$10` (see the LaTeX bug above). Leftover: the SPIVA 2025 figures could replace the 2015 ones if S&P's
 pages become fetchable.
 
-**Phase 5 (2026-10-23):** steps 1–3 done. **Next: step 4, the PDF** (see "Phase 5 plan"); the user is deploying to
-Streamlit Cloud and will send the URL (check what `st.context.url` gives there before building the PDF's share link).
+**Phase 5 (2026-10-23):** steps 1–4 done. **Next: step 5, deployment readiness.** The user is deploying to Streamlit
+Cloud and will send the URL: check what `st.context.url` gives there (the PDF's links and QR code depend on it).

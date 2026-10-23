@@ -1,6 +1,6 @@
 """Drive the running app in headless Chromium: screenshots at desktop, phone and dark-mode sizes,
 plus a check that the risk-return marker really animates, the composition page in each view,
-the active-bets page, the fact sheet, and the library (index and a few articles, each must show its chart).
+the active-bets page, the fact sheet (and its PDF), and the library (index and a few articles, each must show its chart).
 
 Usage (with the app running on localhost:8501):
     python scripts/browser_check.py [out_dir] [url]
@@ -9,6 +9,8 @@ Prints console errors per viewport and exits non-zero if any are found or the an
 """
 from __future__ import annotations
 
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -75,6 +77,29 @@ def marker_moves(page: Page) -> bool:
         xs.append(page.evaluate(js))
         time.sleep(0.04)
     return len(set(round(x, 5) for x in xs)) > 3 and abs(xs[-1] - end) < 1e-6
+
+
+def check_pdf(page: Page) -> list[str]:
+    """Download the fact sheet PDF; it must be one page. Rendered to PNG with pdftoppm when available."""
+    with page.expect_download(timeout=120_000) as dl:
+        page.get_by_role("button", name="Download the fact sheet (PDF)").first.click()
+    path = OUT / "factsheet.pdf"
+    dl.value.save_as(path)
+    raw = path.read_bytes()
+    if not raw.startswith(b"%PDF"):
+        return ["fact sheet download is not a PDF"]
+    try:
+        import io
+
+        from pypdf import PdfReader
+        n = len(PdfReader(io.BytesIO(raw)).pages)
+        if n != 1:
+            return [f"fact sheet PDF has {n} pages"]
+    except ImportError:
+        pass
+    if shutil.which("pdftoppm"):
+        subprocess.run(["pdftoppm", "-png", "-r", "110", str(path), str(OUT / "factsheet-pdf")], check=False)
+    return []
 
 
 def main() -> int:
@@ -159,6 +184,8 @@ def main() -> int:
             if page.locator(".js-plotly-plot").count() < 3:
                 problems.append(f"{label}: fact sheet shows fewer than 3 charts")
             page.screenshot(path=OUT / f"{label}-14-factsheet.png")
+            if label == "desktop":
+                problems += check_pdf(page)
             page.goto(f"{URL}/factsheet?fund={MIXED.to_share_code()}")
             settle(page)
             if page.get_by_text("Whole fund volatility (with unlisted)").count() == 0:

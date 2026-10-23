@@ -151,6 +151,7 @@ def test_fact_sheet_page_shows_every_block():
     assert at.header[0].value == "Example"
     assert len(at.get("plotly_chart")) == 3
     assert sum(t.label == "Show me the maths" for t in at.toggle) >= 3  # every chart has its notes
+    assert any("Download the fact sheet (PDF)" in str(b.proto) for b in at.get("download_button"))
     holdings = next(m.value for m in at.markdown if "<th class=l>Holding</th>" in m.value)
     assert holdings.index("Satrix 40") < holdings.index("Naspers")  # largest first
 

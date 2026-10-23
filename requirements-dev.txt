@@ -1,3 +1,4 @@
 # Development-only tools (not needed to run or deploy the app)
 -r requirements.txt
 playwright==1.63.0   # then: python -m playwright install chromium
+pypdf==6.21.2         # the tests read the fact sheet PDF back

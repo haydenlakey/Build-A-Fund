@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import html
+import re
 
-import pandas as pd
 import streamlit as st
 
 from fundlab import factsheet
@@ -72,6 +72,11 @@ def html_table(rows: list[tuple], header: tuple | None = None, text_cols: int = 
     st.markdown(f"{css}<table class='fs-t'>{head}{body}</table>", unsafe_allow_html=True)
 
 
+def pdf_name(name: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", name).strip("-").lower()
+    return f"{slug or 'fund'}-fact-sheet"
+
+
 def edit_objective(fund) -> None:
     text = st.text_area("Objective", fund.objective, max_chars=400, key=f"objective_{fund.id}",
                         placeholder="In a sentence or two: what is this fund for, and for how long?",
@@ -132,6 +137,19 @@ with st.expander("Objective and benchmark", icon=":material/edit:", expanded=not
 
 with st.spinner("Putting the fact sheet together…"):
     sheet = cached.fact_sheet(state.active())
+
+root = state.app_url()
+share = f"{root}/?fund={state.active().to_share_code()}" if root else ""
+
+
+def make_pdf() -> bytes:  # runs when the button is pressed, on its own thread: no Streamlit calls in here
+    from ui import factsheet_pdf
+    return factsheet_pdf.render(sheet, share, (lambda slug: f"{root}/library?article={slug}") if root else None)
+
+
+st.download_button("Download the fact sheet (PDF)", make_pdf, file_name=f"{pdf_name(sheet.name)}.pdf",
+                   mime="application/pdf", icon=":material/picture_as_pdf:", type="primary", on_click="ignore",
+                   help="One A4 page to send to a friend. Its QR code and link open this fund in the app.")
 
 with st.container(border=True):
     st.header(sheet.name, divider="gray")
