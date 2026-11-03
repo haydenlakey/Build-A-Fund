@@ -23,6 +23,43 @@ Community Cloud's wrapper emitted 403/404 errors for `/api/v1/app/event/open`,
 `sdk.us.heap-api.com` / `cdn.heapanalytics.com`. The check reports these exact
 known endpoints separately. Other console errors and JavaScript exceptions still fail it.
 
+### Hosting error diagnosis
+
+Rechecked in fresh, anonymous Chromium contexts on 3 November 2026, using both
+the ordinary public URL and the supported `?embed=true` URL. The app loaded in
+both cases. All failed requests below originated in Community Cloud's outer
+page, not the app iframe (`/~/+/`). Embed mode still produced the two 404s.
+
+| Request | Response | Owner |
+|---|---|---|
+| `https://cdn.heapanalytics.com/js/heap-.js` | 404; script inserted in the outer page | Cloud analytics integration |
+| `/api/v1/app/event/open` | 403, `Forbidden - CSRF token invalid` (ordinary URL) | Cloud tracking endpoint |
+| `/api/v2/user/details` | 404; response path `/api/v2/subdomain/user/details` | Cloud account endpoint |
+
+The app already sets `browser.gatherUsageStats = false`. Community Cloud
+[overrides that configuration to true](https://docs.streamlit.io/deploy/streamlit-community-cloud/status#configuration).
+Changing the app's Python dependencies or local telemetry setting cannot repair
+these outer-page scripts and provider API routes. The browser-check exclusions
+classify these failures; they do **not** fix or suppress them for visitors.
+
+**Unresolved:** Streamlit Community Cloud must correct these hosting requests.
+No app workaround has been applied. The following report is ready to submit to
+[Streamlit's forum](https://discuss.streamlit.io/)
+and has not been posted:
+
+> Public app: https://build-a-fund-hlakes.streamlit.app/
+>
+> In a fresh anonymous Chromium context, the Community Cloud outer page loads
+> `https://cdn.heapanalytics.com/js/heap-.js` (404), posts to
+> `/api/v1/app/event/open` (403, "Forbidden - CSRF token invalid"), and requests
+> `/api/v2/user/details` (404; JSON error path `/api/v2/subdomain/user/details`).
+> The app iframe at `/~/+/` loads successfully. Adding `?embed=true` still
+> produces the analytics-script and user-details 404s. Please investigate the
+> Cloud wrapper's analytics configuration and anonymous-viewer API handling.
+
+Raw diagnostic responses are retained in
+`%TEMP%/build-a-fund-hosting-diagnosis.json` on the verification machine.
+
 ## Live PDF verification
 
 Downloaded both the example and mixed-fund PDFs directly from the hosted app.

@@ -653,6 +653,12 @@ Made in Phase 2 (2026-10-09):
 
 ## Known bugs and issues
 
+- **Community Cloud wrapper errors (diagnosed 2026-11-03):** Heap `heap-.js` 404,
+  account endpoint 404 and tracking endpoint CSRF 403 originate outside the app iframe.
+  `?embed=true` still has the 404s; Cloud overrides the existing telemetry opt-out.
+  These require a provider-side fix and remain unresolved. Browser-check exclusions
+  report them separately; they do not fix visitors' console errors. Evidence and an
+  unposted support report: [live verification](docs/LIVE_CHECK_2026-11-03.md#hosting-error-diagnosis).
 - **Cold start is slow on this machine:** importing the stack takes about 20 s on the first run (probably antivirus
   scanning the venv). Each interaction then takes about 1.5 s. Check on Streamlit Cloud.
 - On a phone the "Barely moved" callout can cover a nearby holding's label (seen: GLD in the example fund).
