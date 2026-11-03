@@ -3,7 +3,7 @@
 Living status document. Update whenever a phase finishes, a decision is made or
 the plan changes. Full spec: [docs/ORIGINAL_PROMPT.md](docs/ORIGINAL_PROMPT.md).
 
-_Last updated: 2026-10-23 (**Phase 5 steps 1–4 done, step 5 done locally** (waiting for the live URL), 591 tests; Phase 3 done 2026-10-22: all approved case files written, 61 library articles, 551 tests; batch 4 and batch 5 (27 files) done 2026-10-22; batch 3 part 2 done 2026-10-13; Phase 3 rules + glossary + commodity case file done 2026-10-12; Phase 2 done; Phase 4 follow-ups (a)-(c) done; Phase 4 done; Phase 2 steps 1–6 done; Phase 3 library parts 1–2 done: 22 articles)_
+_Last updated: 2026-11-03 (**Phase 5 steps 1-6 done**, including live Streamlit Cloud checks and decoded PDF QR codes; 591 tests pass. Phases 1-4 complete.)_
 
 ## Phase status
 
@@ -13,7 +13,7 @@ _Last updated: 2026-10-23 (**Phase 5 steps 1–4 done, step 5 done locally** (wa
 | 2 | Composition, risk and reality-check views | **Done** (2026-10-12). Steps 1–7 (ETF data, composition, sensitivities + clusters, active bets, risk detail, reality check, diversifier explorer + side-by-side comparison); 332 tests pass. Browser-checked (desktop, phone, dark). |
 | 3 | Library and insight pop-ups | **Done (2026-10-22).** Library page + 22 sourced articles (every lesson group has at least one case file); 167 tests pass. Next: Phase 4. **Rules done (2026-10-12): 16 pop-up rules, every lesson group covered.** **Glossary done (2026-10-12): 52 terms, hover/tap tooltips.** **Commodity slump case file + resources-heavy rule done (17 rules).** **Batch 3 part 2 (2026-10-13): 2008, 1987, Enron, 2001 rand, VBS, Japan.** **Batch 4 (2026-10-22): Madoff, Tongaat, Asian crisis, UK LDI, Lehman, US century.** **Done (2026-10-22): every item on the approved list is written (46 case files + 5 counterexamples, 61 articles); 551 tests pass; browser-checked.** |
 | 4 | Due diligence, unit trusts and unlisted holdings | **Done** (2026-10-11). 281 tests pass. Browser-checked (desktop, phone, dark). |
-| 5 | Fact sheet and polish | **In progress.** Plan approved 2026-10-23. Steps 1–4 done 2026-10-23 (polish, fact-sheet data, page, PDF), 591 tests. Step 5 done locally; waiting for the live URL. |
+| 5 | Fact sheet and polish | **Done (2026-11-03).** Steps 1–6 complete; 591 tests pass. Live desktop, phone and dark-mode browser checks; PDF QR codes and links verified against the public address. |
 
 ### Phase 1: what was delivered
 
@@ -358,10 +358,17 @@ fact sheet (it would need sourced ASISA rules; the sheet shows a labelled risk l
      Streamlit's docs give Community Cloud apps 690 MB minimum to 2.7 GB maximum memory ("approximate, as of
      February 2024", https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app, accessed
      2026-10-23); apps with no traffic for 12 hours sleep until a visitor wakes them.
-   - **README.md** for the repo (what it does, disclaimer, run, data, layout); add the live link when known.
-   - **Still to do (needs the user's deploy):** run the browser check against the live URL; check that
-     `st.context.url` there gives the public address (PDF links and QR code); add the link to the README.
-6. Wrap-up: PLAN.md, tests, browser check.
+   - **README.md** for the repo (what it does, disclaimer, run, data, layout); live app link added 2026-11-03.
+   - **Live checks done (2026-11-03):** [public app](https://build-a-fund-hlakes.streamlit.app/).
+     Desktop, phone and dark mode exercised against Community Cloud. Browser check now handles Cloud's
+     app iframe and asserts PDF links use the tested address. Cloud wrapper analytics/account endpoint
+     failures are reported separately; other console errors and JavaScript exceptions still fail the check.
+   - Downloaded example and mixed-fund PDFs from the live app: one page each. Decoded both embedded QR
+     images with ZXing; both match their public fund link exactly. All five link annotations in each PDF
+     use `https://build-a-fund-hlakes.streamlit.app/` (QR, footer, three library links), confirming the live
+     `st.context.url` produces the public origin. README now links to the app.
+6. **Wrap-up done (2026-11-03):** PLAN.md updated; all 591 tests pass; live browser checks cover all three
+   viewports. See [live verification](docs/LIVE_CHECK_2026-11-03.md) for scope and hosting observations.
 
 ## Phase 4 plan (approved 2026-10-11)
 
@@ -657,7 +664,7 @@ Made in Phase 2 (2026-10-09):
   OUT.JO before 2011-03-18 is a predecessor company (cut via `history_from`). Six ETF tickers return nothing
   (STXSWX, SYGSW4, DIVTRX, NFEMOM, NFTRCI, PTXTEN).
 - **GitHub:** repo `haydenlakey/Build-A-Fund` exists; the weekly Action ran (bot commit "Refresh bundled price data
-  (2026-10-17)"). Streamlit Cloud deployment still untested (Phase 5 step 5).
+  (2026-10-17)"). Streamlit Cloud deployment verified 2026-11-03 (Phase 5 steps 5-6).
 - CRLF warnings on commit (Windows). Harmless; add `.gitattributes` if they get annoying.
 - **Stale ETF sheets:** 1nvest (ETFT40, ETFSWX, ETF500, ETFGLD), NewGold (GLD, NGPLT) and SYGEU data date from
   Oct–Dec 2025. Refresh by hand from etfsa.co.za when a browser is available.
@@ -670,7 +677,7 @@ Made in Phase 2 (2026-10-09):
 - Risk-free default (7%): replace with a sourced current SA 91-day T-bill yield (with date), or keep it as a labelled assumption.
 - A longer free SA government bond series for the balanced benchmark (STXGOV.JO starts 2020).
 - Should a user be able to force-include a holding with < 52 weeks of history (planned override, not built)?
-- Repo visibility not confirmed (no `gh` CLI here). Deploy after Phase 5 step 1 (user, 2026-10-23).
+- Streamlit Cloud app is public and browser-verified (2026-11-03); repo visibility was not separately checked.
 
 ## Next step
 
@@ -724,5 +731,5 @@ Made in Phase 2 (2026-10-09):
 prose as `US\$10` (see the LaTeX bug above). Leftover: the SPIVA 2025 figures could replace the 2015 ones if S&P's
 pages become fetchable.
 
-**Phase 5 (2026-10-23):** steps 1–4 done; step 5 done locally. **Next: the live checks in step 5** once the user
-sends the Streamlit Cloud URL (browser check against it, `st.context.url` for the PDF's links, README link), then step 6.
+**Phase 5 complete (2026-11-03):** live browser checks, public PDF QR codes and links, README link, and step 6
+wrap-up completed. All five phases are complete; the open questions and data limitations above remain documented.

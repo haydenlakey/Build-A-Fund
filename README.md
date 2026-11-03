@@ -1,5 +1,7 @@
 # Build-a-Fund Lab
 
+[Open the live app](https://build-a-fund-hlakes.streamlit.app/)
+
 Build your own "unit trust" from investments you could buy on EasyEquities (JSE shares, JSE-listed ETFs,
 US shares, unit trusts) plus unlisted holdings, and see how each holding changes the fund's risk, expected
 return and character. A library of sourced finance history and theory explains what the numbers mean.
